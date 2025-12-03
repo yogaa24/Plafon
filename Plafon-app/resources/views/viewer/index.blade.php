@@ -11,13 +11,14 @@
             <p class="text-sm text-gray-600">Lihat semua pengajuan yang telah disetujui</p>
         </div>
         <div class="flex items-center space-x-2">
-            <!-- Belum Done -->
-            <!-- <span class="px-4 py-2 bg-yellow-100 text-yellow-800 rounded-lg font-semibold text-sm">
-                ⏳ {{ $pendingCount }} Belum Selesai
-            </span> -->
-            <!-- Sudah Done -->
+            <button onclick="openImportModal()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold text-sm hover:bg-indigo-700 transition">
+                <svg class="w-5 h-5 inline-block mr-2 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                </svg>
+                Import CSV
+            </button>
             <span class="px-4 py-2 bg-green-100 text-green-800 rounded-lg font-semibold text-sm">
-                ✓ {{ $pendingCount }} Sudah Selesai
+                ✓ {{ $pendingCount }} Perlu Input
             </span>
         </div>
     </div>
@@ -25,7 +26,6 @@
     <!-- Filter & Search -->
     <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
         <form method="GET" action="{{ route('viewer.index') }}" class="space-y-4">
-            <!-- Row 1: Search & Sales Filter -->
             <div class="flex flex-wrap gap-3">
                 <!-- Search -->
                 <div class="flex-1 min-w-[250px]">
@@ -54,12 +54,12 @@
                     <input type="date" name="date_to" value="{{ request('date_to') }}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
                 </div>
 
-                    <button type="submit" class="px-5 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition">
-                        Filter
-                    </button>
-                    <a href="{{ route('viewer.index') }}" class="px-5 py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition">
-                        Reset
-                    </a>
+                <button type="submit" class="px-5 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition">
+                    Filter
+                </button>
+                <a href="{{ route('viewer.index') }}" class="px-5 py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition">
+                    Reset
+                </a>
             </div>
         </form>
     </div>
@@ -75,8 +75,10 @@
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Nama</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Nama Kios</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Sales</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Jumlah Buka (Rp.)</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Plafon</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Tanggal Disetujui</th>
+                        <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Jenis</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Tanggal</th>
                         <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Aksi</th>
                     </tr>
                 </thead>
@@ -109,7 +111,29 @@
                             </div>
                         </td>
                         <td class="px-4 py-3 whitespace-nowrap">
-                            <span class="text-sm font-semibold text-gray-900">Rp {{ number_format($submission->plafon, 0, ',', '.') }}</span>
+                            @if($submission->plafon_type === 'open')
+                                <span class="text-sm text-gray-900">{{ number_format($submission->jumlah_buka_faktur, 0, ',', '.') }}</span>
+                            @else
+                                <span class="text-sm text-gray-400 italic">N/A</span>
+                            @endif
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            @if($submission->plafon_type === 'rubah' && $submission->previousSubmission)
+                                <div class="flex items-center space-x-1">
+                                    <span class="text-xs text-gray-400 line-through">{{ number_format($submission->previousSubmission->plafon, 0, ',', '.') }}</span>
+                                    <span class="text-xs {{ $submission->plafon > $submission->previousSubmission->plafon ? 'text-green-600' : 'text-red-600' }}">
+                                        {{ $submission->plafon > $submission->previousSubmission->plafon ? '↑' : '↓' }}
+                                    </span>
+                                    <span class="text-sm font-semibold {{ $submission->plafon > $submission->previousSubmission->plafon ? 'text-green-600' : 'text-red-600' }}">
+                                        {{ number_format($submission->plafon, 0, ',', '.') }}
+                                    </span>
+                                </div>
+                            @else
+                                <span class="text-sm font-semibold text-gray-900">Rp {{ number_format($submission->plafon, 0, ',', '.') }}</span>
+                            @endif
+                        </td>
+                        <td class="px-4 py-3 text-center whitespace-nowrap">
+                            {!! $submission->plafon_type_badge !!}
                         </td>
                         <td class="px-4 py-3 whitespace-nowrap">
                             <span class="text-sm text-gray-600">{{ $submission->updated_at->format('d M Y') }}</span>
@@ -142,7 +166,7 @@
                     
                     <!-- Detail Row (Hidden by default) -->
                     <tr id="detail-{{ $submission->id }}" class="hidden bg-green-50">
-                        <td colspan="8" class="px-4 py-4">
+                        <td colspan="10" class="px-4 py-4">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-white rounded-lg border border-gray-200">
                                 <div>
                                     <h4 class="font-semibold text-gray-700 mb-3 text-sm uppercase tracking-wide">Informasi Umum</h4>
@@ -150,6 +174,20 @@
                                         <div class="flex justify-between py-1 border-b border-gray-100">
                                             <span class="text-sm text-gray-600">Kode:</span>
                                             <span class="text-sm font-medium text-gray-900">{{ $submission->kode }}</span>
+                                        </div>
+                                        <div class="flex justify-between py-1 border-b border-gray-100">
+                                            <span class="text-sm text-gray-600">Jenis:</span>
+                                            <span class="text-sm font-medium">
+                                                @if($submission->plafon_type === 'open')
+                                                    <span class="text-blue-600">Open Plafon</span>
+                                                @else
+                                                    <span class="text-purple-600">Rubah Plafon 
+                                                        @if($submission->plafon_direction)
+                                                            ({{ $submission->plafon_direction === 'naik' ? '↑ Naik' : '↓ Turun' }})
+                                                        @endif
+                                                    </span>
+                                                @endif
+                                            </span>
                                         </div>
                                         <div class="flex justify-between py-1 border-b border-gray-100">
                                             <span class="text-sm text-gray-600">Nama:</span>
@@ -168,14 +206,22 @@
                                 <div>
                                     <h4 class="font-semibold text-gray-700 mb-3 text-sm uppercase tracking-wide">Informasi Keuangan</h4>
                                     <div class="space-y-2">
+                                        @if($submission->plafon_type === 'rubah' && $submission->previousSubmission)
                                         <div class="flex justify-between py-1 border-b border-gray-100">
-                                            <span class="text-sm text-gray-600">Plafon:</span>
+                                            <span class="text-sm text-gray-600">Plafon Sebelumnya:</span>
+                                            <span class="text-sm text-gray-500">Rp {{ number_format($submission->previousSubmission->plafon, 0, ',', '.') }}</span>
+                                        </div>
+                                        @endif
+                                        <div class="flex justify-between py-1 border-b border-gray-100">
+                                            <span class="text-sm text-gray-600">Plafon {{ $submission->plafon_type === 'rubah' ? 'Baru' : '' }}:</span>
                                             <span class="text-sm font-bold text-green-600">Rp {{ number_format($submission->plafon, 0, ',', '.') }}</span>
                                         </div>
+                                        @if($submission->plafon_type === 'open')
                                         <div class="flex justify-between py-1 border-b border-gray-100">
                                             <span class="text-sm text-gray-600">Jumlah Buka Faktur (Rp.)</span>
                                             <span class="text-sm font-medium text-gray-900">{{ number_format($submission->jumlah_buka_faktur, 0, ',', '.') }}</span>
                                         </div>
+                                        @endif
                                         <div class="flex justify-between py-1 border-b border-gray-100">
                                             <span class="text-sm text-gray-600">Sales:</span>
                                             <span class="text-sm font-medium text-gray-900">{{ $submission->sales->name }}</span>
@@ -191,12 +237,12 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="8" class="px-4 py-12 text-center">
+                        <td colspan="10" class="px-4 py-12 text-center">
                             <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                             </svg>
                             <h3 class="mt-2 text-sm font-medium text-gray-900">Tidak ada data</h3>
-                            <p class="mt-1 text-sm text-gray-500">{{ request()->anyFilled(['search', 'sales_id', 'date_from', 'date_to', 'plafon_min', 'plafon_max']) ? 'Tidak ada hasil yang cocok dengan filter' : 'Belum ada pengajuan yang selesai' }}</p>
+                            <p class="mt-1 text-sm text-gray-500">{{ request()->anyFilled(['search', 'sales_id', 'date_from', 'date_to']) ? 'Tidak ada hasil yang cocok dengan filter' : 'Belum ada pengajuan yang selesai' }}</p>
                         </td>
                     </tr>
                     @endforelse
@@ -220,6 +266,73 @@
     </div>
 </div>
 
+<!-- Import CSV Modal -->
+<div id="importModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-6 border w-full max-w-2xl shadow-lg rounded-lg bg-white">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold text-gray-900">Import Data Customer dari CSV</h3>
+            <button onclick="closeImportModal()" class="text-gray-400 hover:text-gray-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Upload Form -->
+        <form action="{{ route('viewer.import') }}" method="POST" enctype="multipart/form-data" id="importForm">
+            @csrf
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Pilih File CSV <span class="text-red-500">*</span>
+                </label>
+                <input type="file" name="csv_file" accept=".csv" required
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                <p class="text-xs text-gray-500 mt-1">File harus berformat .csv dengan maksimal 5MB</p>
+            </div>
+
+            <div class="mb-4">
+                <label class="flex items-center">
+                    <input type="checkbox" name="skip_duplicates" value="1" checked
+                        class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                    <span class="ml-2 text-sm text-gray-700">Lewati data duplikat (berdasarkan nama perusahaan)</span>
+                </label>
+            </div>
+
+            <div id="importProgress" class="hidden mb-4">
+                <div class="w-full bg-gray-200 rounded-full h-2.5">
+                    <div class="bg-indigo-600 h-2.5 rounded-full transition-all duration-300" style="width: 0%" id="progressBar"></div>
+                </div>
+                <p class="text-sm text-gray-600 mt-2 text-center" id="progressText">Memproses...</p>
+            </div>
+
+            <div class="flex gap-3">
+                <button type="button" onclick="closeImportModal()" class="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
+                    Batal
+                </button>
+                <button type="submit" class="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+                    <svg class="w-5 h-5 inline-block mr-2 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                    </svg>
+                    Import Data
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@if(session('success'))
+<div id="success-alert" class="fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
+    {{ session('success') }}
+</div>
+@endif
+
+@if(session('error'))
+<div id="error-alert" class="fixed bottom-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
+    {{ session('error') }}
+</div>
+@endif
+
 <script>
 function toggleDetail(id) {
     const detailRow = document.getElementById('detail-' + id);
@@ -233,5 +346,59 @@ function toggleDetail(id) {
         icon.classList.remove('rotate-180');
     }
 }
+
+function openImportModal() {
+    document.getElementById('importModal').classList.remove('hidden');
+}
+
+function closeImportModal() {
+    document.getElementById('importModal').classList.add('hidden');
+    document.getElementById('importForm').reset();
+    document.getElementById('importProgress').classList.add('hidden');
+}
+
+// Close modal on ESC
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeImportModal();
+    }
+});
+
+// Handle form submission with progress
+document.getElementById('importForm').addEventListener('submit', function(e) {
+    const progressDiv = document.getElementById('importProgress');
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+    
+    progressDiv.classList.remove('hidden');
+    
+    // Simulate progress (in real app, use AJAX for actual progress)
+    let progress = 0;
+    const interval = setInterval(() => {
+        progress += 10;
+        progressBar.style.width = progress + '%';
+        progressText.textContent = `Memproses... ${progress}%`;
+        
+        if (progress >= 90) {
+            clearInterval(interval);
+            progressText.textContent = 'Menyelesaikan import...';
+        }
+    }, 200);
+});
+
+// Auto hide alerts
+document.addEventListener('DOMContentLoaded', function() {
+    const alerts = ['success-alert', 'error-alert'];
+    alerts.forEach(alertId => {
+        const alert = document.getElementById(alertId);
+        if (alert) {
+            setTimeout(() => {
+                alert.style.opacity = '0';
+                alert.style.transition = 'opacity 0.5s ease-out';
+                setTimeout(() => alert.remove(), 500);
+            }, 5000);
+        }
+    });
+});
 </script>
 @endsection

@@ -14,14 +14,22 @@
     </div>
 
     <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-        <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
-            <h1 class="text-2xl font-bold text-white">Edit Pengajuan</h1>
+        <div class="bg-gradient-to-r {{ $submission->plafon_type === 'open' ? 'from-blue-600 to-blue-700' : 'from-purple-600 to-purple-700' }} px-6 py-4">
+            <h1 class="text-2xl font-bold text-white">
+                Edit Pengajuan {{ $submission->plafon_type === 'open' ? 'Open' : 'Rubah' }} Plafon
+            </h1>
             <p class="text-blue-100 text-sm mt-1">Perbarui informasi pengajuan penjualan</p>
         </div>
 
-        <form action="{{ route('submissions.update', $submission) }}" method="POST" class="p-6">
+        <form action="{{ route('submissions.update', $submission) }}" method="POST" class="p-6" id="editForm">
             @csrf
             @method('PUT')
+
+            <!-- Hidden Fields -->
+            <input type="hidden" name="plafon_type" value="{{ $submission->plafon_type }}">
+            @if($submission->plafon_type === 'rubah')
+                <input type="hidden" name="previous_submission_id" value="{{ $submission->previous_submission_id }}">
+            @endif
 
             <!-- Kode (Read-only) -->
             <div class="mb-6 bg-gray-50 border-l-4 border-gray-400 p-4 rounded">
@@ -35,6 +43,25 @@
                         <p class="text-xs text-gray-600 mt-1">Kode tidak dapat diubah</p>
                     </div>
                 </div>
+            </div>
+
+            <!-- Jenis Pengajuan Badge -->
+            <div class="mb-6">
+                @if($submission->plafon_type === 'open')
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                        </svg>
+                        Open Plafon
+                    </span>
+                @else
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                        </svg>
+                        Rubah Plafon
+                    </span>
+                @endif
             </div>
 
             @if($submission->revision_note)
@@ -88,30 +115,120 @@
                     @enderror
                 </div>
 
-                <!-- Plafon -->
-                <div>
-                    <label for="plafon" class="block text-sm font-semibold text-gray-700 mb-2">
-                        Plafon (Rp) <span class="text-red-500">*</span>
-                    </label>
-                    <input type="number" name="plafon" id="plafon" value="{{ old('plafon', (int)$submission->plafon) }}" min="0" step="1" required
-                        class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('plafon') border-red-500 @enderror">
-                    @error('plafon')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                    <p class="mt-1 text-xs text-gray-500">Masukkan nilai dalam rupiah tanpa titik/koma. Contoh: 5000000 untuk Rp 5.000.000</p>
-                </div>
+                @if($submission->plafon_type === 'rubah')
+                    <!-- FORM RUBAH PLAFON -->
+                    
+                    <!-- Jenis Perubahan Plafon -->
+                    <div class="md:col-span-2">
+                        <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                            <label class="block text-sm font-semibold text-gray-700 mb-3">
+                                Jenis Perubahan Plafon <span class="text-red-500">*</span>
+                            </label>
+                            <div class="flex gap-6">
+                                <label class="flex items-center cursor-pointer group">
+                                    <input 
+                                        type="radio" 
+                                        name="plafon_direction" 
+                                        value="naik" 
+                                        {{ old('plafon_direction', $submission->plafon_direction) == 'naik' ? 'checked' : '' }}
+                                        required
+                                        class="w-5 h-5 text-green-600 border-gray-300 focus:ring-green-500">
+                                    <span class="ml-3 flex items-center">
+                                        <svg class="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
+                                        </svg>
+                                        <span class="font-medium text-gray-700 group-hover:text-green-600">Naik Plafon</span>
+                                    </span>
+                                </label>
+                                <label class="flex items-center cursor-pointer group">
+                                    <input 
+                                        type="radio" 
+                                        name="plafon_direction" 
+                                        value="turun" 
+                                        {{ old('plafon_direction', $submission->plafon_direction) == 'turun' ? 'checked' : '' }}
+                                        required
+                                        class="w-5 h-5 text-red-600 border-gray-300 focus:ring-red-500">
+                                    <span class="ml-3 flex items-center">
+                                        <svg class="w-5 h-5 text-red-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+                                        </svg>
+                                        <span class="font-medium text-gray-700 group-hover:text-red-600">Turun Plafon</span>
+                                    </span>
+                                </label>
+                            </div>
+                            @error('plafon_direction')
+                                <p class="text-red-500 text-xs mt-2">{{ $message }}</p>
+                            @enderror
+                        </div>
+                    </div>
 
-                <!-- Jumlah Buka Faktur -->
-                <div>
-                    <label for="jumlah_buka_faktur" class="block text-sm font-semibold text-gray-700 mb-2">
-                        Jumlah Buka Faktur <span class="text-red-500">*</span>
-                    </label>
-                    <input type="number" name="jumlah_buka_faktur" id="jumlah_buka_faktur" value="{{ old('jumlah_buka_faktur', $submission->jumlah_buka_faktur) }}" min="1" required
-                        class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('jumlah_buka_faktur') border-red-500 @enderror">
-                    @error('jumlah_buka_faktur')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
+                    <!-- Plafon Sebelumnya (Read-only) -->
+                    @if($submission->previousSubmission)
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            Plafon Sebelumnya
+                        </label>
+                        <div class="relative">
+                            <span class="absolute left-4 top-3 text-gray-500">Rp</span>
+                            <input 
+                                type="text" 
+                                value="{{ number_format($submission->previousSubmission->plafon, 0, ',', '.') }}" 
+                                readonly 
+                                class="w-full pl-12 pr-4 py-2.5 bg-gray-100 border border-gray-300 rounded-lg text-gray-700 font-semibold">
+                        </div>
+                    </div>
+                    @endif
+
+                    <!-- Plafon Baru -->
+                    <div>
+                        <label for="plafon" class="block text-sm font-semibold text-gray-700 mb-2">
+                            Plafon Baru <span class="text-red-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <span class="absolute left-4 top-3 text-gray-500">Rp</span>
+                            <input 
+                                type="number" 
+                                name="plafon" 
+                                id="plafon" 
+                                value="{{ old('plafon', $submission->plafon) }}" 
+                                min="0" 
+                                step="1000"
+                                required
+                                class="w-full pl-12 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 @error('plafon') border-red-500 @enderror">
+                        </div>
+                        @error('plafon')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                @else
+                    <!-- FORM OPEN PLAFON -->
+                    
+                    <!-- Plafon -->
+                    <div>
+                        <label for="plafon" class="block text-sm font-semibold text-gray-700 mb-2">
+                            Plafon (Rp) <span class="text-red-500">*</span>
+                        </label>
+                        <input type="number" name="plafon" id="plafon" value="{{ old('plafon', (int)$submission->plafon) }}" min="0" step="1" required
+                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('plafon') border-red-500 @enderror">
+                        @error('plafon')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                        <p class="mt-1 text-xs text-gray-500">Masukkan nilai dalam rupiah tanpa titik/koma. Contoh: 5000000 untuk Rp 5.000.000</p>
+                    </div>
+
+                    <!-- Jumlah Buka Faktur -->
+                    <div>
+                        <label for="jumlah_buka_faktur" class="block text-sm font-semibold text-gray-700 mb-2">
+                            Jumlah Buka Faktur <span class="text-red-500">*</span>
+                        </label>
+                        <input type="number" name="jumlah_buka_faktur" id="jumlah_buka_faktur" value="{{ old('jumlah_buka_faktur', $submission->jumlah_buka_faktur) }}" min="1" required
+                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('jumlah_buka_faktur') border-red-500 @enderror">
+                        @error('jumlah_buka_faktur')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+                @endif
 
                 <!-- Komitmen Pembayaran -->
                 <div class="md:col-span-2">
@@ -133,7 +250,7 @@
                     Batal
                 </a>
                 <button type="submit" 
-                    class="px-6 py-2.5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 shadow-md hover:shadow-lg transition">
+                    class="px-6 py-2.5 {{ $submission->plafon_type === 'open' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-purple-600 hover:bg-purple-700' }} text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition">
                     Update Pengajuan
                 </button>
             </div>

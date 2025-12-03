@@ -18,6 +18,13 @@ class DatabaseSeeder extends Seeder
             'role' => 'sales'
         ]);
 
+        User::create([
+            'name' => 'Sales Demo2',
+            'email' => 'sales@demo2.com',
+            'password' => Hash::make('password'),
+            'role' => 'sales'
+        ]);
+
         // Create Approver 1
         User::create([
             'name' => 'Approver 1',

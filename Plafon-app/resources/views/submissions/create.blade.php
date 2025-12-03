@@ -15,7 +15,7 @@
 
     <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
         <div class="bg-gradient-to-r from-indigo-600 to-indigo-700 px-6 py-4">
-            <h1 class="text-2xl font-bold text-white">Buat Pengajuan Baru</h1>
+            <h1 class="text-2xl font-bold text-white">Open Plafon Sementara</h1>
             <p class="text-indigo-100 text-sm mt-1">Isi formulir di bawah untuk membuat pengajuan penjualan</p>
         </div>
 

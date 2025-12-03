@@ -16,7 +16,7 @@ class ApprovalController extends Controller
 
         $query = Submission::where('current_level', $level)
             ->whereIn('status', ['pending', 'approved_1', 'approved_2'])
-            ->with('sales', 'approvals.approver');
+            ->with(['sales', 'approvals.approver', 'previousSubmission']); // ← Tambah previousSubmission
 
         // Search
         if ($request->filled('search')) {
