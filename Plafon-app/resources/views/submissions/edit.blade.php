@@ -34,12 +34,12 @@
             <!-- Kode (Read-only) -->
             <div class="mb-6 bg-gray-50 border-l-4 border-gray-400 p-4 rounded">
                 <div class="flex items-start">
-                    <svg class="w-6 h-6 text-gray-600 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-4 h-4 text-gray-600 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"/>
                     </svg>
                     <div>
-                        <p class="text-sm font-medium text-gray-700">Kode Pengajuan</p>
-                        <p class="text-2xl font-bold text-gray-900 mt-1">{{ $submission->kode }}</p>
+                        <p class="text-sm font-sm text-gray-700">Kode Pengajuan</p>
+                        <p class="text-sm font-bold text-gray-900 mt-1">{{ $submission->kode }}</p>
                         <p class="text-xs text-gray-600 mt-1">Kode tidak dapat diubah</p>
                     </div>
                 </div>

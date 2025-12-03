@@ -63,18 +63,6 @@
             </div>
         </div>
     </div>
-    @else
-    <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg mb-6">
-        <div class="flex items-start">
-            <svg class="w-6 h-6 text-blue-600 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-            </svg>
-            <div>
-                <h3 class="font-semibold text-blue-900 mb-1">Pengajuan Open Plafon Baru</h3>
-                <p class="text-sm text-blue-700">Customer baru dengan plafon awal</p>
-            </div>
-        </div>
-    </div>
     @endif
 
     <!-- Main Info Card -->
@@ -130,7 +118,7 @@
             <!-- Tampilan Normal Open Plafon -->
             <div>
                 <p class="text-sm text-gray-500 mb-1">Plafon</p>
-                <p class="text-2xl font-bold text-indigo-600">Rp {{ number_format($submission->plafon, 0, ',', '.') }}</p>
+                <p class="text-lg font-bold text-indigo-600">Rp {{ number_format($submission->plafon, 0, ',', '.') }}</p>
             </div>
             @endif
             
