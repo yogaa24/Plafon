@@ -26,27 +26,27 @@ Route::middleware(['auth'])->group(function () {
 
     // Sales Routes
     Route::middleware(['role:sales'])->group(function () {
-        // IMPORTANT: Route ini HARUS di atas Route::resource
-        Route::get('submissions/search-nama', [SubmissionController::class, 'searchNama'])->name('submissions.search-nama');
-        
-        // Resource routes
-        Route::resource('submissions', SubmissionController::class);
-    });
 
-    // Route untuk submission
-    Route::middleware(['auth'])->group(function () {
+        // Autocomplete
+        Route::get('submissions/search-nama', [SubmissionController::class, 'searchNama'])
+            ->name('submissions.search-nama');
+
+        // Resource utama (store, index, create, edit, dst.)
         Route::resource('submissions', SubmissionController::class);
-        
-        // Route khusus untuk rubah plafon
-        Route::get('/submissions/{submission}/rubah-plafon', [SubmissionController::class, 'createRubahPlafon'])
+
+        // Create Rubah Plafon
+        Route::get('/submissions/{submission}/rubah-plafon', 
+            [SubmissionController::class, 'createRubahPlafon'])
             ->name('submissions.create-rubah-plafon');
 
-        // routes/create open plafon
-        Route::get('/submissions/create-open-plafon/{submission}', [SubmissionController::class, 'createOpenPlafon'])
+        // Create Open Plafon
+        Route::get('/submissions/create-open-plafon/{submission}', 
+            [SubmissionController::class, 'createOpenPlafon'])
             ->name('submissions.create-open-plafon');
-        
-        // API untuk autocomplete customer
-        Route::get('/submissions/approved-customers', [SubmissionController::class, 'getApprovedCustomers'])
+
+        // API customers
+        Route::get('/submissions/approved-customers', 
+            [SubmissionController::class, 'getApprovedCustomers'])
             ->name('submissions.approved-customers');
     });
 

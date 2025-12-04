@@ -5,8 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 
 class Submission extends Model
-    {
-        protected $fillable = [
+{
+    protected $fillable = [
         'kode',
         'nama',
         'nama_kios',
@@ -17,6 +17,8 @@ class Submission extends Model
         'previous_submission_id',
         'jumlah_buka_faktur',
         'komitmen_pembayaran',
+        'payment_type',
+        'payment_data',
         'sales_id',
         'status',
         'current_level',
@@ -24,18 +26,20 @@ class Submission extends Model
         'rejection_note',
     ];
 
-    // Tambahkan relasi
+    protected $casts = [
+    'payment_data' => 'array',  // Auto convert JSON to array
+    'created_at' => 'datetime',
+    'updated_at' => 'datetime',
+    ];
+
+
+    /* ==========================
+     |          RELASI
+     =========================== */
+
     public function previousSubmission()
     {
         return $this->belongsTo(Submission::class, 'previous_submission_id');
-    }
-
-    // Accessor untuk badge plafon type
-    public function getPlafonTypeBadgeAttribute()
-    {
-        return $this->plafon_type === 'open' 
-            ? '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Open Plafon</span>'
-            : '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">Rubah Plafon</span>';
     }
 
     public function sales()
@@ -48,16 +52,28 @@ class Submission extends Model
         return $this->hasMany(Approval::class);
     }
 
+
+    /* ==========================
+     |      BADGE ACCESSOR
+     =========================== */
+
+    public function getPlafonTypeBadgeAttribute()
+    {
+        return $this->plafon_type === 'open'
+            ? '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Open Plafon</span>'
+            : '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">Rubah Plafon</span>';
+    }
+
     public function getStatusBadgeAttribute()
     {
         $badges = [
-            'pending' => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Menunggu Approval 1</span>',
-            'approved_1' => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Menunggu Approval 2</span>',
-            'approved_2' => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-800">Menunggu Approval 3</span>',
-            'approved_3' => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">Proses Input</span>',
-            'done' => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Selesai</span>',
-            'rejected' => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Ditolak</span>',
-            'revision' => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">Perlu Revisi</span>',
+            'pending'      => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Menunggu Approval 1</span>',
+            'approved_1'   => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Menunggu Approval 2</span>',
+            'approved_2'   => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-800">Menunggu Approval 3</span>',
+            'approved_3'   => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">Proses Input</span>',
+            'done'         => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Selesai</span>',
+            'rejected'     => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Ditolak</span>',
+            'revision'     => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">Perlu Revisi</span>',
         ];
 
         return $badges[$this->status] ?? '';
@@ -65,20 +81,22 @@ class Submission extends Model
 
     public function getPlafonDirectionBadgeAttribute()
     {
-        if (!$this->plafon_direction) return '';
-        
-        return $this->plafon_direction === 'naik' 
+        if (!$this->plafon_direction) {
+            return '';
+        }
+
+        return $this->plafon_direction === 'naik'
             ? '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                <svg class="w-3 h-3 inline-block -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
-                </svg>
-                Naik
-            </span>'
+                    <svg class="w-3 h-3 inline-block -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
+                    </svg>
+                    Naik
+               </span>'
             : '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                <svg class="w-3 h-3 inline-block -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
-                </svg>
-                Turun
-            </span>';
+                    <svg class="w-3 h-3 inline-block -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+                    </svg>
+                    Turun
+               </span>';
     }
 }

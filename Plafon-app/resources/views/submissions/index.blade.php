@@ -24,7 +24,7 @@
 
     <!-- Filter & Search -->
     <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
-        <form method="GET" action="{{ route('submissions.index') }}" class="space-y-3">
+        <form method="GET" action="{{ route('submissions.index') }}" id="filterForm" class="space-y-3">
             <div class="flex flex-wrap gap-3">
                 <!-- Search -->
                 <div class="flex-1 min-w-[250px]">
@@ -33,7 +33,7 @@
 
                 <!-- Status Filter -->
                 <div class="w-52">
-                    <select name="status" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    <select name="status" id="statusFilter" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" onchange="document.getElementById('filterForm').submit()">
                         <option value="">Semua Status</option>
                         <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Menunggu Approval 1</option>
                         <option value="approved_1" {{ request('status') == 'approved_1' ? 'selected' : '' }}>Menunggu Approval 2</option>
@@ -48,9 +48,15 @@
                 <!-- Buttons -->
                 <div class="flex gap-2">
                     <button type="submit" class="px-5 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition">
-                        Filter
+                        <svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                        Cari
                     </button>
                     <a href="{{ route('submissions.index') }}" class="px-5 py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition">
+                        <svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                        </svg>
                         Reset
                     </a>
                 </div>
@@ -64,12 +70,11 @@
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider w-10"></th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Kode</th>
+                        <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider w-16">No</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Nama</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Nama Kios</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Alamat</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Jumlah Buka (Rp.)</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Value Faktur</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Plafon</th>
                         <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Jenis</th>
                         <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
@@ -77,18 +82,18 @@
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
-                    @forelse($submissions as $submission)
+                    @forelse($submissions as $index => $submission)
                     <!-- Main Row -->
                     <tr class="hover:bg-gray-50 transition">
                         <td class="px-4 py-3 text-center">
-                            <button type="button" onclick="toggleDetail({{ $submission->id }})" class="text-gray-500 hover:text-indigo-600 focus:outline-none transition" title="Lihat Detail">
-                                <svg id="icon-{{ $submission->id }}" class="w-5 h-5 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                                </svg>
-                            </button>
-                        </td>
-                        <td class="px-4 py-3 whitespace-nowrap">
-                            <span class="text-sm font-medium text-gray-900">{{ $submission->kode }}</span>
+                            <div class="flex flex-col items-center space-y-1">
+                                <span class="text-sm font-semibold text-gray-900">{{ $submissions->firstItem() + $index }}</span>
+                                <button type="button" onclick="toggleDetail({{ $submission->id }})" class="text-gray-500 hover:text-indigo-600 focus:outline-none transition" title="Lihat Detail">
+                                    <svg id="icon-{{ $submission->id }}" class="w-4 h-4 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                    </svg>
+                                </button>
+                            </div>
                         </td>
                         <td class="px-4 py-3">
                             <div class="text-sm font-medium text-gray-900">{{ $submission->nama }}</div>
@@ -99,7 +104,6 @@
                         <td class="px-4 py-3">
                             <span class="text-sm text-gray-900">{{ $submission->alamat }}</span>
                         </td>
-                        <!-- Bagian Table faktur yang diperbaiki -->
                         <td class="px-4 py-3 whitespace-nowrap">
                             @if($submission->plafon_type === 'open')
                                 <span class="text-sm text-gray-900">{{ number_format($submission->jumlah_buka_faktur, 0, ',', '.') }}</span>
@@ -107,32 +111,15 @@
                                 <span class="text-sm text-gray-400 italic">N/A</span>
                             @endif
                         </td>
-                        <!-- <td class="px-4 py-3 whitespace-nowrap">
-                            @if($submission->plafon_type === 'rubah' && $submission->previousSubmission)
-                                <div class="flex flex-col">
-                                    <span class="text-xs text-gray-400 line-through">Rp {{ number_format($submission->previousSubmission->plafon, 0, ',', '.') }}</span>
-                                    <span class="text-sm font-semibold text-purple-600">Rp {{ number_format($submission->plafon, 0, ',', '.') }}</span>
-                                </div>
-                            @else
-                                <span class="text-sm font-semibold text-gray-900">Rp {{ number_format($submission->plafon, 0, ',', '.') }}</span>
-                            @endif
-                        </td> -->
                         <td class="px-4 py-3 whitespace-nowrap">
                             @if($submission->plafon_type === 'rubah' && $submission->previousSubmission)
                                 <div class="flex flex-col items-center space-y-1">
-                                    <!-- Plafon Lama -->
                                     <span class="text-xs text-gray-400 line-through">
                                         {{ number_format($submission->previousSubmission->plafon, 0, ',', '.') }}
                                     </span>
-                                    <!-- Panah -->
-                                    <!-- <span class="text-xs {{ $submission->plafon > $submission->previousSubmission->plafon ? 'text-green-600' : 'text-red-600' }}">
-                                        {{ $submission->plafon > $submission->previousSubmission->plafon ? '↑' : '↓' }}
-                                    </span> -->
-                                    <!-- Plafon Baru -->
                                     <span class="text-sm font-semibold {{ $submission->plafon > $submission->previousSubmission->plafon ? 'text-green-600' : 'text-red-600' }}">
                                         {{ number_format($submission->plafon, 0, ',', '.') }}
                                     </span>
-
                                 </div>
                             @else
                                 <span class="text-sm font-semibold text-gray-900">
@@ -155,7 +142,6 @@
                                     </svg>
                                 </a>
                                 @if($submission->status === 'done')
-                                    <!-- Tombol Rubah Plafon -->
                                     <a href="{{ route('submissions.create-rubah-plafon', $submission) }}" 
                                     class="text-purple-600 hover:text-purple-900 font-medium text-sm" 
                                     title="Rubah Plafon">
@@ -165,7 +151,6 @@
                                         </svg>
                                     </a>
 
-                                    <!-- Tombol Open Plafon -->
                                     <a href="{{ route('submissions.create-open-plafon', $submission) }}" 
                                     class="text-blue-600 hover:text-blue-900 font-medium text-sm"
                                     title="Open Plafon Baru">
@@ -175,7 +160,6 @@
                                         </svg>
                                     </a>
 
-                                    <!-- Tombol Hapus (Khusus Done) -->
                                     <form action="{{ route('submissions.destroy', $submission) }}" 
                                         method="POST" class="inline" 
                                         onsubmit="return confirm('Yakin ingin menghapus data ini?')">
@@ -213,7 +197,7 @@
                     
                     <!-- Detail Row (Hidden by default) -->
                     <tr id="detail-{{ $submission->id }}" class="hidden bg-gray-50">
-                        <td colspan="10" class="px-4 py-4">
+                        <td colspan="9" class="px-4 py-4">
                             <div class="p-4 bg-white rounded-lg border border-gray-200">
                                 
                                 <!-- Progress Section -->
@@ -306,6 +290,49 @@
                                         </div>
                                     </div>
 
+                                    <!-- OD/Over Information Section -->
+                                    @if($submission->payment_type)
+                                    <div class="col-span-1 md:col-span-2">
+                                        <h4 class="font-semibold text-gray-700 mb-3 text-sm uppercase tracking-wide">Informasi Pembayaran</h4>
+                                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                            <div class="flex items-start">
+                                                <svg class="w-5 h-5 mr-2 text-blue-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                                </svg>
+                                                <div class="flex-1">
+                                                    <p class="text-sm font-semibold text-blue-900 mb-2">
+                                                        Jenis: <span class="uppercase">{{ $submission->payment_type }}</span>
+                                                    </p>
+                                                    @php
+                                                        $paymentData = is_array($submission->payment_data)
+                                                            ? $submission->payment_data
+                                                            : json_decode($submission->payment_data, true);
+                                                    @endphp
+                                                    @if($paymentData && count($paymentData) > 0)
+                                                    <div class="space-y-1">
+                                                        @foreach($paymentData as $key => $value)
+                                                            @if($value)
+                                                            <div class="flex justify-between text-sm">
+                                                                <span class="text-blue-700">
+                                                                    @if($key === 'piutang') Piutang
+                                                                    @elseif($key === 'jml_over') Jml Over
+                                                                    @elseif($key === 'od_30') Jml OD 30
+                                                                    @elseif($key === 'od_60') Jml OD 60
+                                                                    @elseif($key === 'od_90') Jml OD 90
+                                                                    @endif:
+                                                                </span>
+                                                                <span class="font-semibold text-blue-900">Rp {{ number_format($value, 0, ',', '.') }}</span>
+                                                            </div>
+                                                            @endif
+                                                        @endforeach
+                                                    </div>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    @endif
+
                                     <!-- Notes Section -->
                                     @if($submission->revision_note || $submission->rejection_note)
                                     <div class="col-span-1 md:col-span-2">
@@ -329,7 +356,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="10" class="px-4 py-12 text-center">
+                        <td colspan="9" class="px-4 py-12 text-center">
                             <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                             </svg>
@@ -383,10 +410,11 @@
 @endif
 
 <script>
+/* Toggle Detail Row */
 function toggleDetail(id) {
     const detailRow = document.getElementById('detail-' + id);
     const icon = document.getElementById('icon-' + id);
-    
+
     if (detailRow.classList.contains('hidden')) {
         detailRow.classList.remove('hidden');
         icon.classList.add('rotate-180');
@@ -396,40 +424,46 @@ function toggleDetail(id) {
     }
 }
 
+/* Open Modal Customer Selector */
 function showCustomerSelector() {
     document.getElementById('customerModal').classList.remove('hidden');
     document.getElementById('customerSearch').focus();
 }
 
+/* Close Modal Customer Selector */
 function closeCustomerSelector() {
     document.getElementById('customerModal').classList.add('hidden');
     document.getElementById('customerSearch').value = '';
-    document.getElementById('customerList').innerHTML = '<p class="text-gray-500 text-center">Mulai mengetik untuk mencari customer...</p>';
+    document.getElementById('customerList').innerHTML =
+        '<p class="text-gray-500 text-center">Mulai mengetik untuk mencari customer...</p>';
 }
 
+/* Search Customer with Delay */
 let searchTimeout;
 document.getElementById('customerSearch').addEventListener('input', function(e) {
     clearTimeout(searchTimeout);
     const query = e.target.value;
-    
+
     if (query.length < 2) {
-        document.getElementById('customerList').innerHTML = '<p class="text-gray-500 text-center">Minimal 2 karakter...</p>';
+        document.getElementById('customerList').innerHTML =
+            '<p class="text-gray-500 text-center">Minimal 2 karakter...</p>';
         return;
     }
-    
+
     searchTimeout = setTimeout(() => {
         fetch(`/submissions/approved-customers?q=${encodeURIComponent(query)}`)
             .then(res => res.json())
             .then(data => {
                 const listEl = document.getElementById('customerList');
-                
+
                 if (data.length === 0) {
                     listEl.innerHTML = '<p class="text-gray-500 text-center">Tidak ada customer yang cocok</p>';
                     return;
                 }
-                
+
                 listEl.innerHTML = data.map(customer => `
-                    <a href="/submissions/create-rubah-plafon/${customer.id}" class="block p-4 border border-gray-200 rounded-lg hover:bg-purple-50 hover:border-purple-300 transition mb-2">
+                    <a href="/submissions/create-rubah-plafon/${customer.id}"
+                       class="block p-4 border border-gray-200 rounded-lg hover:bg-purple-50 hover:border-purple-300 transition mb-2">
                         <div class="flex justify-between items-start">
                             <div>
                                 <h4 class="font-semibold text-gray-900">${customer.nama}</h4>
@@ -437,7 +471,9 @@ document.getElementById('customerSearch').addEventListener('input', function(e) 
                                 <p class="text-xs text-gray-500 mt-1">${customer.alamat}</p>
                             </div>
                             <div class="text-right">
-                                <p class="text-sm font-bold text-indigo-600">Rp ${new Intl.NumberFormat('id-ID').format(customer.plafon)}</p>
+                                <p class="text-sm font-bold text-indigo-600">
+                                    Rp ${new Intl.NumberFormat('id-ID').format(customer.plafon)}
+                                </p>
                                 <p class="text-xs text-gray-500">Plafon Sekarang</p>
                             </div>
                         </div>
@@ -447,7 +483,7 @@ document.getElementById('customerSearch').addEventListener('input', function(e) 
     }, 300);
 });
 
-// Auto hide success message
+/* Auto-hide Success Message */
 document.addEventListener('DOMContentLoaded', function() {
     const alert = document.getElementById('success-alert');
     if (alert) {
@@ -459,7 +495,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Close modal on ESC
+/* Close modal on ESC key */
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         closeCustomerSelector();

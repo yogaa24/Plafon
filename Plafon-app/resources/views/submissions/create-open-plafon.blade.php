@@ -7,8 +7,8 @@
     <!-- Header -->
     <div class="flex items-center justify-between">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">Open Plafon Baru</h1>
-            <p class="text-sm text-gray-600 mt-1">Buat pengajuan open plafon baru untuk customer yang sudah ada</p>
+            <h1 class="text-2xl font-bold text-gray-900">Open Plafon Sementara</h1>
+            <p class="text-sm text-gray-600 mt-1">Buat pengajuan open plafon sementara customer</p>
         </div>
         <a href="{{ route('submissions.index') }}" class="text-indigo-600 hover:text-indigo-800 font-medium">
             ← Kembali
@@ -22,6 +22,7 @@
             
             <!-- Hidden fields -->
             <input type="hidden" name="plafon_type" value="open">
+            <input type="hidden" name="plafon" value="{{ $submission->plafon }}">
 
             <!-- Kode (Read Only) -->
             <div class="mb-6">
@@ -59,37 +60,26 @@
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">Detail Open Plafon Baru</h3>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- Plafon Baru -->
+                    <!-- Plafon Saat Ini (Read Only) -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Plafon yang Diusulkan <span class="text-red-500">*</span>
+                            Plafon saat ini
                         </label>
                         <div class="relative">
                             <span class="absolute left-4 top-3 text-gray-500">Rp</span>
                             <input 
-                                type="number" 
-                                id="plafonBaru"
-                                name="plafon" 
-                                value="{{ old('plafon', $submission->plafon) }}" 
-                                required 
-                                min="0" 
-                                step="1000"
-                                class="w-full pl-12 pr-4 py-2.5 border @error('plafon') border-red-500 @else border-gray-300 @enderror rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                placeholder="Masukkan plafon yang diinginkan"
-                                oninput="formatPlafonDisplay()">
+                                type="text" 
+                                value="{{ number_format($submission->plafon, 0, ',', '.') }}" 
+                                readonly 
+                                class="w-full pl-12 pr-4 py-2.5 bg-gray-100 border border-gray-300 rounded-lg text-gray-700 font-medium">
                         </div>
-                        @error('plafon')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                        @enderror
-                        <div id="plafonDisplay" class="text-xs mt-1 font-medium text-blue-600 hidden">
-                            <!-- Will be populated by JS -->
-                        </div>
+                        <p class="text-xs text-gray-500 mt-1">Plafon yang sedang aktif</p>
                     </div>
 
                     <!-- Jumlah Buka Faktur -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Jumlah Buka Faktur <span class="text-red-500">*</span>
+                            Jumlah Value Faktur <span class="text-red-500">*</span>
                         </label>
                         <input 
                             type="number" 
@@ -106,13 +96,181 @@
                     </div>
                 </div>
 
-                <!-- Info Plafon Baru -->
-                <div id="plafonInfo" class="mt-4 p-4 rounded-lg border bg-blue-50 border-blue-300 hidden">
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                        <span id="plafonInfoText" class="text-sm font-medium text-blue-800"></span>
+                <!-- Jenis Pembayaran Section (Optional) -->
+                <div class="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <h4 class="text-sm font-semibold text-gray-900 mb-4">Jenis Pembayaran <span class="text-red-500">*</span></h4>
+                    
+                    <!-- Radio Buttons: OD or Over -->
+                    <div class="flex gap-8 mb-4">
+                        <div class="flex items-center">
+                            <input 
+                                type="radio" 
+                                id="type_od" 
+                                name="payment_type" 
+                                value="od"
+                                required
+                                class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                                onchange="togglePaymentType()">
+                            <label for="type_od" class="ml-2 text-sm text-gray-700 cursor-pointer">
+                                OD
+                            </label>
+                        </div>
+                        
+                        <div class="flex items-center">
+                            <input 
+                                type="radio" 
+                                id="type_over" 
+                                name="payment_type" 
+                                value="over"
+                                required
+                                class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                                onchange="togglePaymentType()">
+                            <label for="type_over" class="ml-2 text-sm text-gray-700 cursor-pointer">
+                                Over
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="border-t pt-4">
+                        <!-- OD Section -->
+                        <div id="odSection" class="space-y-3 hidden">
+                            <!-- Piutang -->
+                            <div class="flex items-center justify-between">
+                                <label class="text-sm text-gray-700">Piutang</label>
+                                <input 
+                                    type="number" 
+                                    id="od_piutang_value"
+                                    name="od_piutang_value"
+                                    min="0"
+                                    class="w-48 px-3 py-1.5 text-sm border border-gray-300 rounded-lg 
+                                        focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="Jumlah">
+                            </div>
+
+                            <!-- Jml Over -->
+                            <div class="flex items-center justify-between">
+                                <label class="text-sm text-gray-700">Jml Over</label>
+                                <input 
+                                    type="number" 
+                                    id="od_jml_over_value"
+                                    name="od_jml_over_value"
+                                    min="0"
+                                    class="w-48 px-3 py-1.5 text-sm border border-gray-300 rounded-lg 
+                                        focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="Jumlah">
+                            </div>
+
+                            <!-- Jml OD 30 -->
+                            <div class="flex items-center justify-between">
+                                <label class="text-sm text-gray-700">Jml OD 30</label>
+                                <input 
+                                    type="number" 
+                                    id="od_30_value"
+                                    name="od_30_value"
+                                    min="0"
+                                    class="w-48 px-3 py-1.5 text-sm border border-gray-300 rounded-lg 
+                                        focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="Jumlah">
+                            </div>
+
+                            <!-- Jml OD 60 -->
+                            <div class="flex items-center justify-between">
+                                <label class="text-sm text-gray-700">Jml OD 60</label>
+                                <input 
+                                    type="number" 
+                                    id="od_60_value"
+                                    name="od_60_value"
+                                    min="0"
+                                    class="w-48 px-3 py-1.5 text-sm border border-gray-300 rounded-lg 
+                                        focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="Jumlah">
+                            </div>
+
+                            <!-- Jml OD 90 -->
+                            <div class="flex items-center justify-between">
+                                <label class="text-sm text-gray-700">Jml OD 90</label>
+                                <input 
+                                    type="number" 
+                                    id="od_90_value"
+                                    name="od_90_value"
+                                    min="0"
+                                    class="w-48 px-3 py-1.5 text-sm border border-gray-300 rounded-lg 
+                                        focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="Jumlah">
+                            </div>
+                        </div>
+
+
+                        <!-- Over Section -->
+                        <div id="overSection" class="space-y-3 hidden">
+                            <!-- Piutang -->
+                            <div class="flex items-center justify-between">
+                                <label class="text-sm text-gray-700">Piutang</label>
+                                <input 
+                                    type="number" 
+                                    id="over_piutang_value"
+                                    name="over_piutang_value"
+                                    min="0"
+                                    class="w-48 px-3 py-1.5 text-sm border border-gray-300 rounded-lg 
+                                        focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="Jumlah">
+                            </div>
+
+                            <!-- Jml Over -->
+                            <div class="flex items-center justify-between">
+                                <label class="text-sm text-gray-700">Jml Over</label>
+                                <input 
+                                    type="number" 
+                                    id="over_jml_over_value"
+                                    name="over_jml_over_value"
+                                    min="0"
+                                    class="w-48 px-3 py-1.5 text-sm border border-gray-300 rounded-lg 
+                                        focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="Jumlah">
+                            </div>
+
+                            <!-- Jml OD 30 -->
+                            <div class="flex items-center justify-between">
+                                <label class="text-sm text-gray-700">Jml OD 30</label>
+                                <input 
+                                    type="number" 
+                                    id="over_od_30_value"
+                                    name="over_od_30_value"
+                                    min="0"
+                                    class="w-48 px-3 py-1.5 text-sm border border-gray-300 rounded-lg 
+                                        focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="Jumlah">
+                            </div>
+
+                            <!-- Jml OD 60 -->
+                            <div class="flex items-center justify-between">
+                                <label class="text-sm text-gray-700">Jml OD 60</label>
+                                <input 
+                                    type="number" 
+                                    id="over_od_60_value"
+                                    name="over_od_60_value"
+                                    min="0"
+                                    class="w-48 px-3 py-1.5 text-sm border border-gray-300 rounded-lg 
+                                        focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="Jumlah">
+                            </div>
+
+                            <!-- Jml OD 90 -->
+                            <div class="flex items-center justify-between">
+                                <label class="text-sm text-gray-700">Jml OD 90</label>
+                                <input 
+                                    type="number" 
+                                    id="over_od_90_value"
+                                    name="over_od_90_value"
+                                    min="0"
+                                    class="w-48 px-3 py-1.5 text-sm border border-gray-300 rounded-lg 
+                                        focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="Jumlah">
+                            </div>
+                        </div>
+
+
+                        <p class="text-xs text-gray-500 mt-3">* Jika diisi, pilih OD atau Over kemudian centang item yang diinginkan</p>
                     </div>
                 </div>
 
@@ -150,59 +308,103 @@
 </div>
 
 <script>
-function formatPlafonDisplay() {
-    const plafonInput = document.getElementById('plafonBaru');
-    const plafonValue = parseInt(plafonInput.value) || 0;
-    const plafonDisplayEl = document.getElementById('plafonDisplay');
-    const plafonInfoEl = document.getElementById('plafonInfo');
-    const plafonInfoTextEl = document.getElementById('plafonInfoText');
-    
-    if (plafonValue === 0) {
-        plafonDisplayEl.classList.add('hidden');
-        plafonInfoEl.classList.add('hidden');
-        return;
+function togglePaymentType() {
+    const od = document.getElementById('type_od').checked;
+    const over = document.getElementById('type_over').checked;
+
+    document.getElementById('odSection').classList.toggle('hidden', !od);
+    document.getElementById('overSection').classList.toggle('hidden', !over);
+}
+
+
+function toggleOdInput(checkbox, inputId) {
+    const input = document.getElementById(inputId);
+    input.disabled = !checkbox.checked;
+    if (!checkbox.checked) {
+        input.value = '';
     }
-    
-    const formattedPlafon = new Intl.NumberFormat('id-ID').format(plafonValue);
-    
-    // Show formatted value below input
-    plafonDisplayEl.classList.remove('hidden');
-    plafonDisplayEl.textContent = `Rp ${formattedPlafon}`;
-    
-    // Show info box
-    plafonInfoEl.classList.remove('hidden');
-    plafonInfoTextEl.innerHTML = `Pengajuan open plafon baru sebesar <strong>Rp ${formattedPlafon}</strong>`;
 }
 
 // Validate before submit
 document.getElementById('openPlafonForm').addEventListener('submit', function(e) {
-    const plafonValue = parseInt(document.getElementById('plafonBaru').value) || 0;
+    const jumlahBukaFaktur = parseInt(document.querySelector('[name="jumlah_buka_faktur"]').value) || 0;
     
-    if (plafonValue <= 0) {
+    // Validate jumlah buka faktur
+    if (jumlahBukaFaktur <= 0) {
         e.preventDefault();
-        alert('Plafon harus lebih besar dari 0');
+        alert('Jumlah buka faktur harus lebih besar dari 0');
         return;
     }
     
+    // Check if payment type is selected
+    const typeOd = document.getElementById('type_od');
+    const typeOver = document.getElementById('type_over');
+    
+    // If payment type is selected, validate the items
+    if (typeOd.checked || typeOver.checked) {
+        let hasInvalidValue = false;
+        
+        if (typeOd.checked) {
+            const odCheckboxes = document.querySelectorAll('[name="od_items[]"]:checked');
+            
+            if (odCheckboxes.length > 0) {
+                // Validate each selected item has a valid value
+                odCheckboxes.forEach(cb => {
+                    const valueInputId = cb.id + '_value';
+                    const valueInput = document.getElementById(valueInputId);
+                    const value = parseInt(valueInput.value) || 0;
+                    
+                    if (value <= 0) {
+                        hasInvalidValue = true;
+                        e.preventDefault();
+                        alert(`Masukkan jumlah yang valid untuk ${cb.nextElementSibling.textContent}`);
+                    }
+                });
+            }
+        }
+        
+        if (typeOver.checked && !hasInvalidValue) {
+            const overCheckboxes = document.querySelectorAll('[name="over_items[]"]:checked');
+            
+            if (overCheckboxes.length > 0) {
+                // Validate each selected item has a valid value
+                overCheckboxes.forEach(cb => {
+                    const valueInputId = cb.id + '_value';
+                    const valueInput = document.getElementById(valueInputId);
+                    const value = parseInt(valueInput.value) || 0;
+                    
+                    if (value <= 0) {
+                        hasInvalidValue = true;
+                        e.preventDefault();
+                        alert(`Masukkan jumlah yang valid untuk ${cb.nextElementSibling.textContent}`);
+                    }
+                });
+            }
+        }
+        
+        if (hasInvalidValue) {
+            return;
+        }
+    }
+    
     // Confirmation
+    const plafonValue = {{ $submission->plafon }};
     const formattedPlafon = new Intl.NumberFormat('id-ID').format(plafonValue);
     
-    const confirmed = confirm(
-        `Konfirmasi Pengajuan Open Plafon Baru:\n\n` +
-        `Plafon Baru: Rp ${formattedPlafon}\n\n` +
-        `Lanjutkan pengajuan?`
-    );
+    let paymentType = 'Tidak ada';
+    if (typeOd.checked) paymentType = 'OD';
+    if (typeOver.checked) paymentType = 'Over';
+    
+    const confirmMessage = `Konfirmasi Pengajuan Open Plafon:\n\n` +
+        `Plafon: Rp ${formattedPlafon}\n` +
+        `Jumlah Buka Faktur: ${jumlahBukaFaktur}\n` +
+        `Jenis Pembayaran: ${paymentType}\n\n` +
+        `Lanjutkan pengajuan?`;
+    
+    const confirmed = confirm(confirmMessage);
     
     if (!confirmed) {
         e.preventDefault();
-    }
-});
-
-// Initialize on load if old values exist
-document.addEventListener('DOMContentLoaded', function() {
-    const plafonInput = document.getElementById('plafonBaru');
-    if (plafonInput.value) {
-        formatPlafonDisplay();
     }
 });
 </script>

@@ -99,10 +99,7 @@
                                     <span class="text-xs text-gray-400 line-through">
                                         {{ number_format($submission->previousSubmission->plafon, 0, ',', '.') }}
                                     </span>
-                                    <!-- Panah -->
-                                    <!-- <span class="text-xs {{ $submission->plafon > $submission->previousSubmission->plafon ? 'text-green-600' : 'text-red-600' }}">
-                                        {{ $submission->plafon > $submission->previousSubmission->plafon ? '↑' : '↓' }}
-                                    </span> -->
+
                                     <!-- Plafon Baru -->
                                     <span class="text-sm font-semibold {{ $submission->plafon > $submission->previousSubmission->plafon ? 'text-green-600' : 'text-red-600' }}">
                                         {{ number_format($submission->plafon, 0, ',', '.') }}
