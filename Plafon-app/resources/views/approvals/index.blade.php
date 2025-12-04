@@ -141,16 +141,26 @@
                         </td>
                         <td class="px-4 py-3 text-center whitespace-nowrap">
                             <div class="flex items-center justify-center gap-2">
-                                <!-- Approve Button (Direct Submit) -->
-                                <form action="{{ route('approvals.process', $submission) }}" method="POST" class="inline" onsubmit="return confirm('Yakin ingin menyetujui pengajuan ini?')">
-                                    @csrf
-                                    <input type="hidden" name="action" value="approved">
-                                    <button type="submit" class="px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-700 transition" title="Setujui">
+                                <!-- Approve Button -->
+                                @if($level == 2)
+                                    <!-- Level 2 requires form -->
+                                    <button onclick="openApprovalModal({{ $submission->id }}, 'approved')" class="px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-700 transition" title="Setujui">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                                         </svg>
                                     </button>
-                                </form>
+                                @else
+                                    <!-- Level 1 & 3 direct submit -->
+                                    <form action="{{ route('approvals.process', $submission) }}" method="POST" class="inline" onsubmit="return confirm('Yakin ingin menyetujui pengajuan ini?')">
+                                        @csrf
+                                        <input type="hidden" name="action" value="approved">
+                                        <button type="submit" class="px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-700 transition" title="Setujui">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                            </svg>
+                                        </button>
+                                    </form>
+                                @endif
                                 
                                 <!-- Reject Button -->
                                 <button onclick="openApprovalModal({{ $submission->id }}, 'rejected')" class="px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded hover:bg-red-700 transition" title="Tolak">
@@ -173,6 +183,39 @@
                     <tr id="detail-{{ $submission->id }}" class="hidden bg-gray-50">
                         <td colspan="11" class="px-4 py-4">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-white rounded-lg border border-gray-200">
+                                <!-- Progress Section -->
+                                <div class="col-span-1 md:col-span-2 mb-4 pb-4 border-b border-gray-200">
+                                    <h4 class="font-semibold text-gray-700 mb-3 text-sm uppercase tracking-wide">Progress Approval</h4>
+                                    <div class="flex items-center justify-center space-x-4">
+                                        @for($i = 1; $i <= 3; $i++)
+                                            @php
+                                                $approved = $submission->approvals->where('level', $i)->where('status', 'approved')->first();
+                                                $rejected = $submission->approvals->where('level', $i)->where('status', 'rejected')->first();
+                                                $revision = $submission->approvals->where('level', $i)->where('status', 'revision')->first();
+                                            @endphp
+                                            <div class="flex flex-col items-center">
+                                                <div class="w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold
+                                                    @if($approved) bg-green-500 text-white
+                                                    @elseif($rejected) bg-red-500 text-white
+                                                    @elseif($revision) bg-orange-500 text-white
+                                                    @elseif($submission->current_level == $i && in_array($submission->status, ['pending', 'approved_1', 'approved_2'])) bg-yellow-500 text-white
+                                                    @else bg-gray-200 text-gray-500
+                                                    @endif">
+                                                    {{ $i }}
+                                                </div>
+                                                <span class="text-xs text-gray-600 mt-2">Level {{ $i }}</span>
+                                            </div>
+                                            @if($i < 3)
+                                            <div class="w-16 h-1 -mt-4 
+                                                @if($approved) bg-green-500
+                                                @else bg-gray-200
+                                                @endif">
+                                            </div>
+                                            @endif
+                                        @endfor
+                                    </div>
+                                </div>
+
                                 <div>
                                     <h4 class="font-semibold text-gray-700 mb-3 text-sm uppercase tracking-wide">Informasi Umum</h4>
                                     <div class="space-y-2">
@@ -191,6 +234,16 @@
                                                             ({{ $submission->plafon_direction === 'naik' ? '↑ Naik' : '↓ Turun' }})
                                                         @endif
                                                     </span>
+                                                @endif
+                                            </span>
+                                        </div>
+                                        <div class="flex justify-between py-1 border-b border-gray-100">
+                                            <span class="text-sm text-gray-600">Jenis Pembayaran:</span>
+                                            <span class="text-sm font-medium text-gray-900">
+                                                @if($submission->payment_type === 'over')
+                                                    <span class="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs font-semibold">OVER</span>
+                                                @else
+                                                    <span class="px-2 py-1 bg-orange-100 text-orange-700 rounded text-xs font-semibold">OD</span>
                                                 @endif
                                             </span>
                                         </div>
@@ -235,6 +288,38 @@
                                             <span class="text-sm text-gray-600 block mb-1">Komitmen Pembayaran:</span>
                                             <span class="text-sm text-gray-900">{{ $submission->komitmen_pembayaran }}</span>
                                         </div>
+                                        
+                                        <!-- Data OD/Over dari Approval Level 2 -->
+                                        @php
+                                            $approval2 = $submission->approvals->where('level', 2)->where('status', 'approved')->first();
+                                        @endphp
+                                        @if($approval2)
+                                        <div class="mt-3 pt-3 border-t border-gray-200">
+                                            <h5 class="text-xs font-semibold text-gray-700 mb-2 uppercase">Data Verifikasi Level 2</h5>
+                                            <div class="space-y-1">
+                                                <div class="flex justify-between py-1">
+                                                    <span class="text-xs text-gray-600">Piutang:</span>
+                                                    <span class="text-xs font-medium text-gray-900">Rp {{ number_format($approval2->piutang ?? 0, 0, ',', '.') }}</span>
+                                                </div>
+                                                <div class="flex justify-between py-1">
+                                                    <span class="text-xs text-gray-600">Jml Over:</span>
+                                                    <span class="text-xs font-medium text-gray-900">Rp {{ number_format($approval2->jml_over ?? 0, 0, ',', '.') }}</span>
+                                                </div>
+                                                <div class="flex justify-between py-1">
+                                                    <span class="text-xs text-gray-600">Jml OD 30:</span>
+                                                    <span class="text-xs font-medium text-gray-900">Rp {{ number_format($approval2->jml_od_30 ?? 0, 0, ',', '.') }}</span>
+                                                </div>
+                                                <div class="flex justify-between py-1">
+                                                    <span class="text-xs text-gray-600">Jml OD 60:</span>
+                                                    <span class="text-xs font-medium text-gray-900">Rp {{ number_format($approval2->jml_od_60 ?? 0, 0, ',', '.') }}</span>
+                                                </div>
+                                                <div class="flex justify-between py-1">
+                                                    <span class="text-xs text-gray-600">Jml OD 90:</span>
+                                                    <span class="text-xs font-medium text-gray-900">Rp {{ number_format($approval2->jml_od_90 ?? 0, 0, ',', '.') }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        @endif
                                     </div>
                                 </div>
 
@@ -299,19 +384,58 @@
     </div>
 </div>
 
-<!-- Approval Modal (Only for Reject & Revision) -->
+<!-- Approval Modal -->
 <div id="approvalModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-lg bg-white">
+    <div class="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-lg bg-white">
         <div class="mt-3">
             <h3 id="modalTitle" class="text-lg font-semibold text-gray-900 mb-4"></h3>
             
             <form id="approvalForm" method="POST">
                 @csrf
                 <input type="hidden" name="action" id="actionInput" value="">
+                <input type="hidden" name="jenis_pembayaran" id="jenisPembayaranInput" value="">
+                
+                <!-- Level 2 Specific Fields -->
+                <div id="level2Fields" class="hidden space-y-4 mb-4">
+                    <div class="border border-black-200 rounded-lg p-4">
+                        <h4 class="font-semibold text-black-900 mb-3">Informasi Verifikasi (Level 2)</h4>
+                        
+                        <!-- Jenis Pembayaran Display Only -->
+                        <div class="mb-3">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Jenis Pembayaran</label>
+                            <div id="jenisPembayaranDisplay" class="px-4 py-2 rounded-lg text-sm font-semibold"></div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Piutang <span class="text-red-500">*</span></label>
+                                <input type="number" name="piutang" id="piutangInput" class="w-full px-3 py-2 border border-gray-300 rounded-lg..." placeholder="0">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Jml Over <span class="text-red-500">*</span></label>
+                                <input type="number" name="jml_over" id="jmlOverInput" class="w-full px-3 py-2 border border-gray-300 rounded-lg..." placeholder="0">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Jml OD 30 <span class="text-red-500">*</span></label>
+                                <input type="number" name="jml_od_30" id="jmlOd30Input" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="0">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Jml OD 60 <span class="text-red-500">*</span></label>
+                                <input type="number" name="jml_od_60" id="jmlOd60Input" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="0">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Jml OD 90 <span class="text-red-500">*</span></label>
+                                <input type="number" name="jml_od_90" id="jmlOd90Input" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="0">
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Catatan <span class="text-red-500">*</span></label>
-                    <textarea id="approvalNote" name="note" rows="4" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Jelaskan alasan Anda..."></textarea>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Catatan <span id="noteRequired" class="text-red-500">*</span>
+                    </label>
+                    <textarea id="approvalNote" name="note" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Jelaskan alasan Anda..."></textarea>
                 </div>
 
                 <div class="flex gap-3">
@@ -340,6 +464,15 @@
 @endif
 
 <script>
+// Store current level from Laravel
+const currentLevel = {{ $level }};
+const submissionsData = @json($submissions->map(function($s) {
+    return [
+        'id' => $s->id,
+        'payment_type' => $s->payment_type ?? 'od'
+    ];
+}));
+
 function toggleDetail(id) {
     const detailRow = document.getElementById('detail-' + id);
     const icon = document.getElementById('icon-' + id);
@@ -357,33 +490,80 @@ function openApprovalModal(submissionId, action) {
     const modal = document.getElementById('approvalModal');
     const modalTitle = document.getElementById('modalTitle');
     const approvalNote = document.getElementById('approvalNote');
+    const noteRequired = document.getElementById('noteRequired');
     const submitButton = document.getElementById('submitButton');
     const form = document.getElementById('approvalForm');
     const actionInput = document.getElementById('actionInput');
+    const level2Fields = document.getElementById('level2Fields');
     
-    // Set form action menggunakan route approvals.process
+    // Get jenis pembayaran for this submission
+    const submission = submissionsData.find(s => s.id === submissionId);
+    const jenisPembayaran = submission ? submission.payment_type : '';
+    
+    // Set form action
     form.action = `/approvals/${submissionId}/process`;
-    
-    // Set action value
     actionInput.value = action;
     
-    // Configure modal based on action type
-    if (action === 'rejected') {
-        modalTitle.textContent = 'Tolak Pengajuan';
-        approvalNote.placeholder = 'Jelaskan alasan penolakan...';
-        submitButton.className = 'flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition';
-        submitButton.textContent = 'Tolak';
-    } else if (action === 'revision') {
-        modalTitle.textContent = 'Minta Revisi';
-        approvalNote.placeholder = 'Jelaskan revisi yang diperlukan...';
-        submitButton.className = 'flex-1 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition';
-        submitButton.textContent = 'Minta Revisi';
+    // Set jenis pembayaran hidden input
+    document.getElementById('jenisPembayaranInput').value = jenisPembayaran;
+    
+    // Show Level 2 fields only for approved action and level 2
+    if (action === 'approved' && currentLevel === 2) {
+        level2Fields.classList.remove('hidden');
+        
+        // Display jenis pembayaran
+        const jenisPembayaranDisplay = document.getElementById('jenisPembayaranDisplay');
+        if (jenisPembayaran === 'over') {
+            jenisPembayaranDisplay.innerHTML = '<span class="px-3 py-1 bg-purple-100 text-purple-700 rounded">OVER</span>';
+        } else {
+            jenisPembayaranDisplay.innerHTML = '<span class="px-3 py-1 bg-orange-100 text-orange-700 rounded">OD</span>';
+        }
+        
+        // Make level 2 fields required
+        ['piutangInput', 'jmlOverInput', 'jmlOd30Input', 'jmlOd60Input', 'jmlOd90Input'].forEach(id => {
+            document.getElementById(id).required = true;
+        });
+        
+        modalTitle.textContent = 'Setujui Pengajuan - Verifikasi Data';
+        approvalNote.placeholder = 'Catatan tambahan (opsional)...';
+        approvalNote.required = false;
+        noteRequired.classList.add('hidden');
+        submitButton.className = 'flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition';
+        submitButton.textContent = 'Setujui';
+    } else {
+        level2Fields.classList.add('hidden');
+        
+        // Remove level 2 fields required
+        ['piutangInput', 'jmlOverInput', 'jmlOd30Input', 'jmlOd60Input', 'jmlOd90Input'].forEach(id => {
+            document.getElementById(id).required = false;
+        });
+        
+        // Configure modal for reject/revision
+        if (action === 'rejected') {
+            modalTitle.textContent = 'Tolak Pengajuan';
+            approvalNote.placeholder = 'Jelaskan alasan penolakan...';
+            approvalNote.required = true;
+            noteRequired.classList.remove('hidden');
+            submitButton.className = 'flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition';
+            submitButton.textContent = 'Tolak';
+        } else if (action === 'revision') {
+            modalTitle.textContent = 'Minta Revisi';
+            approvalNote.placeholder = 'Jelaskan revisi yang diperlukan...';
+            approvalNote.required = true;
+            noteRequired.classList.remove('hidden');
+            submitButton.className = 'flex-1 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition';
+            submitButton.textContent = 'Minta Revisi';
+        }
     }
     
-    // Clear previous note
+    // Clear previous values
     approvalNote.value = '';
+    if (level2Fields) {
+        ['piutangInput', 'jmlOverInput', 'jmlOd30Input', 'jmlOd60Input', 'jmlOd90Input'].forEach(id => {
+            document.getElementById(id).value = '';
+        });
+    }
     
-    // Show modal
     modal.classList.remove('hidden');
 }
 

@@ -16,7 +16,7 @@ class ApprovalController extends Controller
 
         $query = Submission::where('current_level', $level)
             ->whereIn('status', ['pending', 'approved_1', 'approved_2'])
-            ->with(['sales', 'approvals.approver', 'previousSubmission']); // ← Tambah previousSubmission
+            ->with(['sales', 'approvals.approver', 'previousSubmission']);
 
         // Search
         if ($request->filled('search')) {
@@ -60,19 +60,47 @@ class ApprovalController extends Controller
                 ->with('error', 'Pengajuan tidak dalam level approval Anda!');
         }
 
-        $validated = $request->validate([
+        // Validation rules based on level and action
+        $rules = [
             'action' => 'required|in:approved,rejected,revision',
             'note' => 'required_if:action,rejected,revision|nullable|string'
-        ]);
+        ];
 
-        Approval::create([
+        // Level 2 specific validation for approved action
+        if ($level == 2 && $request->action == 'approved') {
+            $rules['piutang'] = 'required|numeric|min:0';
+            $rules['jml_over'] = 'required|numeric|min:0';
+            $rules['jml_od_30'] = 'required|numeric|min:0';
+            $rules['jml_od_60'] = 'required|numeric|min:0';
+            $rules['jml_od_90'] = 'required|numeric|min:0';
+            
+            // Note is optional for level 2 approval
+            $rules['note'] = 'nullable|string';
+        }
+
+        $validated = $request->validate($rules);
+
+        // Create approval record
+        $approvalData = [
             'submission_id' => $submission->id,
             'approver_id' => $user->id,
             'level' => $level,
             'status' => $validated['action'],
             'note' => $validated['note'] ?? null
-        ]);
+        ];
 
+        // Add level 2 specific fields if approved
+        if ($level == 2 && $validated['action'] == 'approved') {
+            $approvalData['piutang'] = $validated['piutang'];
+            $approvalData['jml_over'] = $validated['jml_over'];
+            $approvalData['jml_od_30'] = $validated['jml_od_30'];
+            $approvalData['jml_od_60'] = $validated['jml_od_60'];
+            $approvalData['jml_od_90'] = $validated['jml_od_90'];
+        }
+
+        Approval::create($approvalData);
+
+        // Update submission status
         if ($validated['action'] == 'approved') {
             if ($level == 3) {
                 $submission->update([
