@@ -50,7 +50,7 @@
                 <thead class="bg-gray-50">
                     <tr>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider w-10"></th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Kode</th>
+                        <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider w-16">No</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Nama</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Nama Kios</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Sales</th>
@@ -397,8 +397,11 @@
                 
                 <!-- Level 2 Specific Fields -->
                 <div id="level2Fields" class="hidden space-y-4 mb-4">
-                    <div class="border border-black-200 rounded-lg p-4">
-                        <h4 class="font-semibold text-black-900 mb-3">Informasi Verifikasi (Level 2)</h4>
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="font-semibold text-gray-900">Informasi Verifikasi (Level 2)</h4>
+                            <span id="dataSourceInfo" class="text-xs px-2 py-1 rounded bg-blue-50 text-blue-700"></span>
+                        </div>
                         
                         <!-- Jenis Pembayaran Display Only -->
                         <div class="mb-3">
@@ -409,24 +412,28 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Piutang <span class="text-red-500">*</span></label>
-                                <input type="number" name="piutang" id="piutangInput" class="w-full px-3 py-2 border border-gray-300 rounded-lg..." placeholder="0">
+                                <input type="number" name="piutang" id="piutangInput" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="0" step="0.01">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Jml Over <span class="text-red-500">*</span></label>
-                                <input type="number" name="jml_over" id="jmlOverInput" class="w-full px-3 py-2 border border-gray-300 rounded-lg..." placeholder="0">
+                                <input type="number" name="jml_over" id="jmlOverInput" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="0" step="0.01">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Jml OD 30 <span class="text-red-500">*</span></label>
-                                <input type="number" name="jml_od_30" id="jmlOd30Input" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="0">
+                                <input type="number" name="jml_od_30" id="jmlOd30Input" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="0" step="0.01">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Jml OD 60 <span class="text-red-500">*</span></label>
-                                <input type="number" name="jml_od_60" id="jmlOd60Input" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="0">
+                                <input type="number" name="jml_od_60" id="jmlOd60Input" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="0" step="0.01">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Jml OD 90 <span class="text-red-500">*</span></label>
-                                <input type="number" name="jml_od_90" id="jmlOd90Input" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="0">
+                                <input type="number" name="jml_od_90" id="jmlOd90Input" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="0" step="0.01">
                             </div>
+                        </div>
+                        
+                        <div class="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
+                            <strong>💡 Info:</strong> Data di atas adalah data yang diisi oleh sales. Anda dapat memverifikasi dan mengubahnya jika diperlukan.
                         </div>
                     </div>
                 </div>
@@ -469,7 +476,8 @@ const currentLevel = {{ $level }};
 const submissionsData = @json($submissions->map(function($s) {
     return [
         'id' => $s->id,
-        'payment_type' => $s->payment_type ?? 'od'
+        'payment_type' => $s->payment_type ?? 'od',
+        'payment_data' => $s->payment_data ?? []
     ];
 }));
 
@@ -496,9 +504,10 @@ function openApprovalModal(submissionId, action) {
     const actionInput = document.getElementById('actionInput');
     const level2Fields = document.getElementById('level2Fields');
     
-    // Get jenis pembayaran for this submission
+    // Get submission data
     const submission = submissionsData.find(s => s.id === submissionId);
     const jenisPembayaran = submission ? submission.payment_type : '';
+    const paymentData = submission ? submission.payment_data : {};
     
     // Set form action
     form.action = `/approvals/${submissionId}/process`;
@@ -519,6 +528,23 @@ function openApprovalModal(submissionId, action) {
             jenisPembayaranDisplay.innerHTML = '<span class="px-3 py-1 bg-orange-100 text-orange-700 rounded">OD</span>';
         }
         
+        // PRE-FILL dengan data dari sales (jika ada)
+        document.getElementById('piutangInput').value = paymentData.piutang || '';
+        document.getElementById('jmlOverInput').value = paymentData.jml_over || '';
+        document.getElementById('jmlOd30Input').value = paymentData.jml_od_30 || paymentData.od_30 || '';
+        document.getElementById('jmlOd60Input').value = paymentData.jml_od_60 || paymentData.od_60 || '';
+        document.getElementById('jmlOd90Input').value = paymentData.jml_od_90 || paymentData.od_90 || '';
+        
+        // Tampilkan info sumber data
+        const dataSourceInfo = document.getElementById('dataSourceInfo');
+        if (paymentData && (paymentData.piutang || paymentData.jml_over || paymentData.od_30 || paymentData.jml_od_30)) {
+            dataSourceInfo.textContent = '✓ Data dari Sales';
+            dataSourceInfo.className = 'text-xs px-2 py-1 rounded bg-green-50 text-green-700';
+        } else {
+            dataSourceInfo.textContent = 'Data Belum Diisi Sales';
+            dataSourceInfo.className = 'text-xs px-2 py-1 rounded bg-orange-50 text-orange-700';
+        }
+
         // Make level 2 fields required
         ['piutangInput', 'jmlOverInput', 'jmlOd30Input', 'jmlOd60Input', 'jmlOd90Input'].forEach(id => {
             document.getElementById(id).required = true;
@@ -556,13 +582,8 @@ function openApprovalModal(submissionId, action) {
         }
     }
     
-    // Clear previous values
+    // Clear note
     approvalNote.value = '';
-    if (level2Fields) {
-        ['piutangInput', 'jmlOverInput', 'jmlOd30Input', 'jmlOd60Input', 'jmlOd90Input'].forEach(id => {
-            document.getElementById(id).value = '';
-        });
-    }
     
     modal.classList.remove('hidden');
 }

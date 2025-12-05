@@ -6,6 +6,7 @@ use App\Models\Submission;
 use App\Models\Approval;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class ApprovalController extends Controller
 {
@@ -54,82 +55,106 @@ class ApprovalController extends Controller
     {
         $user = Auth::user();
         $level = $this->getApproverLevel($user->role);
+        $action = $request->input('action');
 
+        // Validasi level approver
         if ($submission->current_level != $level) {
-            return redirect()->route('approvals.index')
-                ->with('error', 'Pengajuan tidak dalam level approval Anda!');
+            return redirect()->back()->with('error', 'Anda tidak berhak melakukan approval pada level ini');
         }
 
-        // Validation rules based on level and action
-        $rules = [
-            'action' => 'required|in:approved,rejected,revision',
-            'note' => 'required_if:action,rejected,revision|nullable|string'
-        ];
-
-        // Level 2 specific validation for approved action
-        if ($level == 2 && $request->action == 'approved') {
-            $rules['piutang'] = 'required|numeric|min:0';
-            $rules['jml_over'] = 'required|numeric|min:0';
-            $rules['jml_od_30'] = 'required|numeric|min:0';
-            $rules['jml_od_60'] = 'required|numeric|min:0';
-            $rules['jml_od_90'] = 'required|numeric|min:0';
-            
-            // Note is optional for level 2 approval
-            $rules['note'] = 'nullable|string';
-        }
-
-        $validated = $request->validate($rules);
-
-        // Create approval record
-        $approvalData = [
-            'submission_id' => $submission->id,
-            'approver_id' => $user->id,
-            'level' => $level,
-            'status' => $validated['action'],
-            'note' => $validated['note'] ?? null
-        ];
-
-        // Add level 2 specific fields if approved
-        if ($level == 2 && $validated['action'] == 'approved') {
-            $approvalData['piutang'] = $validated['piutang'];
-            $approvalData['jml_over'] = $validated['jml_over'];
-            $approvalData['jml_od_30'] = $validated['jml_od_30'];
-            $approvalData['jml_od_60'] = $validated['jml_od_60'];
-            $approvalData['jml_od_90'] = $validated['jml_od_90'];
-        }
-
-        Approval::create($approvalData);
-
-        // Update submission status
-        if ($validated['action'] == 'approved') {
-            if ($level == 3) {
-                $submission->update([
-                    'status' => 'approved_3'
+        DB::beginTransaction();
+        try {
+            // Validasi khusus untuk Level 2 saat approve
+            if ($level == 2 && $action === 'approved') {
+                $request->validate([
+                    'piutang' => 'required|numeric|min:0',
+                    'jml_over' => 'required|numeric|min:0',
+                    'jml_od_30' => 'required|numeric|min:0',
+                    'jml_od_60' => 'required|numeric|min:0',
+                    'jml_od_90' => 'required|numeric|min:0',
+                ], [
+                    'piutang.required' => 'Piutang wajib diisi',
+                    'jml_over.required' => 'Jumlah Over wajib diisi',
+                    'jml_od_30.required' => 'Jumlah OD 30 wajib diisi',
+                    'jml_od_60.required' => 'Jumlah OD 60 wajib diisi',
+                    'jml_od_90.required' => 'Jumlah OD 90 wajib diisi',
                 ]);
-            } else {
-                $submission->update([
-                    'status' => 'approved_' . $level,
-                    'current_level' => $level + 1
+
+                // Simpan data ke payment_data di tabel submissions
+                $paymentData = [
+                    'piutang' => $request->piutang,
+                    'jml_over' => $request->jml_over,
+                    'od_30' => $request->jml_od_30,
+                    'od_60' => $request->jml_od_60,
+                    'od_90' => $request->jml_od_90,
+                ];
+
+                $submission->payment_data = json_encode($paymentData);
+            }
+
+            // Validasi catatan untuk reject dan revision
+            if (in_array($action, ['rejected', 'revision'])) {
+                $request->validate([
+                    'note' => 'required|string|min:10'
+                ], [
+                    'note.required' => 'Catatan wajib diisi',
+                    'note.min' => 'Catatan minimal 10 karakter'
                 ]);
             }
-            $message = 'Pengajuan berhasil disetujui!';
-        } elseif ($validated['action'] == 'rejected') {
-            $submission->update([
-                'status' => 'rejected',
-                'rejection_note' => $validated['note']
-            ]);
-            $message = 'Pengajuan berhasil ditolak!';
-        } else {
-            $submission->update([
-                'status' => 'revision',
-                'revision_note' => $validated['note'],
-                'current_level' => 1
-            ]);
-            $message = 'Pengajuan dikembalikan untuk revisi!';
-        }
 
-        return redirect()->route('approvals.index')
-            ->with('success', $message);
+            // Buat record approval
+            $approval = new Approval();
+            $approval->submission_id = $submission->id;
+            $approval->approver_id = $user->id;
+            $approval->level = $level;
+            $approval->status = $action;
+            $approval->note = $request->input('note');
+
+            // Simpan data verifikasi Level 2 di tabel approvals juga (untuk history)
+            if ($level == 2 && $action === 'approved') {
+                $approval->piutang = $request->piutang;
+                $approval->jml_over = $request->jml_over;
+                $approval->jml_od_30 = $request->jml_od_30;
+                $approval->jml_od_60 = $request->jml_od_60;
+                $approval->jml_od_90 = $request->jml_od_90;
+            }
+
+            $approval->save();
+
+            // Update status submission
+            if ($action === 'approved') {
+                if ($level == 3) {
+                    $submission->status = 'done';
+                } else {
+                    $submission->status = 'approved_' . $level;
+                    $submission->current_level = $level + 1;
+                }
+            } elseif ($action === 'rejected') {
+                $submission->status = 'rejected';
+                $submission->rejection_note = $request->input('note');
+            } elseif ($action === 'revision') {
+                $submission->status = 'revision';
+                $submission->revision_note = $request->input('note');
+                $submission->current_level = 1; // Kembali ke level 1
+            }
+
+            $submission->save();
+
+            DB::commit();
+
+            $message = match($action) {
+                'approved' => 'Pengajuan berhasil disetujui',
+                'rejected' => 'Pengajuan berhasil ditolak',
+                'revision' => 'Pengajuan dikembalikan untuk revisi',
+                default => 'Proses approval berhasil'
+            };
+
+            return redirect()->route('approvals.index')->with('success', $message);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
     }
 
     private function getApproverLevel($role)
