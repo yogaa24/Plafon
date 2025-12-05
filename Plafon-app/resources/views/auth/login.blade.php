@@ -70,38 +70,6 @@
                     Login
                 </button>
             </form>
-
-            <!-- Demo Accounts Info -->
-            <div class="mt-8 pt-6 border-t border-gray-200">
-                <p class="text-sm font-semibold text-gray-700 mb-3">Demo Accounts:</p>
-                <div class="space-y-2 text-sm text-gray-600">
-                    <div class="bg-gray-50 p-3 rounded-lg">
-                        <p class="font-medium text-gray-900">Sales</p>
-                        <p>Email: sales@demo.com</p>
-                        <p>Password: password</p>
-                    </div>
-                    <div class="bg-gray-50 p-3 rounded-lg">
-                        <p class="font-medium text-gray-900">Approver 1</p>
-                        <p>Email: approver1@demo.com</p>
-                        <p>Password: password</p>
-                    </div>
-                    <div class="bg-gray-50 p-3 rounded-lg">
-                        <p class="font-medium text-gray-900">Approver 2</p>
-                        <p>Email: approver2@demo.com</p>
-                        <p>Password: password</p>
-                    </div>
-                    <div class="bg-gray-50 p-3 rounded-lg">
-                        <p class="font-medium text-gray-900">Approver 3</p>
-                        <p>Email: approver3@demo.com</p>
-                        <p>Password: password</p>
-                    </div>
-                    <div class="bg-gray-50 p-3 rounded-lg">
-                        <p class="font-medium text-gray-900">Viewer</p>
-                        <p>Email: viewer@demo.com</p>
-                        <p>Password: password</p>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 

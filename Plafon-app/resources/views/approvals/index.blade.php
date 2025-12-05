@@ -49,7 +49,6 @@
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider w-10"></th>
                         <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider w-16">No</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Nama</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Nama Kios</th>
@@ -63,18 +62,18 @@
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
-                    @forelse($submissions as $submission)
+                @forelse($submissions as $index => $submission)
                     <!-- Main Row -->
                     <tr class="hover:bg-gray-50 transition">
                         <td class="px-4 py-3 text-center">
-                            <button type="button" onclick="toggleDetail({{ $submission->id }})" class="text-gray-500 hover:text-indigo-600 focus:outline-none transition" title="Lihat Detail">
-                                <svg id="icon-{{ $submission->id }}" class="w-5 h-5 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                                </svg>
-                            </button>
-                        </td>
-                        <td class="px-4 py-3 whitespace-nowrap">
-                            <span class="text-sm font-medium text-gray-900">{{ $submission->kode }}</span>
+                            <div class="flex flex-col items-center space-y-1">
+                                <span class="text-sm font-semibold text-gray-900">{{ $submissions->firstItem() + $index }}</span>
+                                <button type="button" onclick="toggleDetail({{ $submission->id }})" class="text-gray-500 hover:text-indigo-600 focus:outline-none transition" title="Lihat Detail">
+                                    <svg id="icon-{{ $submission->id }}" class="w-4 h-4 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                    </svg>
+                                </button>
+                            </div>
                         </td>
                         <td class="px-4 py-3">
                             <div class="text-sm font-medium text-gray-900">{{ $submission->nama }}</div>
