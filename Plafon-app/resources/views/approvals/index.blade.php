@@ -142,12 +142,25 @@
                             <div class="flex items-center justify-center gap-2">
                                 <!-- Approve Button -->
                                 @if($level == 2)
-                                    <!-- Level 2 requires form -->
-                                    <button onclick="openApprovalModal({{ $submission->id }}, 'approved')" class="px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-700 transition" title="Setujui">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                                        </svg>
-                                    </button>
+                                    <!-- Level 2 requires form for Open Plafon only -->
+                                    @if($submission->plafon_type === 'open')
+                                        <button onclick="openApprovalModal({{ $submission->id }}, 'approved')" class="px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-700 transition" title="Setujui">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                            </svg>
+                                        </button>
+                                    @else
+                                        <!-- Rubah Plafon: direct submit without modal -->
+                                        <form action="{{ route('approvals.process', $submission) }}" method="POST" class="inline" onsubmit="return confirm('Yakin ingin menyetujui pengajuan ini?')">
+                                            @csrf
+                                            <input type="hidden" name="action" value="approved">
+                                            <button type="submit" class="px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-700 transition" title="Setujui">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                                </svg>
+                                            </button>
+                                        </form>
+                                    @endif
                                 @else
                                     <!-- Level 1 & 3 direct submit -->
                                     <form action="{{ route('approvals.process', $submission) }}" method="POST" class="inline" onsubmit="return confirm('Yakin ingin menyetujui pengajuan ini?')">
@@ -236,6 +249,8 @@
                                                 @endif
                                             </span>
                                         </div>
+                                        <!-- Tampil hanya jika open plafon -->
+                                        @if($submission->plafon_type === 'open')
                                         <div class="flex justify-between py-1 border-b border-gray-100">
                                             <span class="text-sm text-gray-600">Jenis Pembayaran:</span>
                                             <span class="text-sm font-medium text-gray-900">
@@ -246,6 +261,7 @@
                                                 @endif
                                             </span>
                                         </div>
+                                        @endif
                                         <div class="flex justify-between py-1 border-b border-gray-100">
                                             <span class="text-sm text-gray-600">Nama:</span>
                                             <span class="text-sm font-medium text-gray-900">{{ $submission->nama }}</span>
@@ -472,13 +488,7 @@
 <script>
 // Store current level from Laravel
 const currentLevel = {{ $level }};
-const submissionsData = @json($submissions->map(function($s) {
-    return [
-        'id' => $s->id,
-        'payment_type' => $s->payment_type ?? 'od',
-        'payment_data' => $s->payment_data ?? []
-    ];
-}));
+const submissionsData = @json($submissionsArray);
 
 function toggleDetail(id) {
     const detailRow = document.getElementById('detail-' + id);
@@ -507,6 +517,7 @@ function openApprovalModal(submissionId, action) {
     const submission = submissionsData.find(s => s.id === submissionId);
     const jenisPembayaran = submission ? submission.payment_type : '';
     const paymentData = submission ? submission.payment_data : {};
+    const plafonType = submission ? submission.plafon_type : '';
     
     // Set form action
     form.action = `/approvals/${submissionId}/process`;
@@ -515,8 +526,8 @@ function openApprovalModal(submissionId, action) {
     // Set jenis pembayaran hidden input
     document.getElementById('jenisPembayaranInput').value = jenisPembayaran;
     
-    // Show Level 2 fields only for approved action and level 2
-    if (action === 'approved' && currentLevel === 2) {
+    // Show Level 2 fields only for approved action, level 2, AND Open Plafon
+    if (action === 'approved' && currentLevel === 2 && plafonType === 'open') {
         level2Fields.classList.remove('hidden');
         
         // Display jenis pembayaran
@@ -549,7 +560,7 @@ function openApprovalModal(submissionId, action) {
             document.getElementById(id).required = true;
         });
         
-        modalTitle.textContent = 'Setujui Pengajuan - Verifikasi Data';
+        modalTitle.textContent = 'Setujui Pengajuan - Verifikasi Data (Open Plafon)';
         approvalNote.placeholder = 'Catatan tambahan (opsional)...';
         approvalNote.required = false;
         noteRequired.classList.add('hidden');

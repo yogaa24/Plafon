@@ -54,7 +54,20 @@ class ApprovalController extends Controller
 
         $submissions = $query->paginate(15);
 
-        return view('approvals.index', compact('submissions', 'level'));
+        $submissionsArray = $submissions->map(function($s) {
+            return [
+                'id' => $s->id,
+                'plafon_type' => $s->plafon_type,
+                'payment_type' => $s->payment_type ?? 'od',
+                'payment_data' => $s->payment_data ?? []
+            ];
+        })->toArray();
+
+        return view('approvals.index', [
+            'submissions' => $submissions,   // JANGAN DIHAPUS
+            'submissionsArray' => $submissionsArray,
+            'level' => $level,
+        ]);
     }
 
     // Dashboard khusus Level 3

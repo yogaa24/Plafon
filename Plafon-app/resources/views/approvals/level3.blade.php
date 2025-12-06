@@ -211,7 +211,7 @@
                                         @csrf
                                         <input type="hidden" name="action" value="approved">
                                         <button type="submit" class="px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-700 transition" title="ACC">
-                                            ACC
+                                            Acc
                                         </button>
                                     </form>
                                     
@@ -219,7 +219,7 @@
                                     <button onclick="openRejectModal({{ $submission->id }})" 
                                             class="px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded hover:bg-red-700 transition" 
                                             title="Tolak">
-                                        Tolak
+                                        Rejc
                                     </button>
                                 </div>
                             @endif
@@ -400,9 +400,9 @@
                                                         {{ $approval->status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
                                                         {{ $approval->status === 'approved' ? 'Disetujui' : 'Ditolak' }}
                                                     </span>
-                                                @else
+                                                @elseF
                                                     <span class="text-xs px-2 py-1 rounded-full font-semibold bg-gray-200 text-gray-600">
-                                                        Belum Vote
+                                                        No Respon
                                                     </span>
                                                 @endif
                                             </div>
