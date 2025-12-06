@@ -83,9 +83,31 @@ class ApprovalController extends Controller
 
         // Apply status filter
         if ($statusFilter === 'on_progress') {
-            $query->whereIn('status', ['approved_2', 'approved_3']);
+            // On progress: pengajuan yang masih menunggu (approved_2) atau sedang diproses level 3 (approved_3) 
+            // tapi belum ada yang approve
+            $query->where(function($q) {
+                $q->where('status', 'approved_2')
+                  ->orWhere(function($subQ) {
+                      $subQ->where('status', 'approved_3')
+                           ->whereDoesntHave('approvals', function($approvalQ) {
+                               $approvalQ->where('level', 3)
+                                        ->where('status', 'approved');
+                           });
+                  });
+            });
         } elseif ($statusFilter === 'done') {
-            $query->where('status', 'done');
+            // Done: pengajuan dengan status approved_3 yang sudah ada minimal 1 approval, 
+            // atau status done (untuk data lama)
+            $query->where(function($q) {
+                $q->where('status', 'done')
+                  ->orWhere(function($subQ) {
+                      $subQ->where('status', 'approved_3')
+                           ->whereHas('approvals', function($approvalQ) {
+                               $approvalQ->where('level', 3)
+                                        ->where('status', 'approved');
+                           });
+                  });
+            });
         }
 
         // Search
@@ -248,9 +270,9 @@ class ApprovalController extends Controller
         $approvedCount = $level3Approvals->where('status', 'approved')->count();
         $rejectedCount = $level3Approvals->where('status', 'rejected')->count();
 
-        // RULE 1: Jika ada 1 approved, langsung DONE
+        // RULE 1: Jika ada 1 approved, status menjadi approved_3 (bukan done)
         if ($approvedCount >= 1) {
-            $submission->status = 'done';
+            $submission->status = 'approved_3';
             return;
         }
 
@@ -262,8 +284,13 @@ class ApprovalController extends Controller
         }
 
         // RULE 3: Jika masih ada yang belum vote atau belum ada yang approve dan belum 4 reject
-        // Tetap di status approved_3 (on progress di level 3)
-        $submission->status = 'approved_3';
+        // Tetap di status approved_2 (menunggu di level 3)
+        if ($submission->status === 'approved_2') {
+            $submission->status = 'approved_2';
+        } else {
+            // Jika sudah approved_3 tapi belum ada yang approve (tidak seharusnya terjadi)
+            $submission->status = 'approved_3';
+        }
     }
 
     private function getApproverLevel($role)
