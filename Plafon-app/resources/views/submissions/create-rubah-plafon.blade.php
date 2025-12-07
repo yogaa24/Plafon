@@ -22,10 +22,10 @@
             
             <!-- Hidden fields -->
             <input type="hidden" name="plafon_type" value="rubah">
-            <input type="hidden" name="previous_submission_id" value="{{ $submission->id }}">
-            <input type="hidden" name="nama" value="{{ $submission->nama }}">
-            <input type="hidden" name="nama_kios" value="{{ $submission->nama_kios }}">
-            <input type="hidden" name="alamat" value="{{ $submission->alamat }}">
+            <input type="hidden" name="customer_id" value="{{ $customer->id }}">
+            <input type="hidden" name="nama" value="{{ $customer->nama }}">
+            <input type="hidden" name="nama_kios" value="{{ $customer->nama_kios }}">
+            <input type="hidden" name="alamat" value="{{ $customer->plafon_aktif }}">
 
             <!-- Kode (Read Only) -->
             <div class="mb-6">
@@ -40,17 +40,17 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Nama Customer</label>
-                    <input type="text" value="{{ $submission->nama }}" readonly class="w-full px-4 py-2.5 bg-gray-100 border border-gray-300 rounded-lg text-gray-700">
+                    <input type="text" value="{{ $customer->nama }}" readonly class="w-full px-4 py-2.5 bg-gray-100 border border-gray-300 rounded-lg text-gray-700">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Nama Kios</label>
-                    <input type="text" value="{{ $submission->nama_kios }}" readonly class="w-full px-4 py-2.5 bg-gray-100 border border-gray-300 rounded-lg text-gray-700">
+                    <input type="text" value="{{ $customer->nama_kios }}" readonly class="w-full px-4 py-2.5 bg-gray-100 border border-gray-300 rounded-lg text-gray-700">
                 </div>
             </div>
 
             <div class="mb-6">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Alamat</label>
-                <textarea readonly rows="2" class="w-full px-4 py-2.5 bg-gray-100 border border-gray-300 rounded-lg text-gray-700">{{ $submission->alamat }}</textarea>
+                <textarea readonly rows="2" class="w-full px-4 py-2.5 bg-gray-100 border border-gray-300 rounded-lg text-gray-700">{{ $customer->alamat }}</textarea>
             </div>
 
             <!-- Editable Fields -->
@@ -111,7 +111,7 @@
                             <span class="absolute left-4 top-3 text-gray-500">Rp</span>
                             <input 
                                 type="text" 
-                                value="{{ number_format($submission->plafon, 0, ',', '.') }}" 
+                                value="{{ number_format($customer->plafon_aktif, 0, ',', '.') }}" 
                                 readonly 
                                 class="w-full pl-12 pr-4 py-2.5 bg-gray-100 border border-gray-300 rounded-lg text-gray-700 font-semibold">
                         </div>
@@ -129,7 +129,7 @@
                                 type="number" 
                                 id="plafonUsulan"
                                 name="plafon" 
-                                value="{{ old('plafon', $submission->plafon) }}" 
+                                value="{{ old('plafon', $customer->plafon_aktif) }}" 
                                 required 
                                 min="0" 
                                 step="1000"
@@ -190,7 +190,7 @@
 </div>
 
 <script>
-const plafonSaatIni = {{ $submission->plafon }};
+const plafonSaatIni = {{ $customer->plafon_aktif }};
 
 function updatePlafonDirection(direction) {
     const plafonUsulan = document.getElementById('plafonUsulan');

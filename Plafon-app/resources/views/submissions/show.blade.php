@@ -23,40 +23,14 @@
             <div class="flex-1">
                 <h3 class="font-semibold text-purple-900 mb-2">Pengajuan Rubah Plafon</h3>
                 <div class="grid grid-cols-2 gap-3 text-sm">
-                    @if($submission->previousSubmission)
+                    @if($submission->customer)
                     <div>
                         <span class="text-purple-700 font-medium">Plafon Sebelumnya:</span>
-                        <span class="text-purple-900 ml-2 font-semibold">Rp {{ number_format($submission->previousSubmission->plafon, 0, ',', '.') }}</span>
+                        <span class="text-purple-900 ml-2 font-semibold">Rp {{ number_format($submission->customer->plafon_aktif, 0, ',', '.') }}</span>
                     </div>
                     <div>
                         <span class="text-purple-700 font-medium">Plafon Usulan:</span>
                         <span class="text-purple-900 ml-2 font-bold">Rp {{ number_format($submission->plafon, 0, ',', '.') }}</span>
-                    </div>
-                    <div class="col-span-2">
-                        <span class="text-purple-700 font-medium">Status Perubahan:</span>
-                        <span class="ml-2">
-                            @if($submission->plafon_direction === 'naik')
-                                @php
-                                    $selisih = $submission->plafon - $submission->previousSubmission->plafon;
-                                @endphp
-                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
-                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
-                                    </svg>
-                                    Naik Rp {{ number_format($selisih, 0, ',', '.') }}
-                                </span>
-                            @elseif($submission->plafon_direction === 'turun')
-                                @php
-                                    $selisih = $submission->previousSubmission->plafon - $submission->plafon;
-                                @endphp
-                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800">
-                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
-                                    </svg>
-                                    Turun Rp {{ number_format($selisih, 0, ',', '.') }}
-                                </span>
-                            @endif
-                        </span>
                     </div>
                     @endif
                 </div>
@@ -87,11 +61,11 @@
                 <p class="text-lg font-semibold text-gray-900">{{ $submission->nama_kios }}</p>
             </div>
             
-            @if($submission->plafon_type === 'rubah' && $submission->previousSubmission)
+            @if($submission->plafon_type === 'rubah' && $submission->customer)
             <!-- Tampilan Khusus Rubah Plafon -->
             <div>
                 <p class="text-sm text-gray-500 mb-1">Plafon Sebelumnya</p>
-                <p class="text-lg font-semibold text-gray-500 line-through">Rp {{ number_format($submission->previousSubmission->plafon, 0, ',', '.') }}</p>
+                <p class="text-lg font-semibold text-gray-500 line-through">Rp {{ number_format($submission->customer->plafon_aktif, 0, ',', '.') }}</p>
             </div>
             <div class="md:col-span-2">
                 <p class="text-sm text-gray-500 mb-1">Plafon yang Diusulkan</p>
@@ -99,14 +73,14 @@
                     <p class="text-2xl font-bold text-indigo-600">Rp {{ number_format($submission->plafon, 0, ',', '.') }}</p>
                     @if($submission->plafon_direction === 'naik')
                         @php
-                            $selisih = $submission->plafon - $submission->previousSubmission->plafon;
+                            $selisih = $submission->plafon - $submission->customer->plafon_aktif;
                         @endphp
                         <span class="px-3 py-1 bg-green-100 text-green-800 rounded-lg text-sm font-semibold">
                             +Rp {{ number_format($selisih, 0, ',', '.') }}
                         </span>
                     @elseif($submission->plafon_direction === 'turun')
                         @php
-                            $selisih = $submission->previousSubmission->plafon - $submission->plafon;
+                            $selisih = $submission->customer->plafon_aktif - $submission->plafon;
                         @endphp
                         <span class="px-3 py-1 bg-red-100 text-red-800 rounded-lg text-sm font-semibold">
                             -Rp {{ number_format($selisih, 0, ',', '.') }}
@@ -126,18 +100,65 @@
                 <p class="text-sm text-gray-500 mb-1">Alamat</p>
                 <p class="text-gray-900">{{ $submission->alamat }}</p>
             </div>
+            
+            @if($submission->plafon_type === 'open')
             <div>
                 <p class="text-sm text-gray-500 mb-1">Jumlah Buka Faktur</p>
                 <p class="text-lg font-semibold text-gray-900">Rp {{ number_format($submission->jumlah_buka_faktur, 0, ',', '.') }}</p>
             </div>
+            @endif
+            
             <div>
                 <p class="text-sm text-gray-500 mb-1">Tanggal Dibuat</p>
                 <p class="text-gray-900">{{ $submission->created_at->format('d M Y H:i') }}</p>
             </div>
+            
             <div class="md:col-span-2">
                 <p class="text-sm text-gray-500 mb-1">Komitmen Pembayaran</p>
                 <p class="text-gray-900">{{ $submission->komitmen_pembayaran }}</p>
             </div>
+            
+            @if($submission->payment_type && $submission->payment_data)
+            <div class="md:col-span-2">
+                <p class="text-sm text-gray-500 mb-2">Informasi Pembayaran</p>
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div class="flex items-start">
+                        <svg class="w-5 h-5 mr-2 text-blue-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        <div class="flex-1">
+                            <p class="text-sm font-semibold text-blue-900 mb-2">
+                                Jenis: <span class="uppercase">{{ $submission->payment_type }}</span>
+                            </p>
+                            @php
+                                $paymentData = is_array($submission->payment_data)
+                                    ? $submission->payment_data
+                                    : json_decode($submission->payment_data, true);
+                            @endphp
+                            @if($paymentData && count($paymentData) > 0)
+                            <div class="space-y-1">
+                                @foreach($paymentData as $key => $value)
+                                    @if($value)
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-blue-700">
+                                            @if($key === 'piutang') Piutang
+                                            @elseif($key === 'jml_over') Jml Over
+                                            @elseif($key === 'od_30') Jml OD 30
+                                            @elseif($key === 'od_60') Jml OD 60
+                                            @elseif($key === 'od_90') Jml OD 90
+                                            @endif:
+                                        </span>
+                                        <span class="font-semibold text-blue-900">Rp {{ number_format($value, 0, ',', '.') }}</span>
+                                    </div>
+                                    @endif
+                                @endforeach
+                            </div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
         </div>
 
         @if($submission->revision_note)

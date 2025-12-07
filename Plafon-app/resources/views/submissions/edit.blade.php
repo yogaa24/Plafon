@@ -79,40 +79,34 @@
             @endif
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Nama -->
+                <!-- Nama (Read-Only) -->
                 <div>
                     <label for="nama" class="block text-sm font-semibold text-gray-700 mb-2">
-                        Nama <span class="text-red-500">*</span>
+                        Nama
                     </label>
-                    <input type="text" name="nama" id="nama" value="{{ old('nama', $submission->nama) }}" required
-                        class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('nama') border-red-500 @enderror">
-                    @error('nama')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
+                    <input type="text" value="{{ $submission->nama }}" readonly
+                        class="w-full px-4 py-2.5 bg-gray-100 border border-gray-300 rounded-lg text-gray-700">
+                    <p class="text-xs text-gray-500 mt-1">Data tidak dapat diubah</p>
                 </div>
 
-                <!-- Nama Kios -->
+                <!-- Nama Kios (Read-Only) -->
                 <div>
                     <label for="nama_kios" class="block text-sm font-semibold text-gray-700 mb-2">
-                        Nama Kios <span class="text-red-500">*</span>
+                        Nama Kios
                     </label>
-                    <input type="text" name="nama_kios" id="nama_kios" value="{{ old('nama_kios', $submission->nama_kios) }}" required
-                        class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('nama_kios') border-red-500 @enderror">
-                    @error('nama_kios')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
+                    <input type="text" value="{{ $submission->nama_kios }}" readonly
+                        class="w-full px-4 py-2.5 bg-gray-100 border border-gray-300 rounded-lg text-gray-700">
+                    <p class="text-xs text-gray-500 mt-1">Data tidak dapat diubah</p>
                 </div>
 
-                <!-- Alamat -->
+                <!-- Alamat (Read-Only) -->
                 <div class="md:col-span-2">
                     <label for="alamat" class="block text-sm font-semibold text-gray-700 mb-2">
-                        Alamat <span class="text-red-500">*</span>
+                        Alamat
                     </label>
-                    <textarea name="alamat" id="alamat" rows="3" required
-                        class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('alamat') border-red-500 @enderror">{{ old('alamat', $submission->alamat) }}</textarea>
-                    @error('alamat')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
+                    <textarea rows="3" readonly
+                        class="w-full px-4 py-2.5 bg-gray-100 border border-gray-300 rounded-lg text-gray-700">{{ $submission->alamat }}</textarea>
+                    <p class="text-xs text-gray-500 mt-1">Data tidak dapat diubah</p>
                 </div>
 
                 @if($submission->plafon_type === 'rubah')
@@ -163,19 +157,20 @@
                     </div>
 
                     <!-- Plafon Sebelumnya (Read-only) -->
-                    @if($submission->previousSubmission)
+                    @if($submission->customer)
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            Plafon Sebelumnya
+                            Plafon Sebelumnya (Customer)
                         </label>
                         <div class="relative">
                             <span class="absolute left-4 top-3 text-gray-500">Rp</span>
                             <input 
                                 type="text" 
-                                value="{{ number_format($submission->previousSubmission->plafon, 0, ',', '.') }}" 
+                                value="{{ number_format($submission->customer->plafon_aktif, 0, ',', '.') }}" 
                                 readonly 
                                 class="w-full pl-12 pr-4 py-2.5 bg-gray-100 border border-gray-300 rounded-lg text-gray-700 font-semibold">
                         </div>
+                        <p class="text-xs text-gray-500 mt-1">Plafon aktif saat ini di master customer</p>
                     </div>
                     @endif
 
@@ -201,20 +196,23 @@
                         @enderror
                     </div>
 
-                @else
+                    @else
                     <!-- FORM OPEN PLAFON -->
                     
-                    <!-- Plafon -->
+                    <!-- Plafon (Read-Only untuk Open) -->
                     <div>
-                        <label for="plafon" class="block text-sm font-semibold text-gray-700 mb-2">
-                            Plafon (Rp) <span class="text-red-500">*</span>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            Plafon
                         </label>
-                        <input type="number" name="plafon" id="plafon" value="{{ old('plafon', (int)$submission->plafon) }}" min="0" step="1" required
-                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('plafon') border-red-500 @enderror">
-                        @error('plafon')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                        <p class="mt-1 text-xs text-gray-500">Masukkan nilai dalam rupiah tanpa titik/koma. Contoh: 5000000 untuk Rp 5.000.000</p>
+                        <div class="relative">
+                            <span class="absolute left-4 top-3 text-gray-500">Rp</span>
+                            <input 
+                                type="text" 
+                                value="{{ number_format($submission->plafon, 0, ',', '.') }}" 
+                                readonly 
+                                class="w-full pl-12 pr-4 py-2.5 bg-gray-100 border border-gray-300 rounded-lg text-gray-700 font-semibold">
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1">Plafon tidak dapat diubah</p>
                     </div>
 
                     <!-- Jumlah Buka Faktur -->
@@ -241,6 +239,116 @@
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
+
+                <!-- Jenis Pembayaran Section (hanya untuk Open Plafon) -->
+                @if($submission->plafon_type === 'open')
+                <div class="md:col-span-2 mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <h4 class="text-sm font-semibold text-gray-900 mb-4">Jenis Pembayaran</h4>
+                    
+                    <!-- Radio Buttons: OD or Over -->
+                    <div class="flex gap-8 mb-4">
+                        <div class="flex items-center">
+                            <input 
+                                type="radio" 
+                                id="type_od" 
+                                name="payment_type" 
+                                value="od"
+                                {{ old('payment_type', $submission->payment_type) == 'od' ? 'checked' : '' }}
+                                class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                                onchange="togglePaymentType()">
+                            <label for="type_od" class="ml-2 text-sm text-gray-700 cursor-pointer">OD</label>
+                        </div>
+                        
+                        <div class="flex items-center">
+                            <input 
+                                type="radio" 
+                                id="type_over" 
+                                name="payment_type" 
+                                value="over"
+                                {{ old('payment_type', $submission->payment_type) == 'over' ? 'checked' : '' }}
+                                class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                                onchange="togglePaymentType()">
+                            <label for="type_over" class="ml-2 text-sm text-gray-700 cursor-pointer">Over</label>
+                        </div>
+                    </div>
+
+                    @php
+                        $paymentData = is_array($submission->payment_data) 
+                            ? $submission->payment_data 
+                            : json_decode($submission->payment_data, true) ?? [];
+                    @endphp
+
+                    <div class="border-t pt-4">
+                        <!-- OD Section -->
+                        <div id="odSection" class="space-y-3 {{ old('payment_type', $submission->payment_type) != 'od' ? 'hidden' : '' }}">
+                            <div class="flex items-center justify-between">
+                                <label class="text-sm text-gray-700">Piutang</label>
+                                <input type="number" name="od_piutang_value" min="0"
+                                    value="{{ old('od_piutang_value', $paymentData['piutang'] ?? '') }}"
+                                    class="w-48 px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <label class="text-sm text-gray-700">Jml Over</label>
+                                <input type="number" name="od_jml_over_value" min="0"
+                                    value="{{ old('od_jml_over_value', $paymentData['jml_over'] ?? '') }}"
+                                    class="w-48 px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <label class="text-sm text-gray-700">Jml OD 30</label>
+                                <input type="number" name="od_30_value" min="0"
+                                    value="{{ old('od_30_value', $paymentData['od_30'] ?? '') }}"
+                                    class="w-48 px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <label class="text-sm text-gray-700">Jml OD 60</label>
+                                <input type="number" name="od_60_value" min="0"
+                                    value="{{ old('od_60_value', $paymentData['od_60'] ?? '') }}"
+                                    class="w-48 px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <label class="text-sm text-gray-700">Jml OD 90</label>
+                                <input type="number" name="od_90_value" min="0"
+                                    value="{{ old('od_90_value', $paymentData['od_90'] ?? '') }}"
+                                    class="w-48 px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            </div>
+                        </div>
+
+                        <!-- Over Section -->
+                        <div id="overSection" class="space-y-3 {{ old('payment_type', $submission->payment_type) != 'over' ? 'hidden' : '' }}">
+                            <div class="flex items-center justify-between">
+                                <label class="text-sm text-gray-700">Piutang</label>
+                                <input type="number" name="over_piutang_value" min="0"
+                                    value="{{ old('over_piutang_value', $paymentData['piutang'] ?? '') }}"
+                                    class="w-48 px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <label class="text-sm text-gray-700">Jml Over</label>
+                                <input type="number" name="over_jml_over_value" min="0"
+                                    value="{{ old('over_jml_over_value', $paymentData['jml_over'] ?? '') }}"
+                                    class="w-48 px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <label class="text-sm text-gray-700">Jml OD 30</label>
+                                <input type="number" name="over_od_30_value" min="0"
+                                    value="{{ old('over_od_30_value', $paymentData['od_30'] ?? '') }}"
+                                    class="w-48 px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <label class="text-sm text-gray-700">Jml OD 60</label>
+                                <input type="number" name="over_od_60_value" min="0"
+                                    value="{{ old('over_od_60_value', $paymentData['od_60'] ?? '') }}"
+                                    class="w-48 px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <label class="text-sm text-gray-700">Jml OD 90</label>
+                                <input type="number" name="over_od_90_value" min="0"
+                                    value="{{ old('over_od_90_value', $paymentData['od_90'] ?? '') }}"
+                                    class="w-48 px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endif
             </div>
 
             <!-- Action Buttons -->
@@ -271,4 +379,21 @@
     </div>
     @endif
 </div>
+
+@if($submission->plafon_type === 'open')
+<script>
+function togglePaymentType() {
+    const od = document.getElementById('type_od').checked;
+    const over = document.getElementById('type_over').checked;
+
+    document.getElementById('odSection').classList.toggle('hidden', !od);
+    document.getElementById('overSection').classList.toggle('hidden', !over);
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    togglePaymentType();
+});
+</script>
+@endif
 @endsection

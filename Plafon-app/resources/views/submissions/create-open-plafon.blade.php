@@ -21,8 +21,9 @@
             @csrf
             
             <!-- Hidden fields -->
+            <input type="hidden" name="customer_id" value="{{ $customer->id }}">
             <input type="hidden" name="plafon_type" value="open">
-            <input type="hidden" name="plafon" value="{{ $submission->plafon }}">
+            <input type="hidden" name="plafon" value="{{ $customer->plafon_aktif }}">
 
             <!-- Kode (Read Only) -->
             <div class="mb-6">
@@ -33,26 +34,21 @@
                 <p class="text-xs text-gray-500 mt-1">Kode akan digenerate otomatis saat pengajuan disimpan</p>
             </div>
 
-            <!-- Hidden fields for customer info -->
-            <input type="hidden" name="nama" value="{{ $submission->nama }}">
-            <input type="hidden" name="nama_kios" value="{{ $submission->nama_kios }}">
-            <input type="hidden" name="alamat" value="{{ $submission->alamat }}">
-
             <!-- Read-Only Customer Information -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Nama Customer</label>
-                    <input type="text" value="{{ $submission->nama }}" readonly class="w-full px-4 py-2.5 bg-gray-100 border border-gray-300 rounded-lg text-gray-700">
+                    <input type="text" value="{{ $customer->nama }}" readonly class="w-full px-4 py-2.5 bg-gray-100 border border-gray-300 rounded-lg text-gray-700">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Nama Kios</label>
-                    <input type="text" value="{{ $submission->nama_kios }}" readonly class="w-full px-4 py-2.5 bg-gray-100 border border-gray-300 rounded-lg text-gray-700">
+                    <input type="text" value="{{ $customer->nama_kios }}" readonly class="w-full px-4 py-2.5 bg-gray-100 border border-gray-300 rounded-lg text-gray-700">
                 </div>
             </div>
 
             <div class="mb-6">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Alamat</label>
-                <textarea readonly rows="2" class="w-full px-4 py-2.5 bg-gray-100 border border-gray-300 rounded-lg text-gray-700">{{ $submission->alamat }}</textarea>
+                <textarea readonly rows="2" class="w-full px-4 py-2.5 bg-gray-100 border border-gray-300 rounded-lg text-gray-700">{{ $customer->alamat }}</textarea>
             </div>
 
             <!-- Editable Fields -->
@@ -69,7 +65,7 @@
                             <span class="absolute left-4 top-3 text-gray-500">Rp</span>
                             <input 
                                 type="text" 
-                                value="{{ number_format($submission->plafon, 0, ',', '.') }}" 
+                                value="{{ number_format($customer->plafon_aktif, 0, ',', '.') }}" 
                                 readonly 
                                 class="w-full pl-12 pr-4 py-2.5 bg-gray-100 border border-gray-300 rounded-lg text-gray-700 font-medium">
                         </div>
@@ -84,7 +80,7 @@
                         <input 
                             type="number" 
                             name="jumlah_buka_faktur" 
-                            value="{{ old('jumlah_buka_faktur', $submission->jumlah_buka_faktur) }}" 
+                            value="{{ old('jumlah_buka_faktur') }}"
                             required 
                             min="1"
                             class="w-full px-4 py-2.5 border @error('jumlah_buka_faktur') border-red-500 @else border-gray-300 @enderror rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -284,7 +280,7 @@
                         rows="3" 
                         required
                         class="w-full px-4 py-2.5 border @error('komitmen_pembayaran') border-red-500 @else border-gray-300 @enderror rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Contoh: Pembayaran setiap hari Senin dan Kamis">{{ old('komitmen_pembayaran', $submission->komitmen_pembayaran) }}</textarea>
+                        placeholder="Contoh: Pembayaran setiap hari Senin dan Kamis">{{ old('komitmen_pembayaran') }}</textarea>
                     @error('komitmen_pembayaran')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
@@ -344,25 +340,6 @@ document.getElementById('openPlafonForm').addEventListener('submit', function(e)
     if (typeOd.checked || typeOver.checked) {
         let hasInvalidValue = false;
         
-        if (typeOd.checked) {
-            const odCheckboxes = document.querySelectorAll('[name="od_items[]"]:checked');
-            
-            if (odCheckboxes.length > 0) {
-                // Validate each selected item has a valid value
-                odCheckboxes.forEach(cb => {
-                    const valueInputId = cb.id + '_value';
-                    const valueInput = document.getElementById(valueInputId);
-                    const value = parseInt(valueInput.value) || 0;
-                    
-                    if (value <= 0) {
-                        hasInvalidValue = true;
-                        e.preventDefault();
-                        alert(`Masukkan jumlah yang valid untuk ${cb.nextElementSibling.textContent}`);
-                    }
-                });
-            }
-        }
-        
         if (typeOver.checked && !hasInvalidValue) {
             const overCheckboxes = document.querySelectorAll('[name="over_items[]"]:checked');
             
@@ -388,7 +365,7 @@ document.getElementById('openPlafonForm').addEventListener('submit', function(e)
     }
     
     // Confirmation
-    const plafonValue = {{ $submission->plafon }};
+    const plafonValue = {{ $customer->plafon_aktif }};
     const formattedPlafon = new Intl.NumberFormat('id-ID').format(plafonValue);
     
     let paymentType = 'Tidak ada';

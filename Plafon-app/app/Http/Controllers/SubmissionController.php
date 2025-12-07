@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Customer;
 use App\Models\Submission;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -20,7 +21,7 @@ class SubmissionController extends Controller
         if ($hasFilter && $request->view === 'submissions') {
             // Jika ada filter, tampilkan pengajuan
             $query = Submission::where('sales_id', Auth::id())
-                ->with('approvals.approver');
+                ->with(['approvals.approver', 'customer']);
 
             if ($request->filled('status')) {
                 $query->where('status', $request->status);
@@ -41,24 +42,12 @@ class SubmissionController extends Controller
 
             $submissions = $query->paginate(15)->appends($request->query());
         } else {
-            // Tampilan default: hanya customer aktif
-            $query = Submission::where('sales_id', Auth::id())
-                ->where('status', 'done')
-                ->whereIn('id', function($query) {
-                    $query->selectRaw('MAX(id)')
-                        ->from('submissions')
-                        ->where('sales_id', Auth::id())
-                        ->where('status', 'done')
-                        ->groupBy('nama', 'nama_kios');
-                });
+            // Tampilan default: customer dari tabel customers milik sales yang login
+            $query = Customer::active()->bySales(Auth::id());
 
             // Tambahkan search untuk customer
             if ($request->filled('customer_search')) {
-                $search = $request->customer_search;
-                $query->where(function($q) use ($search) {
-                    $q->where('nama', 'like', "%{$search}%")
-                    ->orWhere('nama_kios', 'like', "%{$search}%");
-                });
+                $query->search($request->customer_search);
             }
 
             $customers = $query->orderBy('nama', 'asc')->get();
@@ -80,38 +69,68 @@ class SubmissionController extends Controller
     /**
      * Form untuk rubah plafon customer existing
      */
-    public function createRubahPlafon(Submission $submission)
+    public function createRubahPlafon(Customer $customer)
     {
-        // Validasi: hanya bisa rubah plafon dari submission yang sudah done
-        if ($submission->status !== 'done') {
+        // Validasi: customer harus aktif
+        if ($customer->status !== 'active') {
             return redirect()->route('submissions.index')
-                ->with('error', 'Hanya dapat mengubah plafon dari pengajuan yang sudah selesai!');
+                ->with('error', 'Customer tidak aktif!');
         }
 
-        // Validasi: hanya sales yang sama
-        if ($submission->sales_id !== Auth::id()) {
+        // Validasi: hanya sales yang handle customer ini yang bisa akses
+        if ($customer->sales_id !== Auth::id()) {
             abort(403, 'Anda tidak memiliki akses untuk customer ini.');
+        }
+
+        // Cek apakah ada pengajuan yang sedang berjalan
+        if ($customer->hasPendingSubmission()) {
+            return redirect()->route('submissions.index')
+                ->with('error', 'Customer ini masih memiliki pengajuan yang sedang diproses!');
         }
 
         $kode = $this->generateKode();
         
-        return view('submissions.create-rubah-plafon', compact('submission', 'kode'));
+        return view('submissions.create-rubah-plafon', compact('customer', 'kode'));
+    }
+
+    /**
+     * Form untuk open plafon dari customer existing
+     */
+    public function createOpenPlafon(Customer $customer)
+    {
+        // Validasi: customer harus aktif
+        if ($customer->status !== 'active') {
+            return redirect()->route('submissions.index')
+                ->with('error', 'Customer tidak aktif!');
+        }
+
+        // Validasi: hanya sales yang handle customer ini yang bisa akses
+        if ($customer->sales_id !== Auth::id()) {
+            abort(403, 'Anda tidak memiliki akses untuk customer ini.');
+        }
+
+        // Cek apakah ada pengajuan yang sedang berjalan
+        if ($customer->hasPendingSubmission()) {
+            return redirect()->route('submissions.index')
+                ->with('error', 'Customer ini masih memiliki pengajuan yang sedang diproses!');
+        }
+
+        $kode = $this->generateKode();
+        
+        return view('submissions.create-open-plafon', compact('customer', 'kode'));
     }
 
     public function store(Request $request)
     {
         // Validasi dasar
         $rules = [
-            'nama' => 'required|string|max:255',
-            'nama_kios' => 'required|string|max:255',
-            'alamat' => 'required|string',
+            'customer_id' => 'required|exists:customers,id',
             'plafon' => 'required|numeric|min:0',
             'plafon_type' => 'required|in:open,rubah',
             'plafon_direction' => 'nullable|in:naik,turun',
             'previous_submission_id' => 'nullable|exists:submissions,id',
             'komitmen_pembayaran' => 'required|string',
             'payment_type' => 'nullable|in:od,over',
-            // Validasi untuk nilai-nilai payment
             'od_piutang_value' => 'nullable|numeric|min:0',
             'od_jml_over_value' => 'nullable|numeric|min:0',
             'od_30_value' => 'nullable|numeric|min:0',
@@ -129,30 +148,28 @@ class SubmissionController extends Controller
             $rules['jumlah_buka_faktur'] = 'required|integer|min:1';
         } elseif ($request->plafon_type === 'rubah') {
             $rules['plafon_direction'] = 'required|in:naik,turun';
-            $rules['previous_submission_id'] = 'required|exists:submissions,id';
         }
 
         $validated = $request->validate($rules);
 
+        // Ambil data customer
+        $customer = Customer::findOrFail($validated['customer_id']);
+
         // Validasi logika naik/turun untuk rubah plafon
-        if ($request->plafon_type === 'rubah' && $request->previous_submission_id) {
-            $previousSubmission = Submission::find($request->previous_submission_id);
+        if ($request->plafon_type === 'rubah') {
+            $plafonBaru = $request->plafon;
+            $plafonLama = $customer->plafon_aktif;
             
-            if ($previousSubmission) {
-                $plafonBaru = $request->plafon;
-                $plafonLama = $previousSubmission->plafon;
-                
-                if ($request->plafon_direction === 'naik' && $plafonBaru <= $plafonLama) {
-                    return back()->withErrors([
-                        'plafon' => 'Plafon usulan harus lebih besar dari plafon saat ini untuk pilihan "Naik Plafon"'
-                    ])->withInput();
-                }
-                
-                if ($request->plafon_direction === 'turun' && $plafonBaru >= $plafonLama) {
-                    return back()->withErrors([
-                        'plafon' => 'Plafon usulan harus lebih kecil dari plafon saat ini untuk pilihan "Turun Plafon"'
-                    ])->withInput();
-                }
+            if ($request->plafon_direction === 'naik' && $plafonBaru <= $plafonLama) {
+                return back()->withErrors([
+                    'plafon' => 'Plafon usulan harus lebih besar dari plafon saat ini untuk pilihan "Naik Plafon"'
+                ])->withInput();
+            }
+            
+            if ($request->plafon_direction === 'turun' && $plafonBaru >= $plafonLama) {
+                return back()->withErrors([
+                    'plafon' => 'Plafon usulan harus lebih kecil dari plafon saat ini untuk pilihan "Turun Plafon"'
+                ])->withInput();
             }
         }
 
@@ -183,24 +200,34 @@ class SubmissionController extends Controller
         $jumlahBukaFaktur = null;
         if ($validated['plafon_type'] === 'open') {
             $jumlahBukaFaktur = $validated['jumlah_buka_faktur'];
-        } elseif ($validated['plafon_type'] === 'rubah' && isset($validated['previous_submission_id'])) {
-            // Untuk rubah plafon, ambil dari submission sebelumnya
-            $previousSubmission = Submission::find($validated['previous_submission_id']);
-            if ($previousSubmission) {
-                $jumlahBukaFaktur = $previousSubmission->jumlah_buka_faktur;
+        } elseif ($validated['plafon_type'] === 'rubah') {
+            // Untuk rubah plafon, ambil dari submission sebelumnya (yang terakhir done)
+            $latestApproved = $customer->latestApprovedSubmission;
+            if ($latestApproved) {
+                $jumlahBukaFaktur = $latestApproved->jumlah_buka_faktur;
+            }
+        }
+
+        // Cari previous submission (untuk rubah plafon)
+        $previousSubmissionId = null;
+        if ($validated['plafon_type'] === 'rubah') {
+            $latestApproved = $customer->latestApprovedSubmission;
+            if ($latestApproved) {
+                $previousSubmissionId = $latestApproved->id;
             }
         }
 
         // Create submission
         $submission = Submission::create([
             'kode' => $kode,
-            'nama' => $validated['nama'],
-            'nama_kios' => $validated['nama_kios'],
-            'alamat' => $validated['alamat'],
+            'customer_id' => $customer->id,
+            'nama' => $customer->nama,
+            'nama_kios' => $customer->nama_kios,
+            'alamat' => $customer->alamat,
             'plafon' => $validated['plafon'],
             'plafon_type' => $validated['plafon_type'],
             'plafon_direction' => $validated['plafon_direction'] ?? null,
-            'previous_submission_id' => $validated['previous_submission_id'] ?? null,
+            'previous_submission_id' => $previousSubmissionId,
             'jumlah_buka_faktur' => $jumlahBukaFaktur,
             'komitmen_pembayaran' => $validated['komitmen_pembayaran'],
             'payment_type' => $request->payment_type,
@@ -237,60 +264,93 @@ class SubmissionController extends Controller
         if ($submission->sales_id != Auth::id()) {
             abort(403);
         }
-
-        // Base validation rules
+    
+        // Base validation rules (hapus nama, nama_kios, alamat, plafon dari validasi)
         $baseRules = [
-            'nama' => 'required|string|max:255',
-            'nama_kios' => 'required|string|max:255',
-            'alamat' => 'required|string',
-            'plafon' => 'required|integer|min:0',
             'komitmen_pembayaran' => 'required|string',
+            'payment_type' => 'nullable|in:od,over',
+            'od_piutang_value' => 'nullable|numeric|min:0',
+            'od_jml_over_value' => 'nullable|numeric|min:0',
+            'od_30_value' => 'nullable|numeric|min:0',
+            'od_60_value' => 'nullable|numeric|min:0',
+            'od_90_value' => 'nullable|numeric|min:0',
+            'over_piutang_value' => 'nullable|numeric|min:0',
+            'over_jml_over_value' => 'nullable|numeric|min:0',
+            'over_od_30_value' => 'nullable|numeric|min:0',
+            'over_od_60_value' => 'nullable|numeric|min:0',
+            'over_od_90_value' => 'nullable|numeric|min:0',
         ];
-
+    
         // Add specific rules based on plafon_type
         if ($submission->plafon_type === 'open') {
             $baseRules['jumlah_buka_faktur'] = 'required|integer|min:1';
         } elseif ($submission->plafon_type === 'rubah') {
             $baseRules['plafon_direction'] = 'required|in:naik,turun';
+            $baseRules['plafon'] = 'required|numeric|min:0'; // Plafon tetap bisa diubah untuk rubah plafon
             
             // Validate plafon direction logic
             $request->validate([
                 'plafon_direction' => [
                     'required',
                     function ($attribute, $value, $fail) use ($request, $submission) {
-                        if ($submission->previousSubmission) {
+                        if ($submission->customer) {
                             $plafonBaru = $request->plafon;
-                            $plafonLama = $submission->previousSubmission->plafon;
+                            $plafonLama = $submission->customer->plafon_aktif;
                             
                             if ($value === 'naik' && $plafonBaru <= $plafonLama) {
-                                $fail('Plafon baru harus lebih besar dari plafon sebelumnya untuk pilihan "Naik Plafon"');
+                                $fail('Plafon baru harus lebih besar dari plafon saat ini untuk pilihan "Naik Plafon"');
                             }
                             
                             if ($value === 'turun' && $plafonBaru >= $plafonLama) {
-                                $fail('Plafon baru harus lebih kecil dari plafon sebelumnya untuk pilihan "Turun Plafon"');
+                                $fail('Plafon baru harus lebih kecil dari plafon saat ini untuk pilihan "Turun Plafon"');
                             }
                         }
                     },
                 ],
             ]);
         }
-
+    
         $validated = $request->validate($baseRules);
-
+    
+        // Update payment data jika ada
+        if ($request->payment_type) {
+            $paymentData = [];
+            
+            if ($request->payment_type === 'od') {
+                if ($request->od_piutang_value) $paymentData['piutang'] = $request->od_piutang_value;
+                if ($request->od_jml_over_value) $paymentData['jml_over'] = $request->od_jml_over_value;
+                if ($request->od_30_value) $paymentData['od_30'] = $request->od_30_value;
+                if ($request->od_60_value) $paymentData['od_60'] = $request->od_60_value;
+                if ($request->od_90_value) $paymentData['od_90'] = $request->od_90_value;
+            } elseif ($request->payment_type === 'over') {
+                if ($request->over_piutang_value) $paymentData['piutang'] = $request->over_piutang_value;
+                if ($request->over_jml_over_value) $paymentData['jml_over'] = $request->over_jml_over_value;
+                if ($request->over_od_30_value) $paymentData['od_30'] = $request->over_od_30_value;
+                if ($request->over_od_60_value) $paymentData['od_60'] = $request->over_od_60_value;
+                if ($request->over_od_90_value) $paymentData['od_90'] = $request->over_od_90_value;
+            }
+    
+            $validated['payment_type'] = $request->payment_type;
+            $validated['payment_data'] = $paymentData;
+        } else {
+            $validated['payment_type'] = null;
+            $validated['payment_data'] = null;
+        }
+    
         // Reset approval status if revision
         if ($submission->status == 'revision') {
             $validated['status'] = 'pending';
             $validated['current_level'] = 1;
             $validated['revision_note'] = null;
         }
-
+    
         // Update plafon_direction for rubah plafon
         if ($submission->plafon_type === 'rubah') {
             $validated['plafon_direction'] = $request->plafon_direction;
         }
-
+    
         $submission->update($validated);
-
+    
         return redirect()->route('submissions.index')
             ->with('success', 'Pengajuan berhasil diperbarui!');
     }
@@ -313,32 +373,11 @@ class SubmissionController extends Controller
             abort(403);
         }
 
-        $submission->load('approvals.approver', 'previousSubmission');
+        $submission->load('approvals.approver', 'previousSubmission', 'customer');
 
         $showAll = request()->get('show') == 'all';
 
         return view('submissions.show', compact('submission', 'showAll'));
-    }
-
-    /**
-     * Form untuk open plafon dari customer existing
-     */
-    public function createOpenPlafon(Submission $submission)
-    {
-        // Validasi: hanya bisa open plafon dari submission yang sudah done
-        if ($submission->status !== 'done') {
-            return redirect()->route('submissions.index')
-                ->with('error', 'Hanya dapat membuat open plafon dari customer yang sudah aktif!');
-        }
-
-        // Validasi: hanya sales yang sama
-        if ($submission->sales_id !== Auth::id()) {
-            abort(403, 'Anda tidak memiliki akses untuk customer ini.');
-        }
-
-        $kode = $this->generateKode();
-        
-        return view('submissions.create-open-plafon', compact('submission', 'kode'));
     }
 
     private function generateKode()

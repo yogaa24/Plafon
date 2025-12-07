@@ -2,12 +2,16 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Submission extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'kode',
+        'customer_id', // RELASI BARU
         'nama',
         'nama_kios',
         'alamat',
@@ -27,35 +31,42 @@ class Submission extends Model
     ];
 
     protected $casts = [
-    'payment_data' => 'array',  // Auto convert JSON to array
-    'created_at' => 'datetime',
-    'updated_at' => 'datetime',
+        'payment_data' => 'array',
+        'created_at'   => 'datetime',
+        'updated_at'   => 'datetime',
     ];
 
-
     /* ==========================
-     |          RELASI
-     =========================== */
+     |         RELASI
+     ========================== */
 
+    // Relasi Customer BARU
+    public function customer()
+    {
+        return $this->belongsTo(Customer::class, 'customer_id');
+    }
+
+    // Relasi Submission sebelumnya
     public function previousSubmission()
     {
         return $this->belongsTo(Submission::class, 'previous_submission_id');
     }
 
+    // Relasi ke Sales (User)
     public function sales()
     {
         return $this->belongsTo(User::class, 'sales_id');
     }
 
+    // Relasi Approval
     public function approvals()
     {
         return $this->hasMany(Approval::class);
     }
 
-
     /* ==========================
-     |      BADGE ACCESSOR
-     =========================== */
+     |      ACCESSOR BADGE
+     ========================== */
 
     public function getPlafonTypeBadgeAttribute()
     {

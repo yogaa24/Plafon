@@ -69,55 +69,73 @@
 
     <!-- Tampilan Customer (default view) -->
     @if(!$hasFilter && $customers->count() > 0)
-    <div class="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg shadow-sm border border-green-200 p-6">
+    <div class="bg-white from-white rounded-lg shadow-sm border-transparent p-6">
         <div class="flex items-center mb-4">
             <svg class="w-6 h-6 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
             </svg>
-            <h3 class="text-lg font-bold text-green-900">Customer Aktif</h3>
+            <h3 class="text-lg font-bold text-green-900">Daftar Customer</h3>
             <span class="ml-auto text-sm text-green-700">Total: {{ $customers->count() }} customer</span>
         </div>
         
         <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-green-200">
-                <thead class="bg-green-100">
+            <table class="min-w-full divide-y divide-black">
+                <thead class="bg-white">
                     <tr>
                         <th class="px-4 py-3 text-center text-xs font-semibold text-green-800 uppercase tracking-wider w-16">No</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-green-800 uppercase tracking-wider">Kode</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-green-800 uppercase tracking-wider">Nama</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-green-800 uppercase tracking-wider">Nama Kios</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-green-800 uppercase tracking-wider">Alamat</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-green-800 uppercase tracking-wider">Plafon Saat Ini</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-green-800 uppercase tracking-wider">Plafon Aktif</th>
+                        <th class="px-4 py-3 text-center text-xs font-semibold text-green-800 uppercase tracking-wider">Status Pengajuan</th>
                         <th class="px-4 py-3 text-center text-xs font-semibold text-green-800 uppercase tracking-wider">Aksi</th>
                     </tr>
                 </thead>
-                <tbody class="bg-white divide-y divide-green-100">
+                <tbody class="bg-white divide-y divide-gray-200">
                     @foreach($customers as $index => $customer)
                     <tr class="hover:bg-green-50 transition">
                         <td class="px-4 py-3 text-center text-sm text-gray-900">{{ $index + 1 }}</td>
+                        <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ $customer->kode_customer }}</td>
                         <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ $customer->nama }}</td>
                         <td class="px-4 py-3 text-sm text-gray-900">{{ $customer->nama_kios }}</td>
                         <td class="px-4 py-3 text-sm text-gray-900">{{ $customer->alamat }}</td>
                         <td class="px-4 py-3 text-sm font-semibold text-green-700">
-                            Rp {{ number_format($customer->plafon, 0, ',', '.') }}
+                            Rp {{ number_format($customer->plafon_aktif, 0, ',', '.') }}
+                        </td>
+                        <td class="px-4 py-3 text-center">
+                            @if($customer->hasPendingSubmission())
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                    Sedang Diproses
+                                </span>
+                            @else
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                    Tersedia
+                                </span>
+                            @endif
                         </td>
                         <td class="px-4 py-3 text-center whitespace-nowrap">
                             <div class="flex items-center justify-center space-x-2">
-                                <a href="{{ route('submissions.create-open-plafon', $customer) }}" 
-                                   class="inline-flex items-center px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition"
-                                   title="Open Plafon Baru">
-                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-                                    </svg>
-                                    Open
-                                </a>
-                                <a href="{{ route('submissions.create-rubah-plafon', $customer) }}" 
-                                   class="inline-flex items-center px-3 py-1.5 bg-purple-600 text-white text-xs font-medium rounded-lg hover:bg-purple-700 transition"
-                                   title="Rubah Plafon">
-                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                                    </svg>
-                                    Rubah
-                                </a>
+                                @if(!$customer->hasPendingSubmission())
+                                    <a href="{{ route('submissions.create-open-plafon', $customer) }}" 
+                                    class="inline-flex items-center px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition"
+                                    title="Open Plafon Baru">
+                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                                        </svg>
+                                        Open
+                                    </a>
+                                    <a href="{{ route('submissions.create-rubah-plafon', $customer) }}" 
+                                    class="inline-flex items-center px-3 py-1.5 bg-purple-600 text-white text-xs font-medium rounded-lg hover:bg-purple-700 transition"
+                                    title="Rubah Plafon">
+                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                                        </svg>
+                                        Rubah
+                                    </a>
+                                @else
+                                    <span class="text-xs text-gray-500 italic">Menunggu approval</span>
+                                @endif
                             </div>
                         </td>
                     </tr>
@@ -131,8 +149,8 @@
         <svg class="mx-auto h-16 w-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
         </svg>
-        <h3 class="mt-4 text-lg font-medium text-gray-900">Belum Ada Customer Aktif</h3>
-        <p class="mt-2 text-sm text-gray-500">Belum ada customer dengan status selesai yang dapat ditampilkan.</p>
+        <h3 class="mt-4 text-lg font-medium text-gray-900">Belum Ada Customer</h3>
+        <p class="mt-2 text-sm text-gray-500">Belum ada data customer yang tersedia.</p>
     </div>
     @endif
 
@@ -207,12 +225,12 @@
                             @endif
                         </td>
                         <td class="px-4 py-3 whitespace-nowrap">
-                            @if($submission->plafon_type === 'rubah' && $submission->previousSubmission)
+                            @if($submission->plafon_type === 'rubah' && $submission->customer)
                                 <div class="flex flex-col items-center space-y-1">
                                     <span class="text-xs text-gray-400 line-through">
-                                        {{ number_format($submission->previousSubmission->plafon, 0, ',', '.') }}
+                                        {{ number_format($submission->customer->plafon_aktif, 0, ',', '.') }}
                                     </span>
-                                    <span class="text-sm font-semibold {{ $submission->plafon > $submission->previousSubmission->plafon ? 'text-green-600' : 'text-red-600' }}">
+                                    <span class="text-sm font-semibold {{ $submission->plafon > $submission->customer->plafon_aktif ? 'text-green-600' : 'text-red-600' }}">
                                         {{ number_format($submission->plafon, 0, ',', '.') }}
                                     </span>
                                 </div>
@@ -348,10 +366,10 @@
                                     <div>
                                         <h4 class="font-semibold text-gray-700 mb-3 text-sm uppercase tracking-wide">Informasi Keuangan</h4>
                                         <div class="space-y-2">
-                                            @if($submission->plafon_type === 'rubah' && $submission->previousSubmission)
+                                            @if($submission->plafon_type === 'rubah' && $submission->customer)
                                             <div class="flex justify-between py-1 border-b border-gray-100">
                                                 <span class="text-sm text-gray-600">Plafon Sebelumnya:</span>
-                                                <span class="text-sm text-gray-500">Rp {{ number_format($submission->previousSubmission->plafon, 0, ',', '.') }}</span>
+                                                <span class="text-sm text-gray-500">Rp {{ number_format($submission->customer->plafon_aktif, 0, ',', '.') }}</span>
                                             </div>
                                             @endif
                                             <div class="flex justify-between py-1 border-b border-gray-100">

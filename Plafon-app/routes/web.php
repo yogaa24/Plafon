@@ -38,9 +38,15 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['role:sales'])->group(function () {
         Route::get('submissions/search-nama', [SubmissionController::class, 'searchNama'])->name('submissions.search-nama');
         Route::resource('submissions', SubmissionController::class);
-        Route::get('/submissions/{submission}/rubah-plafon', [SubmissionController::class, 'createRubahPlafon'])->name('submissions.create-rubah-plafon');
-        Route::get('/submissions/create-open-plafon/{submission}', [SubmissionController::class, 'createOpenPlafon'])->name('submissions.create-open-plafon');
-        Route::get('/submissions/approved-customers', [SubmissionController::class, 'getApprovedCustomers'])->name('submissions.approved-customers');
+        Route::get('/submissions/customer/{customer}/create-rubah-plafon',
+            [SubmissionController::class, 'createRubahPlafon']
+        )->name('submissions.create-rubah-plafon');
+        Route::get('/submissions/customer/{customer}/create-open-plafon',
+            [SubmissionController::class, 'createOpenPlafon']
+        )->name('submissions.create-open-plafon');
+        Route::get('/submissions/approved-customers',
+            [SubmissionController::class, 'getApprovedCustomers']
+        )->name('submissions.approved-customers');
     });
 
     // ------------------------
