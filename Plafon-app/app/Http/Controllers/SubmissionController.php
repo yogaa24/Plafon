@@ -11,40 +11,63 @@ class SubmissionController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Submission::where('sales_id', Auth::id())
-            ->with('approvals.approver');
+        // Cek apakah ada filter yang dipilih
+        $hasFilter = $request->filled('status') || $request->filled('search') || $request->filled('view');
+        
+        $submissions = collect();
+        $customers = collect();
+        
+        if ($hasFilter && $request->view === 'submissions') {
+            // Jika ada filter, tampilkan pengajuan
+            $query = Submission::where('sales_id', Auth::id())
+                ->with('approvals.approver');
 
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        } else {
-            if (!$request->has('show_completed')) {
-                $query->where('status', '!=', 'done');
+            if ($request->filled('status')) {
+                $query->where('status', $request->status);
             }
+
+            if ($request->filled('search')) {
+                $search = $request->search;
+                $query->where(function($q) use ($search) {
+                    $q->where('kode', 'like', "%{$search}%")
+                    ->orWhere('nama', 'like', "%{$search}%")
+                    ->orWhere('nama_kios', 'like', "%{$search}%");
+                });
+            }
+
+            $sortBy = $request->get('sort_by', 'created_at');
+            $sortOrder = $request->get('sort_order', 'desc');
+            $query->orderBy($sortBy, $sortOrder);
+
+            $submissions = $query->paginate(15)->appends($request->query());
+        } else {
+            // Tampilan default: hanya customer aktif
+            $query = Submission::where('sales_id', Auth::id())
+                ->where('status', 'done')
+                ->whereIn('id', function($query) {
+                    $query->selectRaw('MAX(id)')
+                        ->from('submissions')
+                        ->where('sales_id', Auth::id())
+                        ->where('status', 'done')
+                        ->groupBy('nama', 'nama_kios');
+                });
+
+            // Tambahkan search untuk customer
+            if ($request->filled('customer_search')) {
+                $search = $request->customer_search;
+                $query->where(function($q) use ($search) {
+                    $q->where('nama', 'like', "%{$search}%")
+                    ->orWhere('nama_kios', 'like', "%{$search}%");
+                });
+            }
+
+            $customers = $query->orderBy('nama', 'asc')->get();
         }
-
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('kode', 'like', "%{$search}%")
-                ->orWhere('nama', 'like', "%{$search}%")
-                ->orWhere('nama_kios', 'like', "%{$search}%");
-            });
-        }
-
-        $sortBy = $request->get('sort_by', 'created_at');
-        $sortOrder = $request->get('sort_order', 'desc');
-        $query->orderBy($sortBy, $sortOrder);
-
-        $submissions = $query->paginate(15)->appends($request->query());
-
-        // 🔥 Tambahkan ini untuk diperbaiki
-        $customers = Submission::where('sales_id', Auth::id())
-            ->where('status', 'done')
-            ->get();
 
         return view('submissions.index', [
             'submissions' => $submissions,
             'customers' => $customers,
+            'hasFilter' => $hasFilter,
         ]);
     }
 
@@ -290,7 +313,7 @@ class SubmissionController extends Controller
             abort(403);
         }
 
-        $submission->load('approvals.approver', 'previousSubmission'); // ← pastikan ini ada
+        $submission->load('approvals.approver', 'previousSubmission');
 
         $showAll = request()->get('show') == 'all';
 

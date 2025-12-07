@@ -177,7 +177,7 @@ class ApprovalController extends Controller
         DB::beginTransaction();
         try {
             // Validasi khusus untuk Level 2 saat approve
-            if ($level == 2 && $action === 'approved') {
+            if ($level == 2 && $action === 'approved' && $submission->plafon_type === 'open') {
                 $request->validate([
                     'piutang' => 'required|numeric|min:0',
                     'jml_over' => 'required|numeric|min:0',
@@ -221,7 +221,7 @@ class ApprovalController extends Controller
             $approval->status = $action;
             $approval->note = $request->input('note');
 
-            if ($level == 2 && $action === 'approved') {
+            if ($level == 2 && $action === 'approved' && $submission->plafon_type === 'open') {
                 $approval->piutang = $request->piutang;
                 $approval->jml_over = $request->jml_over;
                 $approval->jml_od_30 = $request->jml_od_30;

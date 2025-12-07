@@ -400,7 +400,7 @@
                                                         {{ $approval->status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
                                                         {{ $approval->status === 'approved' ? 'Disetujui' : 'Ditolak' }}
                                                     </span>
-                                                @elseF
+                                                @else
                                                     <span class="text-xs px-2 py-1 rounded-full font-semibold bg-gray-200 text-gray-600">
                                                         No Respon
                                                     </span>

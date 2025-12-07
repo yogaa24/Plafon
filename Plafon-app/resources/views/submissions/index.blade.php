@@ -16,13 +16,16 @@
     <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
         <form method="GET" action="{{ route('submissions.index') }}" id="filterForm" class="space-y-3">
             <div class="flex flex-wrap gap-3">
-                <!-- Search -->
-                <div class="flex-1 min-w-[250px]">
-                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari kode, nama, atau kios..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                <!-- View Type -->
+                <div class="w-52">
+                    <select name="view" id="viewFilter" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" onchange="handleViewChange()">
+                        <option value="">Customer</option>
+                        <option value="submissions" {{ request('view') == 'submissions' ? 'selected' : '' }}>Pengajuan</option>
+                    </select>
                 </div>
 
-                <!-- Status Filter -->
-                <div class="w-52">
+                <!-- Status Filter (hanya muncul jika view = submissions) -->
+                <div id="statusFilterWrapper" class="w-52 {{ request('view') != 'submissions' ? 'hidden' : '' }}">
                     <select name="status" id="statusFilter" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" onchange="document.getElementById('filterForm').submit()">
                         <option value="">Semua Status</option>
                         <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Menunggu Approval 1</option>
@@ -33,6 +36,16 @@
                         <option value="revision" {{ request('status') == 'revision' ? 'selected' : '' }}>Perlu Revisi</option>
                         <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Ditolak</option>
                     </select>
+                </div>
+
+                <!-- Search untuk Pengajuan -->
+                <div id="searchSubmissionWrapper" class="flex-1 min-w-[250px] {{ request('view') != 'submissions' ? 'hidden' : '' }}">
+                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari kode, nama, atau kios pengajuan..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+
+                <!-- Search untuk Customer -->
+                <div id="searchCustomerWrapper" class="flex-1 min-w-[250px] {{ request('view') == 'submissions' ? 'hidden' : '' }}">
+                    <input type="text" name="customer_search" value="{{ request('customer_search') }}" placeholder="Cari nama atau kios customer..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
                 </div>
 
                 <!-- Buttons -->
@@ -54,8 +67,100 @@
         </form>
     </div>
 
-    <!-- Table -->
+    <!-- Tampilan Customer (default view) -->
+    @if(!$hasFilter && $customers->count() > 0)
+    <div class="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg shadow-sm border border-green-200 p-6">
+        <div class="flex items-center mb-4">
+            <svg class="w-6 h-6 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+            </svg>
+            <h3 class="text-lg font-bold text-green-900">Customer Aktif</h3>
+            <span class="ml-auto text-sm text-green-700">Total: {{ $customers->count() }} customer</span>
+        </div>
+        
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-green-200">
+                <thead class="bg-green-100">
+                    <tr>
+                        <th class="px-4 py-3 text-center text-xs font-semibold text-green-800 uppercase tracking-wider w-16">No</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-green-800 uppercase tracking-wider">Nama</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-green-800 uppercase tracking-wider">Nama Kios</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-green-800 uppercase tracking-wider">Alamat</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-green-800 uppercase tracking-wider">Plafon Saat Ini</th>
+                        <th class="px-4 py-3 text-center text-xs font-semibold text-green-800 uppercase tracking-wider">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-green-100">
+                    @foreach($customers as $index => $customer)
+                    <tr class="hover:bg-green-50 transition">
+                        <td class="px-4 py-3 text-center text-sm text-gray-900">{{ $index + 1 }}</td>
+                        <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ $customer->nama }}</td>
+                        <td class="px-4 py-3 text-sm text-gray-900">{{ $customer->nama_kios }}</td>
+                        <td class="px-4 py-3 text-sm text-gray-900">{{ $customer->alamat }}</td>
+                        <td class="px-4 py-3 text-sm font-semibold text-green-700">
+                            Rp {{ number_format($customer->plafon, 0, ',', '.') }}
+                        </td>
+                        <td class="px-4 py-3 text-center whitespace-nowrap">
+                            <div class="flex items-center justify-center space-x-2">
+                                <a href="{{ route('submissions.create-open-plafon', $customer) }}" 
+                                   class="inline-flex items-center px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition"
+                                   title="Open Plafon Baru">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                                    </svg>
+                                    Open
+                                </a>
+                                <a href="{{ route('submissions.create-rubah-plafon', $customer) }}" 
+                                   class="inline-flex items-center px-3 py-1.5 bg-purple-600 text-white text-xs font-medium rounded-lg hover:bg-purple-700 transition"
+                                   title="Rubah Plafon">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                                    </svg>
+                                    Rubah
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div>
+    @elseif(!$hasFilter)
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
+        <svg class="mx-auto h-16 w-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+        </svg>
+        <h3 class="mt-4 text-lg font-medium text-gray-900">Belum Ada Customer Aktif</h3>
+        <p class="mt-2 text-sm text-gray-500">Belum ada customer dengan status selesai yang dapat ditampilkan.</p>
+    </div>
+    @endif
+
+    <!-- Table Pengajuan (muncul jika ada filter) -->
+    @if($hasFilter)
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+            <h3 class="text-lg font-bold text-gray-900">
+                @if(request('status'))
+                    Pengajuan - Status: 
+                    @switch(request('status'))
+                        @case('pending') Menunggu Approval 1 @break
+                        @case('approved_1') Menunggu Approval 2 @break
+                        @case('approved_2') Menunggu Approval 3 @break
+                        @case('approved_3') Proses Input @break
+                        @case('done') Selesai @break
+                        @case('revision') Perlu Revisi @break
+                        @case('rejected') Ditolak @break
+                        @default Semua Status @break
+                    @endswitch
+                @elseif(request('search'))
+                    Hasil Pencarian: "{{ request('search') }}"
+                @else
+                    Semua Pengajuan
+                @endif
+            </h3>
+        </div>
+        
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
@@ -131,25 +236,8 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                                     </svg>
                                 </a>
+                                
                                 @if($submission->status === 'done')
-                                    <a href="{{ route('submissions.create-rubah-plafon', $submission) }}" 
-                                    class="text-purple-600 hover:text-purple-900 font-medium text-sm" 
-                                    title="Rubah Plafon">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                                        </svg>
-                                    </a>
-
-                                    <a href="{{ route('submissions.create-open-plafon', $submission) }}" 
-                                    class="text-blue-600 hover:text-blue-900 font-medium text-sm"
-                                    title="Open Plafon Baru">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                                d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-                                        </svg>
-                                    </a>
-
                                     <form action="{{ route('submissions.destroy', $submission) }}" 
                                         method="POST" class="inline" 
                                         onsubmit="return confirm('Yakin ingin menghapus data ini?')">
@@ -165,6 +253,7 @@
                                         </button>
                                     </form>
                                 @endif
+                                
                                 @if(in_array($submission->status, ['pending', 'revision']))
                                 <a href="{{ route('submissions.edit', $submission) }}" class="text-blue-600 hover:text-blue-900 font-medium text-sm" title="Edit">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -304,11 +393,16 @@
                                                             @if($value)
                                                             <div class="flex justify-between text-sm">
                                                                 <span class="text-blue-700">
-                                                                    @if($key === 'piutang') Piutang
-                                                                    @elseif($key === 'jml_over') Jml Over
-                                                                    @elseif($key === 'od_30') Jml OD 30
-                                                                    @elseif($key === 'od_60') Jml OD 60
-                                                                    @elseif($key === 'od_90') Jml OD 90
+                                                                    @if($key === 'piutang') 
+                                                                        Piutang
+                                                                    @elseif($key === 'jml_over') 
+                                                                        Jml Over
+                                                                    @elseif($key === 'od_30') 
+                                                                        Jml OD 30
+                                                                    @elseif($key === 'od_60') 
+                                                                        Jml OD 60
+                                                                    @elseif($key === 'od_90') 
+                                                                        Jml OD 90
                                                                     @endif:
                                                                 </span>
                                                                 <span class="font-semibold text-blue-900">Rp {{ number_format($value, 0, ',', '.') }}</span>
@@ -351,7 +445,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                             </svg>
                             <h3 class="mt-2 text-sm font-medium text-gray-900">Tidak ada data</h3>
-                            <p class="mt-1 text-sm text-gray-500">{{ request('search') || request('status') ? 'Tidak ada hasil yang cocok dengan filter' : 'Belum ada pengajuan aktif' }}</p>
+                            <p class="mt-1 text-sm text-gray-500">{{ request('search') || request('status') ? 'Tidak ada hasil yang cocok dengan filter' : 'Belum ada pengajuan' }}</p>
                         </td>
                     </tr>
                     @endforelse
@@ -360,37 +454,23 @@
         </div>
 
         <!-- Pagination -->
-        @if($submissions->hasPages())
-        <div class="bg-white px-4 py-3 border-t border-gray-200">
-            {{ $submissions->links() }}
+        <!-- Pagination - Hanya tampil jika ada data dan merupakan paginator -->
+        @if($submissions->count() > 0)
+                @if(method_exists($submissions, 'hasPages') && $submissions->hasPages())
+                <div class="bg-white px-4 py-3 border-t border-gray-200">
+                    {{ $submissions->links() }}
+                </div>
+                @endif
+            @endif
+        </div>
+
+        <!-- Summary Info - Hanya tampil jika ada data -->
+        @if($submissions->count() > 0 && method_exists($submissions, 'total'))
+        <div class="text-sm text-gray-600">
+            Menampilkan {{ $submissions->firstItem() ?? 0 }} - {{ $submissions->lastItem() ?? 0 }} dari {{ $submissions->total() }} pengajuan
         </div>
         @endif
-    </div>
-
-    <!-- Summary Info -->
-    <div class="text-sm text-gray-600">
-        Menampilkan {{ $submissions->firstItem() ?? 0 }} - {{ $submissions->lastItem() ?? 0 }} dari {{ $submissions->total() }} pengajuan
-    </div>
-</div>
-
-<!-- Modal Customer Selector -->
-<div id="customerModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
-        <div class="p-6 border-b border-gray-200">
-            <div class="flex justify-between items-center">
-                <h3 class="text-xl font-bold text-gray-900">Pilih Customer untuk Rubah Plafon</h3>
-                <button onclick="closeCustomerSelector()" class="text-gray-400 hover:text-gray-600">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                    </svg>
-                </button>
-            </div>
-            <input type="text" id="customerSearch" placeholder="Cari nama atau kios customer..." class="mt-4 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
-        </div>
-        <div id="customerList" class="p-6 overflow-y-auto max-h-96">
-            <p class="text-gray-500 text-center">Mulai mengetik untuk mencari customer...</p>
-        </div>
-    </div>
+    @endif
 </div>
 
 @if(session('success'))
@@ -414,64 +494,28 @@ function toggleDetail(id) {
     }
 }
 
-/* Open Modal Customer Selector */
-function showCustomerSelector() {
-    document.getElementById('customerModal').classList.remove('hidden');
-    document.getElementById('customerSearch').focus();
-}
-
-/* Close Modal Customer Selector */
-function closeCustomerSelector() {
-    document.getElementById('customerModal').classList.add('hidden');
-    document.getElementById('customerSearch').value = '';
-    document.getElementById('customerList').innerHTML =
-        '<p class="text-gray-500 text-center">Mulai mengetik untuk mencari customer...</p>';
-}
-
-/* Search Customer with Delay */
-let searchTimeout;
-document.getElementById('customerSearch').addEventListener('input', function(e) {
-    clearTimeout(searchTimeout);
-    const query = e.target.value;
-
-    if (query.length < 2) {
-        document.getElementById('customerList').innerHTML =
-            '<p class="text-gray-500 text-center">Minimal 2 karakter...</p>';
-        return;
+/* Handle View Change */
+function handleViewChange() {
+    const viewFilter = document.getElementById('viewFilter');
+    const statusFilterWrapper = document.getElementById('statusFilterWrapper');
+    const searchSubmissionWrapper = document.getElementById('searchSubmissionWrapper');
+    const searchCustomerWrapper = document.getElementById('searchCustomerWrapper');
+    
+    if (viewFilter.value === 'submissions') {
+        // Tampilkan filter untuk pengajuan
+        statusFilterWrapper.classList.remove('hidden');
+        searchSubmissionWrapper.classList.remove('hidden');
+        searchCustomerWrapper.classList.add('hidden');
+    } else {
+        // Tampilkan search untuk customer
+        statusFilterWrapper.classList.add('hidden');
+        searchSubmissionWrapper.classList.add('hidden');
+        searchCustomerWrapper.classList.remove('hidden');
     }
-
-    searchTimeout = setTimeout(() => {
-        fetch(`/submissions/approved-customers?q=${encodeURIComponent(query)}`)
-            .then(res => res.json())
-            .then(data => {
-                const listEl = document.getElementById('customerList');
-
-                if (data.length === 0) {
-                    listEl.innerHTML = '<p class="text-gray-500 text-center">Tidak ada customer yang cocok</p>';
-                    return;
-                }
-
-                listEl.innerHTML = data.map(customer => `
-                    <a href="/submissions/create-rubah-plafon/${customer.id}"
-                       class="block p-4 border border-gray-200 rounded-lg hover:bg-purple-50 hover:border-purple-300 transition mb-2">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <h4 class="font-semibold text-gray-900">${customer.nama}</h4>
-                                <p class="text-sm text-gray-600">${customer.nama_kios}</p>
-                                <p class="text-xs text-gray-500 mt-1">${customer.alamat}</p>
-                            </div>
-                            <div class="text-right">
-                                <p class="text-sm font-bold text-indigo-600">
-                                    Rp ${new Intl.NumberFormat('id-ID').format(customer.plafon)}
-                                </p>
-                                <p class="text-xs text-gray-500">Plafon Sekarang</p>
-                            </div>
-                        </div>
-                    </a>
-                `).join('');
-            });
-    }, 300);
-});
+    
+    // Submit form langsung ketika view berubah
+    document.getElementById('filterForm').submit();
+}
 
 /* Auto-hide Success Message */
 document.addEventListener('DOMContentLoaded', function() {
@@ -482,13 +526,6 @@ document.addEventListener('DOMContentLoaded', function() {
             alert.style.transition = 'opacity 0.5s ease-out';
             setTimeout(() => alert.remove(), 500);
         }, 3000);
-    }
-});
-
-/* Close modal on ESC key */
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        closeCustomerSelector();
     }
 });
 </script>
