@@ -118,18 +118,21 @@
                             @endif
                         </td>
                         <td class="px-4 py-3 whitespace-nowrap">
-                            @if($submission->plafon_type === 'rubah' && $submission->previousSubmission)
-                                <div class="flex items-center space-x-1">
-                                    <span class="text-xs text-gray-400 line-through">{{ number_format($submission->previousSubmission->plafon, 0, ',', '.') }}</span>
-                                    <span class="text-xs {{ $submission->plafon > $submission->previousSubmission->plafon ? 'text-green-600' : 'text-red-600' }}">
-                                        {{ $submission->plafon > $submission->previousSubmission->plafon ? '↑' : '↓' }}
+                            @if($submission->plafon_type === 'rubah' && $submission->customer)
+                                <div class="flex flex-col items-center space-y-1">
+                                    <!-- Plafon Lama -->
+                                    <span class="text-xs text-gray-400 line-through">
+                                        {{ number_format($submission->customer->plafon_aktif, 0, ',', '.') }}
                                     </span>
-                                    <span class="text-sm font-semibold {{ $submission->plafon > $submission->previousSubmission->plafon ? 'text-green-600' : 'text-red-600' }}">
+                                    <!-- Plafon Baru -->
+                                    <span class="text-sm font-semibold {{ $submission->plafon > $submission->customer->plafon_aktif ? 'text-green-600' : 'text-red-600' }}">
                                         {{ number_format($submission->plafon, 0, ',', '.') }}
                                     </span>
                                 </div>
                             @else
-                                <span class="text-sm font-semibold text-gray-900">Rp {{ number_format($submission->plafon, 0, ',', '.') }}</span>
+                                <span class="text-sm font-semibold text-gray-900">
+                                    {{ number_format($submission->plafon, 0, ',', '.') }}
+                                </span>
                             @endif
                         </td>
                         <td class="px-4 py-3 text-center whitespace-nowrap">
@@ -206,10 +209,10 @@
                                 <div>
                                     <h4 class="font-semibold text-gray-700 mb-3 text-sm uppercase tracking-wide">Informasi Keuangan</h4>
                                     <div class="space-y-2">
-                                        @if($submission->plafon_type === 'rubah' && $submission->previousSubmission)
+                                        @if($submission->plafon_type === 'rubah' && $submission->customer)
                                         <div class="flex justify-between py-1 border-b border-gray-100">
                                             <span class="text-sm text-gray-600">Plafon Sebelumnya:</span>
-                                            <span class="text-sm text-gray-500">Rp {{ number_format($submission->previousSubmission->plafon, 0, ',', '.') }}</span>
+                                            <span class="text-sm text-gray-500">Rp {{ number_format($submission->customer->plafon_aktif, 0, ',', '.') }}</span>
                                         </div>
                                         @endif
                                         <div class="flex justify-between py-1 border-b border-gray-100">
@@ -320,7 +323,7 @@
     </div>
 </div>
 
-<!-- Import CSV Modal -->
+<!-- Import CSV Modal - Updated Version -->
 <div id="importModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
     <div class="relative top-20 mx-auto p-6 border w-full max-w-2xl shadow-lg rounded-lg bg-white">
         <div class="flex justify-between items-center mb-4">
@@ -345,14 +348,6 @@
                 <p class="text-xs text-gray-500 mt-1">File harus berformat .csv dengan maksimal 5MB</p>
             </div>
 
-            <div class="mb-4">
-                <label class="flex items-center">
-                    <input type="checkbox" name="skip_duplicates" value="1" checked
-                        class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
-                    <span class="ml-2 text-sm text-gray-700">Lewati data duplikat (berdasarkan nama perusahaan)</span>
-                </label>
-            </div>
-
             <div id="importProgress" class="hidden mb-4">
                 <div class="w-full bg-gray-200 rounded-full h-2.5">
                     <div class="bg-indigo-600 h-2.5 rounded-full transition-all duration-300" style="width: 0%" id="progressBar"></div>
@@ -375,15 +370,61 @@
     </div>
 </div>
 
+<!-- Alert Messages - Updated untuk menampilkan error detail -->
 @if(session('success'))
-<div id="success-alert" class="fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
-    {{ session('success') }}
+<div id="success-alert" class="fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 max-w-md">
+    <div class="flex items-start">
+        <svg class="w-5 h-5 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+        </svg>
+        <div>{{ session('success') }}</div>
+    </div>
+</div>
+@endif
+
+@if(session('warning'))
+<div id="warning-alert" class="fixed bottom-4 right-4 bg-yellow-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 max-w-md">
+    <div class="flex items-start">
+        <svg class="w-5 h-5 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+        </svg>
+        <div>
+            <p>{{ session('warning') }}</p>
+            @if(session('error_details'))
+            <button onclick="toggleErrorDetails()" class="text-xs underline mt-1">Lihat Detail Error</button>
+            <pre id="errorDetails" class="hidden text-xs mt-2 p-2 bg-yellow-600 rounded overflow-auto max-h-40">{{ session('error_details') }}</pre>
+            @endif
+        </div>
+    </div>
 </div>
 @endif
 
 @if(session('error'))
-<div id="error-alert" class="fixed bottom-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
-    {{ session('error') }}
+<div id="error-alert" class="fixed bottom-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 max-w-md">
+    <div class="flex items-start">
+        <svg class="w-5 h-5 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+        <div>{{ session('error') }}</div>
+    </div>
+</div>
+@endif
+
+@if($errors->any())
+<div id="validation-alert" class="fixed bottom-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 max-w-md">
+    <div class="flex items-start">
+        <svg class="w-5 h-5 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+        <div>
+            <p class="font-semibold mb-1">Validasi Error:</p>
+            <ul class="text-sm space-y-1">
+                @foreach($errors->all() as $error)
+                <li>• {{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    </div>
 </div>
 @endif
 
@@ -399,6 +440,11 @@ function toggleDetail(id) {
         detailRow.classList.add('hidden');
         icon.classList.remove('rotate-180');
     }
+}
+
+function toggleErrorDetails() {
+    const details = document.getElementById('errorDetails');
+    details.classList.toggle('hidden');
 }
 
 function openImportModal() {
@@ -426,7 +472,7 @@ document.getElementById('importForm').addEventListener('submit', function(e) {
     
     progressDiv.classList.remove('hidden');
     
-    // Simulate progress (in real app, use AJAX for actual progress)
+    // Simulate progress
     let progress = 0;
     const interval = setInterval(() => {
         progress += 10;
@@ -442,7 +488,7 @@ document.getElementById('importForm').addEventListener('submit', function(e) {
 
 // Auto hide alerts
 document.addEventListener('DOMContentLoaded', function() {
-    const alerts = ['success-alert', 'error-alert'];
+    const alerts = ['success-alert', 'error-alert', 'warning-alert', 'validation-alert'];
     alerts.forEach(alertId => {
         const alert = document.getElementById(alertId);
         if (alert) {
@@ -450,7 +496,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 alert.style.opacity = '0';
                 alert.style.transition = 'opacity 0.5s ease-out';
                 setTimeout(() => alert.remove(), 500);
-            }, 5000);
+            }, 8000);
         }
     });
 });

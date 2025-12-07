@@ -23,7 +23,7 @@ class ApprovalController extends Controller
 
         $query = Submission::where('current_level', $level)
             ->whereIn('status', ['pending', 'approved_1', 'approved_2'])
-            ->with(['sales', 'approvals.approver', 'previousSubmission']);
+            ->with(['sales', 'approvals.approver', 'previousSubmission', 'customer']);
 
         // Search
         if ($request->filled('search')) {
@@ -90,9 +90,10 @@ class ApprovalController extends Controller
         $statusFilter = $request->get('status', 'on_progress');
 
         $query = Submission::where('current_level', 3)
-            ->with(['sales', 'approvals' => function($q) {
-                $q->where('level', 3)->with('approver');
-            }, 'previousSubmission']);
+        ->with(['sales', 'customer', 'previousSubmission'])
+        ->with(['approvals' => function($q) {
+            $q->where('level', 3)->with('approver');
+        }]);
 
         // Apply status filter
         if ($statusFilter === 'on_progress') {
@@ -206,10 +207,10 @@ class ApprovalController extends Controller
             // Validasi catatan untuk reject dan revision
             if (in_array($action, ['rejected', 'revision'])) {
                 $request->validate([
-                    'note' => 'required|string|min:10'
+                    'note' => 'required|string|min:3'
                 ], [
                     'note.required' => 'Catatan wajib diisi',
-                    'note.min' => 'Catatan minimal 10 karakter'
+                    'note.min' => 'Catatan minimal 3 karakter'
                 ]);
             }
 

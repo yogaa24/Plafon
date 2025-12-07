@@ -72,5 +72,4 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/viewer/{submission}/done', [ViewerController::class, 'markDone'])->name('viewer.done');
         Route::post('/viewer/import', [ViewerController::class, 'import'])->name('viewer.import');
     });
-
 });

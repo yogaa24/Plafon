@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
+use App\Models\Customer;
 use App\Models\Submission;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class ViewerController extends Controller
@@ -84,8 +87,149 @@ class ViewerController extends Controller
         return back()->with('success', 'Status berhasil diubah menjadi Done.');
     }
 
+    /**
+     * Import customers from CSV file
+     */
     public function import(Request $request)
     {
-      
+        // Validasi file upload
+        $validator = Validator::make($request->all(), [
+            'csv_file' => 'required|file|mimes:csv,txt|max:5120', // max 5MB
+        ], [
+            'csv_file.required' => 'File CSV wajib diunggah',
+            'csv_file.mimes' => 'File harus berformat CSV',
+            'csv_file.max' => 'Ukuran file maksimal 5MB',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->with('error', $validator->errors()->first());
+        }
+
+        try {
+            $file = $request->file('csv_file');
+            $path = $file->getRealPath();
+            
+            // Baca file CSV
+            $csv = array_map('str_getcsv', file($path));
+            
+            if (empty($csv)) {
+                return redirect()->back()->with('error', 'File CSV kosong');
+            }
+
+            // Ambil header (baris pertama)
+            $header = array_map('trim', $csv[0]);
+            
+            // Validasi header yang diperlukan
+            $requiredHeaders = ['kode_customer', 'nama', 'nama_kios', 'alamat', 'plafon_aktif', 'sales_id'];
+            $missingHeaders = array_diff($requiredHeaders, $header);
+            
+            if (!empty($missingHeaders)) {
+                return redirect()->back()->with('error', 
+                    'Header CSV tidak lengkap. Header yang diperlukan: ' . implode(', ', $requiredHeaders));
+            }
+
+            // Hapus header dari array
+            array_shift($csv);
+
+            $successCount = 0;
+            $errorCount = 0;
+            $errors = [];
+            $skippedCount = 0;
+
+            DB::beginTransaction();
+
+            foreach ($csv as $rowIndex => $row) {
+                $lineNumber = $rowIndex + 2; // +2 karena index 0 adalah header dan row mulai dari 1
+                
+                // Skip baris kosong
+                if (empty(array_filter($row))) {
+                    $skippedCount++;
+                    continue;
+                }
+
+                // Gabungkan header dengan data
+                $data = array_combine($header, $row);
+
+                // Bersihkan data dari whitespace
+                $data = array_map('trim', $data);
+
+                // Validasi data per baris
+                $rowValidator = Validator::make($data, [
+                    'kode_customer' => 'required|string|max:255',
+                    'nama' => 'required|string|max:255',
+                    'nama_kios' => 'required|string|max:255',
+                    'alamat' => 'required|string',
+                    'plafon_aktif' => 'required|numeric|min:0',
+                    'sales_id' => 'required|integer|exists:users,id',
+                ]);
+
+                if ($rowValidator->fails()) {
+                    $errorCount++;
+                    $errors[] = "Baris {$lineNumber}: " . $rowValidator->errors()->first();
+                    continue;
+                }
+
+                // Cek apakah sales_id valid (harus role sales)
+                $sales = User::find($data['sales_id']);
+                if (!$sales || $sales->role !== 'sales') {
+                    $errorCount++;
+                    $errors[] = "Baris {$lineNumber}: Sales ID {$data['sales_id']} tidak valid atau bukan role sales";
+                    continue;
+                }
+
+                try {
+                    // Update atau Insert customer
+                    Customer::updateOrCreate(
+                        ['kode_customer' => $data['kode_customer']], // Kondisi pencarian
+                        [
+                            'sales_id' => $data['sales_id'],
+                            'nama' => $data['nama'],
+                            'nama_kios' => $data['nama_kios'],
+                            'alamat' => $data['alamat'],
+                            'plafon_aktif' => $data['plafon_aktif'],
+                            'status' => $data['status'] ?? 'active', // Default active jika tidak ada
+                        ]
+                    );
+                    
+                    $successCount++;
+                } catch (\Exception $e) {
+                    $errorCount++;
+                    $errors[] = "Baris {$lineNumber}: " . $e->getMessage();
+                }
+            }
+
+            DB::commit();
+
+            // Buat pesan response
+            $message = "Import selesai: {$successCount} data berhasil";
+            
+            if ($skippedCount > 0) {
+                $message .= ", {$skippedCount} baris kosong dilewati";
+            }
+            
+            if ($errorCount > 0) {
+                $message .= ", {$errorCount} data gagal";
+            }
+
+            // Jika ada error, tampilkan detail error (maksimal 10 error pertama)
+            if (!empty($errors)) {
+                $errorDetails = implode("\n", array_slice($errors, 0, 10));
+                if (count($errors) > 10) {
+                    $errorDetails .= "\n... dan " . (count($errors) - 10) . " error lainnya";
+                }
+                
+                return redirect()->back()
+                    ->with('warning', $message)
+                    ->with('error_details', $errorDetails);
+            }
+
+            return redirect()->back()->with('success', $message);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
     }
 }

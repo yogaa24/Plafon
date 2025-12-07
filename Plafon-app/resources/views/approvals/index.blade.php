@@ -92,22 +92,20 @@
                             @endif
                         </td>
                         <td class="px-4 py-3 whitespace-nowrap">
-                            @if($submission->plafon_type === 'rubah' && $submission->previousSubmission)
+                            @if($submission->plafon_type === 'rubah' && $submission->customer)
                                 <div class="flex flex-col items-center space-y-1">
                                     <!-- Plafon Lama -->
                                     <span class="text-xs text-gray-400 line-through">
-                                        {{ number_format($submission->previousSubmission->plafon, 0, ',', '.') }}
+                                        {{ number_format($submission->customer->plafon_aktif, 0, ',', '.') }}
                                     </span>
-
                                     <!-- Plafon Baru -->
-                                    <span class="text-sm font-semibold {{ $submission->plafon > $submission->previousSubmission->plafon ? 'text-green-600' : 'text-red-600' }}">
+                                    <span class="text-sm font-semibold {{ $submission->plafon > $submission->customer->plafon_aktif ? 'text-green-600' : 'text-red-600' }}">
                                         {{ number_format($submission->plafon, 0, ',', '.') }}
                                     </span>
-
                                 </div>
                             @else
                                 <span class="text-sm font-semibold text-gray-900">
-                                    Rp {{ number_format($submission->plafon, 0, ',', '.') }}
+                                    {{ number_format($submission->plafon, 0, ',', '.') }}
                                 </span>
                             @endif
                         </td>
@@ -279,10 +277,10 @@
                                 <div>
                                     <h4 class="font-semibold text-gray-700 mb-3 text-sm uppercase tracking-wide">Informasi Keuangan</h4>
                                     <div class="space-y-2">
-                                        @if($submission->plafon_type === 'rubah' && $submission->previousSubmission)
+                                        @if($submission->plafon_type === 'rubah' && $submission->customer)
                                         <div class="flex justify-between py-1 border-b border-gray-100">
                                             <span class="text-sm text-gray-600">Plafon Sebelumnya:</span>
-                                            <span class="text-sm text-gray-500">Rp {{ number_format($submission->previousSubmission->plafon, 0, ',', '.') }}</span>
+                                            <span class="text-sm text-gray-500">Rp {{ number_format($submission->customer->plafon_aktif, 0, ',', '.') }}</span>
                                         </div>
                                         @endif
                                         <div class="flex justify-between py-1 border-b border-gray-100">
