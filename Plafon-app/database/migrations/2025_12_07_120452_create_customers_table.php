@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('customers', function (Blueprint $table) {
             $table->id();
             $table->foreignId('sales_id')->constrained('users')->onDelete('cascade'); // Sales yang handle customer ini
+            $table->string('nama_sales')->nullable(); // Nama sales dari CSV untuk referensi/matching
             $table->string('kode_customer')->unique(); // Kode unik customer
             $table->string('nama');
             $table->string('nama_kios');
@@ -24,6 +25,7 @@ return new class extends Migration
             
             // Indexes
             $table->index('sales_id');
+            $table->index('nama_sales'); // Index untuk pencarian berdasarkan nama sales
             $table->index('nama');
             $table->index('nama_kios');
             $table->index('status');

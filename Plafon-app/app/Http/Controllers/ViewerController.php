@@ -94,7 +94,7 @@ class ViewerController extends Controller
     {
         // Validasi file upload
         $validator = Validator::make($request->all(), [
-            'csv_file' => 'required|file|mimes:csv,txt|max:5120', // max 5MB
+            'csv_file' => 'required|file|mimes:csv,txt|max:5120',
         ], [
             'csv_file.required' => 'File CSV wajib diunggah',
             'csv_file.mimes' => 'File harus berformat CSV',
@@ -111,23 +111,44 @@ class ViewerController extends Controller
             $file = $request->file('csv_file');
             $path = $file->getRealPath();
             
-            // Baca file CSV
+            // Baca CSV
             $csv = array_map('str_getcsv', file($path));
             
             if (empty($csv)) {
                 return redirect()->back()->with('error', 'File CSV kosong');
             }
 
-            // Ambil header (baris pertama)
-            $header = array_map('trim', $csv[0]);
+            // Mapping header CSV ke kolom database
+            $headerMapping = [
+                'kode' => 'kode_customer',
+                'kontak' => 'nama',
+                'perusahaan' => 'nama_kios',
+                'alamat1' => 'alamat',
+                'bataskredit' => 'plafon_aktif',
+                'kategori' => 'nama_sales',
+            ];
+
+            // Header CSV (trim whitespace)
+            $csvHeaders = array_map('trim', $csv[0]);
             
-            // Validasi header yang diperlukan
-            $requiredHeaders = ['kode_customer', 'nama', 'nama_kios', 'alamat', 'plafon_aktif', 'sales_id'];
-            $missingHeaders = array_diff($requiredHeaders, $header);
-            
-            if (!empty($missingHeaders)) {
+            // Buat mapping index: dari index CSV ke nama kolom database
+            $columnIndexMap = [];
+            foreach ($csvHeaders as $index => $csvHeader) {
+                $csvHeaderLower = strtolower($csvHeader);
+                
+                // Cek apakah header CSV ada di mapping
+                if (isset($headerMapping[$csvHeaderLower])) {
+                    $columnIndexMap[$index] = $headerMapping[$csvHeaderLower];
+                }
+                // Kolom yang tidak ada di mapping akan diabaikan
+            }
+
+            // Cek apakah ada minimal satu kolom yang ter-mapping
+            if (empty($columnIndexMap)) {
                 return redirect()->back()->with('error', 
-                    'Header CSV tidak lengkap. Header yang diperlukan: ' . implode(', ', $requiredHeaders));
+                    'Tidak ada kolom yang cocok dengan mapping. Pastikan CSV memiliki kolom: ' . 
+                    implode(', ', array_keys($headerMapping))
+                );
             }
 
             // Hapus header dari array
@@ -141,28 +162,43 @@ class ViewerController extends Controller
             DB::beginTransaction();
 
             foreach ($csv as $rowIndex => $row) {
-                $lineNumber = $rowIndex + 2; // +2 karena index 0 adalah header dan row mulai dari 1
-                
+                $lineNumber = $rowIndex + 2;
+
                 // Skip baris kosong
                 if (empty(array_filter($row))) {
                     $skippedCount++;
                     continue;
                 }
 
-                // Gabungkan header dengan data
-                $data = array_combine($header, $row);
+                // Map data dari CSV ke struktur database
+                $mappedData = [];
+                foreach ($columnIndexMap as $csvIndex => $dbColumn) {
+                    if (isset($row[$csvIndex])) {
+                        $mappedData[$dbColumn] = trim($row[$csvIndex]);
+                    }
+                }
 
-                // Bersihkan data dari whitespace
-                $data = array_map('trim', $data);
+                // Set status default ke 'active'
+                $mappedData['status'] = 'active';
 
-                // Validasi data per baris
-                $rowValidator = Validator::make($data, [
+                // Validasi kolom wajib
+                $requiredFields = ['kode_customer', 'nama', 'nama_kios', 'alamat'];
+                $missingFields = array_diff($requiredFields, array_keys($mappedData));
+
+                if (!empty($missingFields)) {
+                    $errorCount++;
+                    $errors[] = "Baris {$lineNumber}: Kolom wajib tidak ada - " . implode(', ', $missingFields);
+                    continue;
+                }
+
+                // Validasi data
+                $rowValidator = Validator::make($mappedData, [
                     'kode_customer' => 'required|string|max:255',
                     'nama' => 'required|string|max:255',
                     'nama_kios' => 'required|string|max:255',
                     'alamat' => 'required|string',
-                    'plafon_aktif' => 'required|numeric|min:0',
-                    'sales_id' => 'required|integer|exists:users,id',
+                    'plafon_aktif' => 'nullable|numeric|min:0',
+                    'nama_sales' => 'nullable|string|max:255',
                 ]);
 
                 if ($rowValidator->fails()) {
@@ -171,29 +207,51 @@ class ViewerController extends Controller
                     continue;
                 }
 
-                // Cek apakah sales_id valid (harus role sales)
-                $sales = User::find($data['sales_id']);
-                if (!$sales || $sales->role !== 'sales') {
-                    $errorCount++;
-                    $errors[] = "Baris {$lineNumber}: Sales ID {$data['sales_id']} tidak valid atau bukan role sales";
-                    continue;
-                }
-
                 try {
-                    // Update atau Insert customer
+                    // Cari sales_id berdasarkan nama_sales jika ada
+                    $salesId = null;
+                    if (!empty($mappedData['nama_sales'])) {
+                        $sales = User::where('role', 'sales')
+                            ->where('name', 'LIKE', '%' . $mappedData['nama_sales'] . '%')
+                            ->first();
+                        
+                        if ($sales) {
+                            $salesId = $sales->id;
+                        } else {
+                            $errorCount++;
+                            $errors[] = "Baris {$lineNumber}: Sales '{$mappedData['nama_sales']}' tidak ditemukan";
+                            continue;
+                        }
+                    } else {
+                        // Jika nama_sales tidak ada, cari sales pertama atau gunakan default
+                        $sales = User::where('role', 'sales')->first();
+                        if ($sales) {
+                            $salesId = $sales->id;
+                        } else {
+                            $errorCount++;
+                            $errors[] = "Baris {$lineNumber}: Tidak ada sales yang tersedia di sistem";
+                            continue;
+                        }
+                    }
+
+                    // Siapkan data untuk insert/update
+                    $customerData = [
+                        'sales_id' => $salesId,
+                        'nama' => $mappedData['nama'],
+                        'nama_kios' => $mappedData['nama_kios'],
+                        'alamat' => $mappedData['alamat'],
+                        'plafon_aktif' => $mappedData['plafon_aktif'] ?? 0,
+                        'nama_sales' => $mappedData['nama_sales'] ?? null,
+                        'status' => 'active',
+                    ];
+
                     Customer::updateOrCreate(
-                        ['kode_customer' => $data['kode_customer']], // Kondisi pencarian
-                        [
-                            'sales_id' => $data['sales_id'],
-                            'nama' => $data['nama'],
-                            'nama_kios' => $data['nama_kios'],
-                            'alamat' => $data['alamat'],
-                            'plafon_aktif' => $data['plafon_aktif'],
-                            'status' => $data['status'] ?? 'active', // Default active jika tidak ada
-                        ]
+                        ['kode_customer' => $mappedData['kode_customer']],
+                        $customerData
                     );
-                    
+
                     $successCount++;
+
                 } catch (\Exception $e) {
                     $errorCount++;
                     $errors[] = "Baris {$lineNumber}: " . $e->getMessage();
@@ -202,24 +260,22 @@ class ViewerController extends Controller
 
             DB::commit();
 
-            // Buat pesan response
             $message = "Import selesai: {$successCount} data berhasil";
-            
+
             if ($skippedCount > 0) {
                 $message .= ", {$skippedCount} baris kosong dilewati";
             }
-            
+
             if ($errorCount > 0) {
                 $message .= ", {$errorCount} data gagal";
             }
 
-            // Jika ada error, tampilkan detail error (maksimal 10 error pertama)
             if (!empty($errors)) {
                 $errorDetails = implode("\n", array_slice($errors, 0, 10));
                 if (count($errors) > 10) {
                     $errorDetails .= "\n... dan " . (count($errors) - 10) . " error lainnya";
                 }
-                
+
                 return redirect()->back()
                     ->with('warning', $message)
                     ->with('error_details', $errorDetails);
