@@ -21,6 +21,8 @@ class Submission extends Model
         'previous_submission_id',
         'jumlah_buka_faktur',
         'komitmen_pembayaran',
+        'keterangan',
+        'lampiran_path',
         'payment_type',
         'payment_data',
         'sales_id',
@@ -35,6 +37,23 @@ class Submission extends Model
         'created_at'   => 'datetime',
         'updated_at'   => 'datetime',
     ];
+
+    /**
+     * Boot method untuk handle delete event
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        // Event ketika submission akan dihapus
+        static::deleting(function ($submission) {
+            // Hapus file lampiran jika ada
+            if ($submission->lampiran_path) {
+                Storage::disk('public')->delete($submission->lampiran_path);
+            }
+        });
+    }
+
 
     /* ==========================
      |         RELASI

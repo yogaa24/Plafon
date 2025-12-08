@@ -6,6 +6,9 @@ use App\Models\Submission;
 use App\Models\Approval;
 use App\Models\User;
 use Illuminate\Http\Request;
+use App\Exports\Level3DoneExport;
+use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -151,6 +154,72 @@ class ApprovalController extends Controller
 
         return view('approvals.level3', compact('submissions', 'level3Approvers', 'statusFilter'));
     }
+
+    public function exportLevel3(Request $request)
+{
+    $user = Auth::user();
+    
+    // HANYA FAIRIN YANG BISA EXPORT
+    if ($user->approver_name !== 'Fairin') {
+        abort(403, 'Unauthorized: Hanya Fairin yang dapat mengekspor data.');
+    }
+
+    // Query pengajuan dengan status DONE (sama seperti filter done di level3)
+    $query = Submission::with(['sales', 'customer', 'previousSubmission'])
+        ->with(['approvals' => function($q) {
+            $q->where('level', 3)->with('approver');
+        }]);
+
+    // Filter DONE (sama seperti di level3)
+    $query->where(function($q) {
+        $q->where('status', 'done')
+          ->orWhere(function($subQ) {
+              $subQ->where('status', 'approved_3')
+                   ->whereHas('approvals', function($approvalQ) {
+                       $approvalQ->where('level', 3)
+                                ->where('status', 'approved');
+                   });
+          });
+    });
+
+    // Apply filter search, date jika ada
+    if ($request->filled('search')) {
+        $search = $request->search;
+        $query->where(function($q) use ($search) {
+            $q->where('kode', 'like', "%{$search}%")
+              ->orWhere('nama', 'like', "%{$search}%")
+              ->orWhere('nama_kios', 'like', "%{$search}%")
+              ->orWhereHas('sales', function($q) use ($search) {
+                  $q->where('name', 'like', "%{$search}%");
+              });
+        });
+    }
+
+    if ($request->filled('date_from')) {
+        $query->whereDate('created_at', '>=', $request->date_from);
+    }
+
+    if ($request->filled('date_to')) {
+        $query->whereDate('created_at', '<=', $request->date_to);
+    }
+
+    // EKSEKUSI QUERY → Ini yang penting!
+    $submissions = $query->orderBy('created_at', 'desc')->get();
+
+    // Get all level 3 approvers untuk kolom approval
+    $level3Approvers = User::where('is_level3_approver', true)
+        ->where('role', 'approver3')
+        ->orderBy('approver_name')
+        ->get();
+
+    // Export menggunakan Laravel Excel
+    $filename = 'Pengajuan_Done_Level3_' . date('Y-m-d_His') . '.xlsx';
+
+    return Excel::download(
+        new Level3DoneExport($submissions, $level3Approvers), 
+        $filename
+    );
+}
 
     public function process(Request $request, Submission $submission)
     {

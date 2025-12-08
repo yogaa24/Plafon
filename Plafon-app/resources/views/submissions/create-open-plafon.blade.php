@@ -17,7 +17,7 @@
 
     <!-- Form -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <form action="{{ route('submissions.store') }}" method="POST" id="openPlafonForm">
+        <form action="{{ route('submissions.store') }}" method="POST" id="openPlafonForm" enctype="multipart/form-data">
             @csrf
             
             <!-- Hidden fields -->
@@ -285,6 +285,37 @@
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
                 </div>
+
+                <!-- Keterangan -->
+                <div class="mt-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Keterangan (Opsional)
+                    </label>
+                    <textarea 
+                        name="keterangan" 
+                        rows="3" 
+                        class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Tambahkan keterangan jika diperlukan">{{ old('keterangan') }}</textarea>
+                </div>
+
+                <!-- Upload Lampiran -->
+                <div class="mt-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Lampiran Gambar (Opsional)
+                    </label>
+                    <input 
+                        type="file" 
+                        name="lampiran" 
+                        accept="image/*"
+                        class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        onchange="previewImage(event)">
+                    <p class="text-xs text-gray-500 mt-1">Format: JPG, PNG, JPEG (Max: 2MB)</p>
+                    
+                    <!-- Image Preview -->
+                    <div id="imagePreview" class="mt-3 hidden">
+                        <img id="preview" class="max-w-xs rounded-lg border border-gray-300" alt="Preview">
+                    </div>
+                </div>
             </div>
 
             <!-- Submit Buttons -->
@@ -318,6 +349,31 @@ function toggleOdInput(checkbox, inputId) {
     input.disabled = !checkbox.checked;
     if (!checkbox.checked) {
         input.value = '';
+    }
+}
+
+function previewImage(event) {
+    const file = event.target.files[0];
+    const preview = document.getElementById('preview');
+    const previewContainer = document.getElementById('imagePreview');
+    
+    if (file) {
+        // Validasi ukuran file (max 2MB)
+        if (file.size > 2 * 1024 * 1024) {
+            alert('Ukuran file maksimal 2MB');
+            event.target.value = '';
+            previewContainer.classList.add('hidden');
+            return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            preview.src = e.target.result;
+            previewContainer.classList.remove('hidden');
+        }
+        reader.readAsDataURL(file);
+    } else {
+        previewContainer.classList.add('hidden');
     }
 }
 

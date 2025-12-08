@@ -50,7 +50,7 @@ Route::middleware(['auth'])->group(function () {
     });
 
     // ------------------------
-    // APPROVER 1, 2, 3 (UMUM)
+    // APPROVER 1, 2, (UMUM)
     // ------------------------
     Route::middleware(['role:approver1,approver2,approver3'])->group(function () {
         Route::get('/approvals', [ApprovalController::class, 'index'])->name('approvals.index');
@@ -62,6 +62,9 @@ Route::middleware(['auth'])->group(function () {
     // APPROVER LEVEL 3 (KHUSUS)
     // ------------------------
     Route::get('/approvals/level3', [ApprovalController::class, 'level3'])->name('approvals.level3')->middleware('role:approver3');
+    Route::get('/approvals/level3/export', [ApprovalController::class, 'exportLevel3'])
+    ->name('approvals.level3.export')
+    ->middleware(['auth', 'role:approver3']);
 
     // ------------------------
     // VIEWER

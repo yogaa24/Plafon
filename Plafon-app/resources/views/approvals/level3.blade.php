@@ -9,6 +9,19 @@
         <h1 class="text-2xl font-bold text-gray-900">Dashboard Approval Level 3</h1>
         <p class="text-sm text-gray-600">Review dan proses pengajuan oleh Tim Approver Level 3</p>
         <p class="text-xs text-gray-500 mt-1">Approver: {{ auth()->user()->approver_name }}</p>
+        
+        <!-- TAMBAHKAN INI: Export Button untuk Fairin -->
+        @if(auth()->user()->approver_name === 'Fairin' && $statusFilter === 'done')
+        <div class="mt-3">
+            <a href="{{ route('approvals.level3.export', request()->query()) }}" 
+            class="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                Export Excel (Done)
+            </a>
+        </div>
+        @endif
     </div>
 
     <!-- Filter Status Tabs -->

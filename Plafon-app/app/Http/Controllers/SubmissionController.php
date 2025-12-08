@@ -6,6 +6,7 @@ use App\Models\Customer;
 use App\Models\Submission;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
 
 class SubmissionController extends Controller
@@ -131,6 +132,8 @@ class SubmissionController extends Controller
             'previous_submission_id' => 'nullable|exists:submissions,id',
             'komitmen_pembayaran' => 'required|string',
             'payment_type' => 'nullable|in:od,over',
+            'keterangan' => 'nullable|string|max:1000',
+            'lampiran' => 'nullable|image|mimes:jpeg,jpg,png|max:2048', // max 2MB
             'od_piutang_value' => 'nullable|numeric|min:0',
             'od_jml_over_value' => 'nullable|numeric|min:0',
             'od_30_value' => 'nullable|numeric|min:0',
@@ -217,6 +220,12 @@ class SubmissionController extends Controller
             }
         }
 
+        // Handle file upload
+        $lampiranPath = null;
+        if ($request->hasFile('lampiran')) {
+            $lampiranPath = $request->file('lampiran')->store('lampiran-submissions', 'public');
+        }
+
         // Create submission
         $submission = Submission::create([
             'kode' => $kode,
@@ -230,6 +239,8 @@ class SubmissionController extends Controller
             'previous_submission_id' => $previousSubmissionId,
             'jumlah_buka_faktur' => $jumlahBukaFaktur,
             'komitmen_pembayaran' => $validated['komitmen_pembayaran'],
+            'keterangan' => $validated['keterangan'] ?? null,
+            'lampiran_path' => $lampiranPath,
             'payment_type' => $request->payment_type,
             'payment_data' => $paymentData,
             'sales_id' => auth()->id(),
@@ -269,6 +280,9 @@ class SubmissionController extends Controller
         $baseRules = [
             'komitmen_pembayaran' => 'required|string',
             'payment_type' => 'nullable|in:od,over',
+            'keterangan' => 'nullable|string|max:1000',
+            'lampiran' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
+            'hapus_lampiran' => 'nullable|boolean',
             'od_piutang_value' => 'nullable|numeric|min:0',
             'od_jml_over_value' => 'nullable|numeric|min:0',
             'od_30_value' => 'nullable|numeric|min:0',
@@ -311,6 +325,23 @@ class SubmissionController extends Controller
         }
     
         $validated = $request->validate($baseRules);
+
+        // Handle file upload untuk update
+        if ($request->hasFile('lampiran')) {
+            // Hapus file lama jika ada
+            if ($submission->lampiran_path) {
+                Storage::disk('public')->delete($submission->lampiran_path);
+            }
+            $validated['lampiran_path'] = $request->file('lampiran')->store('lampiran-submissions', 'public');
+        }
+
+        // Handle hapus lampiran
+        if ($request->has('hapus_lampiran') && $request->hapus_lampiran) {
+            if ($submission->lampiran_path) {
+                Storage::disk('public')->delete($submission->lampiran_path);
+                $validated['lampiran_path'] = null;
+            }
+        }
     
         // Update payment data jika ada
         if ($request->payment_type) {

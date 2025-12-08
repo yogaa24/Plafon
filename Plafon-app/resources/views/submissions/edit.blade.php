@@ -21,7 +21,7 @@
             <p class="text-blue-100 text-sm mt-1">Perbarui informasi pengajuan penjualan</p>
         </div>
 
-        <form action="{{ route('submissions.update', $submission) }}" method="POST" class="p-6" id="editForm">
+        <form action="{{ route('submissions.update', $submission) }}" method="POST" class="p-6" id="editForm" enctype="multipart/form-data">
             @csrf
             @method('PUT')
 
@@ -349,6 +349,54 @@
                     </div>
                 </div>
                 @endif
+            </div>
+
+            <!-- Keterangan -->
+            <div class="mt-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Keterangan (Opsional)
+                </label>
+                <textarea 
+                    name="keterangan" 
+                    rows="3" 
+                    class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                    placeholder="Tambahkan keterangan jika diperlukan">{{ old('keterangan', $submission->keterangan) }}</textarea>
+            </div>
+
+            <!-- Upload Lampiran -->
+            <div class="mt-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Lampiran Gambar (Opsional)
+                </label>
+                
+                @if($submission->lampiran_path)
+                <div class="mb-3">
+                    <p class="text-sm text-gray-600 mb-2">Lampiran saat ini:</p>
+                    <div class="relative inline-block">
+                        <img src="{{ Storage::url($submission->lampiran_path) }}" 
+                            alt="Lampiran" 
+                            class="w-60 max-h-60 object-contain rounded-lg border border-gray-300">
+                        <label class="flex items-center mt-2 text-sm text-gray-600">
+                            <input type="checkbox" name="hapus_lampiran" value="1" class="mr-2">
+                            Hapus lampiran ini
+                        </label>
+                    </div>
+                </div>
+                @endif
+                
+                <input 
+                    type="file" 
+                    name="lampiran" 
+                    accept="image/*"
+                    class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                    onchange="previewImage(event)">
+                <p class="text-xs text-gray-500 mt-1">Format: JPG, PNG, JPEG (Max: 2MB) - Upload file baru untuk mengganti</p>
+                
+                <!-- Image Preview -->
+                <div id="imagePreview" class="mt-3 hidden">
+                    <p class="text-sm text-gray-600 mb-2">Preview gambar baru:</p>
+                    <img id="preview" class="w-60 max-h-60 object-contain rounded-lg border border-gray-300" alt="Preview">
+                </div>
             </div>
 
             <!-- Action Buttons -->
