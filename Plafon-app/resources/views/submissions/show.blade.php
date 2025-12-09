@@ -91,7 +91,7 @@
             @else
             <!-- Tampilan Normal Open Plafon -->
             <div>
-                <p class="text-sm text-gray-500 mb-1">Plafon</p>
+                <p class="text-sm text-gray-500 mb-1">Plafon Aktif</p>
                 <p class="text-lg font-bold text-indigo-600">Rp {{ number_format($submission->plafon, 0, ',', '.') }}</p>
             </div>
             @endif
