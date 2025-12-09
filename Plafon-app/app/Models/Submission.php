@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -11,7 +12,7 @@ class Submission extends Model
 
     protected $fillable = [
         'kode',
-        'customer_id', // RELASI BARU
+        'customer_id',
         'nama',
         'nama_kios',
         'alamat',
@@ -53,7 +54,6 @@ class Submission extends Model
             }
         });
     }
-
 
     /* ==========================
      |         RELASI

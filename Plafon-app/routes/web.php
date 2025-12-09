@@ -56,15 +56,16 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/approvals', [ApprovalController::class, 'index'])->name('approvals.index');
         // Route::get('/approvals/{submission}', [ApprovalController::class, 'show'])->name('approvals.show');
         Route::post('/approvals/{submission}/process', [ApprovalController::class, 'process'])->name('approvals.process');
+        // ------------------------
+        // APPROVER LEVEL 3 (KHUSUS)
+        // ------------------------
+        Route::get('/approvals/level3', [ApprovalController::class, 'level3'])->name('approvals.level3')->middleware('role:approver3');
+        Route::get('/approvals/level3/export', [ApprovalController::class, 'exportLevel3'])
+        ->name('approvals.level3.export')
+        ->middleware(['auth', 'role:approver3']);
+   
     });
 
-    // ------------------------
-    // APPROVER LEVEL 3 (KHUSUS)
-    // ------------------------
-    Route::get('/approvals/level3', [ApprovalController::class, 'level3'])->name('approvals.level3')->middleware('role:approver3');
-    Route::get('/approvals/level3/export', [ApprovalController::class, 'exportLevel3'])
-    ->name('approvals.level3.export')
-    ->middleware(['auth', 'role:approver3']);
 
     // ------------------------
     // VIEWER

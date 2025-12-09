@@ -93,8 +93,8 @@
                 <thead class="bg-gray-50">
                     <tr>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">No</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Kode</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Nama / Kios</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Nama</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Nama Kios</th>
                         <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Jenis</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Sales</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Plafon</th>
@@ -118,11 +118,10 @@
                             {{ $submissions->firstItem() + $index }}
                         </td>
                         <td class="px-4 py-3 whitespace-nowrap">
-                            <span class="text-sm font-medium text-gray-900">{{ $submission->kode }}</span>
+                            <div class="text-sm font-medium text-gray-900">{{ $submission->nama }}</div>
                         </td>
                         <td class="px-4 py-3">
-                            <div class="text-sm font-medium text-gray-900">{{ $submission->nama }}</div>
-                            <div class="text-xs text-gray-500">{{ $submission->nama_kios }}</div>
+                            <div class="text-sm font-medium text-gray-900">{{ $submission->nama_kios }}</div>
                         </td>
                         <td class="px-4 py-3 text-center whitespace-nowrap">
                             {!! $submission->plafon_type_badge !!}
