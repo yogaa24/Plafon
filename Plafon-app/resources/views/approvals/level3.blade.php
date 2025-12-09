@@ -7,7 +7,6 @@
     <!-- Header -->
     <div>
         <h1 class="text-2xl font-bold text-gray-900">Dashboard Approval Level 3</h1>
-        <p class="text-sm text-gray-600">Review dan proses pengajuan oleh Tim Approver Level 3</p>
         <p class="text-xs text-gray-500 mt-1">Approver: {{ auth()->user()->approver_name }}</p>
         
         <!-- TAMBAHKAN INI: Export Button untuk Fairin -->
@@ -278,6 +277,12 @@
                                             <span class="text-sm text-gray-600 block mb-1">Alamat:</span>
                                             <span class="text-sm text-gray-900">{{ $submission->alamat }}</span>
                                         </div>
+                                        @if($submission->keterangan)
+                                        <div class="py-1 border-t border-gray-100 mt-2 pt-2">
+                                            <span class="text-sm text-gray-600 block mb-1">Keterangan:</span>
+                                            <span class="text-sm text-gray-900 bg-gray-50 p-2 rounded">{{ $submission->keterangan }}</span>
+                                        </div>
+                                        @endif
                                     </div>
                                 </div>
                                 
@@ -308,6 +313,26 @@
                                             <span class="text-sm text-gray-600 block mb-1">Komitmen Pembayaran:</span>
                                             <span class="text-sm text-gray-900">{{ $submission->komitmen_pembayaran }}</span>
                                         </div>
+
+                                        <!-- Lampiran Gambar Section -->
+                                        @if($submission->lampiran_path)
+                                        <div class="col-span-1 md:col-span-2">
+                                            <h4 class="font-semibold text-gray-700 mb-3 text-sm uppercase tracking-wide">Lampiran</h4>
+                                            <div class=" rounded-lg p-4">
+                                                <a href="{{ Storage::url($submission->lampiran_path) }}" target="_blank" class="inline-block">
+                                                    <img src="{{ Storage::url($submission->lampiran_path) }}" 
+                                                        alt="Lampiran Pengajuan" 
+                                                        class="w-30 max-h-30 object-contain rounded-lg border-2 border-gray-300 hover:border-blue-500 transition cursor-pointer shadow hover:shadow-lg">
+                                                </a>
+                                                <p class="text-xs text-gray-500 mt-2">
+                                                    <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"/>
+                                                    </svg>
+                                                    Klik gambar untuk melihat ukuran penuh
+                                                </p>
+                                            </div>
+                                        </div>
+                                        @endif
                                         
                                         @php
                                             $approval2 = $submission->approvals->where('level', 2)->where('status', 'approved')->first();

@@ -471,7 +471,6 @@
             </table>
         </div>
 
-        <!-- Pagination -->
         <!-- Pagination - Hanya tampil jika ada data dan merupakan paginator -->
         @if($submissions->count() > 0)
                 @if(method_exists($submissions, 'hasPages') && $submissions->hasPages())
