@@ -10,19 +10,11 @@ class DatabaseSeeder extends Seeder
 {
     public function run()
     {
-        // Default Sales User
-        User::create([
-            'name' => 'Sales Demo',
-            'email' => 'sales@demo.com',
-            'password' => Hash::make('password'),
-            'role' => 'sales'
-        ]);
-
         // Approver 1
         User::create([
             'name' => 'Approver 1',
             'email' => 'approver1@demo.com',
-            'password' => Hash::make('password'),
+            'password' => Hash::make('karisma'),
             'role' => 'approver1'
         ]);
 
@@ -30,23 +22,15 @@ class DatabaseSeeder extends Seeder
         User::create([
             'name' => 'Approver 2',
             'email' => 'approver2@demo.com',
-            'password' => Hash::make('password'),
+            'password' => Hash::make('karisma'),
             'role' => 'approver2'
-        ]);
-
-        // Approver 3
-        User::create([
-            'name' => 'Approver 3',
-            'email' => 'approver3@demo.com',
-            'password' => Hash::make('password'),
-            'role' => 'approver3'
         ]);
 
         // Viewer
         User::create([
-            'name' => 'Viewer Demo',
-            'email' => 'viewer@demo.com',
-            'password' => Hash::make('password'),
+            'name' => 'Nila',
+            'email' => 'nila@gmail.com',
+            'password' => Hash::make('karisma'),
             'role' => 'viewer'
         ]);
 
@@ -66,14 +50,14 @@ class DatabaseSeeder extends Seeder
         ];
 
         foreach ($salesList as $name) {
-            $email = strtolower(str_replace(' ', '', $name)) . '@demo.com';
+            $email = strtolower(str_replace(' ', '', $name)) . '@gmail.com';
 
             User::updateOrCreate(
                 ['email' => $email],
                 [
                     'name' => $name,
                     'role' => 'sales',
-                    'password' => Hash::make('password'),
+                    'password' => Hash::make('karisma'),
                     'is_level3_approver' => false,
                     'approver_name' => null,
                 ]

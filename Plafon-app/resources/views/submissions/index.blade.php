@@ -74,7 +74,7 @@
             <svg class="w-6 h-6 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
             </svg>
-            <h3 class="text-lg font-bold text-green-900">Daftar Customer</h3>
+            <h3 class="text-lg font-bold text-black">Daftar Customer</h3>
             <span class="ml-auto text-sm text-green-700">Total: {{ $customers->count() }} customer</span>
         </div>
         
@@ -82,19 +82,19 @@
             <table class="min-w-full divide-y divide-black">
                 <thead class="bg-white">
                     <tr>
-                        <th class="px-4 py-3 text-center text-xs font-semibold text-green-800 uppercase tracking-wider w-16">No</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-green-800 uppercase tracking-wider">Kode</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-green-800 uppercase tracking-wider">Nama</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-green-800 uppercase tracking-wider">Nama Kios</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-green-800 uppercase tracking-wider">Alamat</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-green-800 uppercase tracking-wider">Plafon Aktif</th>
-                        <th class="px-4 py-3 text-center text-xs font-semibold text-green-800 uppercase tracking-wider">Status Pengajuan</th>
-                        <th class="px-4 py-3 text-center text-xs font-semibold text-green-800 uppercase tracking-wider">Aksi</th>
+                        <th class="px-4 py-3 text-center text-xs font-semibold text-black uppercase tracking-wider w-16">No</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-black uppercase tracking-wider">Kode</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-black uppercase tracking-wider">Nama</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-black uppercase tracking-wider">Nama Kios</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-black uppercase tracking-wider">Alamat</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-black uppercase tracking-wider">Plafon Aktif</th>
+                        <th class="px-4 py-3 text-center text-xs font-semibold text-black uppercase tracking-wider">Status Pengajuan</th>
+                        <th class="px-4 py-3 text-center text-xs font-semibold text-black uppercase tracking-wider">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
                     @foreach($customers as $index => $customer)
-                    <tr class="hover:bg-green-50 transition">
+                    <tr class="hover:bg-blue-50 transition">
                         <td class="px-4 py-3 text-center text-sm text-gray-900">{{ $index + 1 }}</td>
                         <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ $customer->kode_customer }}</td>
                         <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ $customer->nama }}</td>

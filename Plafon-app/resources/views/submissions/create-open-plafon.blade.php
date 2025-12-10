@@ -59,7 +59,7 @@
                     <!-- Plafon Saat Ini (Read Only) -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Plafon saat ini
+                            Plafon Aktif
                         </label>
                         <div class="relative">
                             <span class="absolute left-4 top-3 text-gray-500">Rp</span>
