@@ -53,7 +53,7 @@
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Nama</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Nama Kios</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Sales</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Jumlah Buka (Rp.)</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Jumlah Value Faktur</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Plafon</th>
                         <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Jenis</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Tanggal</th>
@@ -295,7 +295,7 @@
                                         </div>
                                         @if($submission->plafon_type === 'open')
                                         <div class="flex justify-between py-1 border-b border-gray-100">
-                                            <span class="text-sm text-gray-600">Jumlah Buka (Rp.)</span>
+                                            <span class="text-sm text-gray-600">Jumlah Value Faktur</span>
                                             <span class="text-sm font-medium text-gray-900">{{ number_format($submission->jumlah_buka_faktur, 0, ',', '.') }}</span>
                                         </div>
                                         @endif
@@ -306,6 +306,10 @@
                                         <div class="py-1">
                                             <span class="text-sm text-gray-600 block mb-1">Komitmen Pembayaran:</span>
                                             <span class="text-sm text-gray-900">{{ $submission->komitmen_pembayaran }}</span>
+                                        </div>
+                                        <div class="flex justify-between py-1">
+                                            <span class="text-sm text-gray-600">Dibuat:</span>
+                                            <span class="text-sm text-gray-500">{{ $submission->created_at->format('d M Y, H:i') }}</span>
                                         </div>
 
                                         <!-- Lampiran Gambar Section -->

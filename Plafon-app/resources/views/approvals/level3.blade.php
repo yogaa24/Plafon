@@ -312,6 +312,10 @@
                                             <span class="text-sm text-gray-600 block mb-1">Komitmen Pembayaran:</span>
                                             <span class="text-sm text-gray-900">{{ $submission->komitmen_pembayaran }}</span>
                                         </div>
+                                        <div class="flex justify-between py-1">
+                                            <span class="text-sm text-gray-600">Dibuat:</span>
+                                            <span class="text-sm text-gray-500">{{ $submission->created_at->format('d M Y, H:i') }}</span>
+                                         </div>
 
                                         <!-- Lampiran Gambar Section -->
                                         @if($submission->lampiran_path)
