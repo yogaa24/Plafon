@@ -138,38 +138,25 @@
                         </td>
                         <td class="px-4 py-3 text-center whitespace-nowrap">
                             <div class="flex items-center justify-center gap-2">
-                                <!-- Approve Button -->
-                                @if($level == 2)
-                                    @if($submission->plafon_type === 'open')
-                                        <!-- Open Plafon: needs modal for payment data -->
-                                        <button onclick="openApprovalModal({{ $submission->id }}, 'approved')" class="px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-700 transition" title="Setujui">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                                            </svg>
-                                        </button>
-                                    @else
-                                        <!-- Rubah Plafon: direct approve without payment data -->
-                                        <form action="{{ route('approvals.process', $submission) }}" method="POST" class="inline" onsubmit="return confirm('Yakin ingin menyetujui pengajuan ini?')">
-                                            @csrf
-                                            <input type="hidden" name="action" value="approved">
-                                            <button type="submit" class="px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-700 transition" title="Setujui">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                                                </svg>
-                                            </button>
-                                        </form>
-                                    @endif
+                                <!-- Approve Button - SEMUA LEVEL PAKAI MODAL -->
+                                @if($level == 2 && $submission->plafon_type === 'open')
+                                    <!-- Level 2 Open Plafon: Modal dengan payment data -->
+                                    <button onclick="openApprovalModal({{ $submission->id }}, 'approved')" 
+                                            class="px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-700 transition" 
+                                            title="Setujui">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                        </svg>
+                                    </button>
                                 @else
-                                    <!-- Level 1 & 3 direct submit -->
-                                    <form action="{{ route('approvals.process', $submission) }}" method="POST" class="inline" onsubmit="return confirm('Yakin ingin menyetujui pengajuan ini?')">
-                                        @csrf
-                                        <input type="hidden" name="action" value="approved">
-                                        <button type="submit" class="px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-700 transition" title="Setujui">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                                            </svg>
-                                        </button>
-                                    </form>
+                                    <!-- Semua level lainnya: Modal dengan notes wajib -->
+                                    <button onclick="openApprovalModalSimple({{ $submission->id }}, 'approved')" 
+                                            class="px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-700 transition" 
+                                            title="Setujui">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                        </svg>
+                                    </button>
                                 @endif
                                 
                                 <!-- Reject Button -->
@@ -180,11 +167,24 @@
                                 </button>
                                 
                                 <!-- Revision Button -->
-                                <button onclick="openApprovalModal({{ $submission->id }}, 'revision')" class="px-3 py-1.5 bg-orange-600 text-white text-xs font-medium rounded hover:bg-orange-700 transition" title="Minta Revisi">
+                                <button onclick="openApprovalModal({{ $submission->id }}, 'revision')" 
+                                        class="px-3 py-1.5 bg-orange-600 text-white text-xs font-medium rounded hover:bg-orange-700 transition" 
+                                        title="Minta Revisi">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
                                     </svg>
                                 </button>
+
+                                <!-- Edit Komitmen Button (hanya Level 1, 2, 3) -->
+                                @if(in_array($level, [1, 2, 3]))
+                                <button onclick="openEditCommitmentModal({{ $submission->id }}, '{{ addslashes($submission->komitmen_pembayaran) }}')" 
+                                        class="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 transition" 
+                                        title="Edit Komitmen">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                    </svg>
+                                </button>
+                                @endif
                             </div>
                         </td>
                     </tr>
@@ -433,7 +433,8 @@
         <div class="mt-3">
             <h3 id="modalTitle" class="text-lg font-semibold text-gray-900 mb-4"></h3>
             
-            <form id="approvalForm" method="POST">
+            <!-- TAMBAHKAN method="POST" di sini -->
+            <form id="approvalForm" method="POST" enctype="multipart/form-data">
                 @csrf
                 <input type="hidden" name="action" id="actionInput" value="">
                 <input type="hidden" name="jenis_pembayaran" id="jenisPembayaranInput" value="">
@@ -474,6 +475,21 @@
                                 <input type="number" name="jml_od_90" id="jmlOd90Input" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="0" step="0.01">
                             </div>
                         </div>
+
+                        <!-- Upload Lampiran -->
+                        <div class="mt-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Upload Lampiran <span class="text-red-500">*</span>
+                            </label>
+                            <input type="file" 
+                                   name="lampiran" 
+                                   id="lampiranInput" 
+                                   accept="image/jpeg,image/jpg,image/png" 
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                   onchange="previewImage(event)">
+                                   
+                            <p class="text-xs text-gray-500 mt-1">Format: JPG, JPEG, PNG. Maksimal 2MB</p>
+                        </div>
                         
                         <div class="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
                             <strong>💡 Info:</strong> Data di atas adalah data yang diisi oleh sales. Anda dapat memverifikasi dan mengubahnya jika diperlukan.
@@ -485,7 +501,10 @@
                     <label class="block text-sm font-medium text-gray-700 mb-2">
                         Catatan <span id="noteRequired" class="text-red-500">*</span>
                     </label>
-                    <textarea id="approvalNote" name="note" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Jelaskan alasan Anda..."></textarea>
+                    <textarea id="approvalNote" name="note" rows="4" required
+                              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" 
+                              placeholder="Catatan wajib diisi untuk setiap tindakan..."></textarea>
+                    <p class="text-xs text-gray-500 mt-1">* Catatan wajib diisi untuk approve maupun reject</p>
                 </div>
 
                 <div class="flex gap-3">
@@ -494,6 +513,39 @@
                     </button>
                     <button type="submit" id="submitButton" class="flex-1 px-4 py-2 text-white rounded-lg transition">
                         Konfirmasi
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Komitmen Modal -->
+<div id="editCommitmentModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-lg bg-white">
+        <div class="mt-3">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Edit Komitmen Pembayaran</h3>
+            
+            <form id="editCommitmentForm" method="POST">
+                @csrf
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Komitmen Pembayaran <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" id="komitmenInput" name="komitmen_pembayaran" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                           placeholder="Contoh: 30 hari">
+                </div>
+
+                <div class="flex gap-3">
+                    <button type="button" onclick="closeEditCommitmentModal()" 
+                            class="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
+                        Batal
+                    </button>
+                    <button type="submit" 
+                            class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition">
+                        Simpan Perubahan
                     </button>
                 </div>
             </form>
@@ -531,6 +583,7 @@ function toggleDetail(id) {
     }
 }
 
+// Modal untuk Level 2 Open Plafon (dengan payment data)
 function openApprovalModal(submissionId, action) {
     const modal = document.getElementById('approvalModal');
     const modalTitle = document.getElementById('modalTitle');
@@ -588,10 +641,16 @@ function openApprovalModal(submissionId, action) {
             document.getElementById(id).required = true;
         });
         
+        // Make lampiran required for Level 2
+        const lampiranInput = document.getElementById('lampiranInput');
+        if (lampiranInput) {
+            lampiranInput.required = true;
+        }
+        
         modalTitle.textContent = 'Setujui Pengajuan - Verifikasi Data (Open Plafon)';
-        approvalNote.placeholder = 'Catatan tambahan (opsional)...';
-        approvalNote.required = false;
-        noteRequired.classList.add('hidden');
+        approvalNote.placeholder = 'Catatan tambahan (wajib diisi)...';
+        approvalNote.required = true;
+        noteRequired.classList.remove('hidden');
         submitButton.className = 'flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition';
         submitButton.textContent = 'Setujui';
     } else {
@@ -599,8 +658,15 @@ function openApprovalModal(submissionId, action) {
         
         // Remove level 2 fields required
         ['piutangInput', 'jmlOverInput', 'jmlOd30Input', 'jmlOd60Input', 'jmlOd90Input'].forEach(id => {
-            document.getElementById(id).required = false;
+            const elem = document.getElementById(id);
+            if (elem) elem.required = false;
         });
+        
+        // Remove lampiran required for non-Level 2
+        const lampiranInput = document.getElementById('lampiranInput');
+        if (lampiranInput) {
+            lampiranInput.required = false;
+        }
         
         // Configure modal for reject/revision
         if (action === 'rejected') {
@@ -626,8 +692,66 @@ function openApprovalModal(submissionId, action) {
     modal.classList.remove('hidden');
 }
 
+// Modal SIMPLE untuk Level 1, Level 2 Rubah Plafon (hanya notes)
+function openApprovalModalSimple(submissionId, action) {
+    const modal = document.getElementById('approvalModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const approvalNote = document.getElementById('approvalNote');
+    const noteRequired = document.getElementById('noteRequired');
+    const submitButton = document.getElementById('submitButton');
+    const form = document.getElementById('approvalForm');
+    const actionInput = document.getElementById('actionInput');
+    const level2Fields = document.getElementById('level2Fields');
+    
+    // Hide level 2 fields
+    level2Fields.classList.add('hidden');
+    
+    // Set form action
+    form.action = `/approvals/${submissionId}/process`;
+    actionInput.value = action;
+    
+    // Remove lampiran required
+    const lampiranInput = document.getElementById('lampiranInput');
+    if (lampiranInput) {
+        lampiranInput.required = false;
+    }
+    
+    // Configure for approve
+    modalTitle.textContent = 'Setujui Pengajuan';
+    approvalNote.placeholder = 'Jelaskan alasan persetujuan Anda...';
+    approvalNote.required = true;
+    noteRequired.classList.remove('hidden');
+    submitButton.className = 'flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition';
+    submitButton.textContent = 'Setujui';
+    
+    // Clear note
+    approvalNote.value = '';
+    
+    modal.classList.remove('hidden');
+}
+
 function closeApprovalModal() {
     const modal = document.getElementById('approvalModal');
+    modal.classList.add('hidden');
+    
+    // Reset form
+    const form = document.getElementById('approvalForm');
+    form.reset();
+}
+
+function openEditCommitmentModal(submissionId, currentCommitment) {
+    const modal = document.getElementById('editCommitmentModal');
+    const form = document.getElementById('editCommitmentForm');
+    const input = document.getElementById('komitmenInput');
+    
+    form.action = `/approvals/${submissionId}/update-commitment`;
+    input.value = currentCommitment;
+    
+    modal.classList.remove('hidden');
+}
+
+function closeEditCommitmentModal() {
+    const modal = document.getElementById('editCommitmentModal');
     modal.classList.add('hidden');
 }
 
@@ -635,6 +759,12 @@ function closeApprovalModal() {
 document.getElementById('approvalModal')?.addEventListener('click', function(e) {
     if (e.target === this) {
         closeApprovalModal();
+    }
+});
+
+document.getElementById('editCommitmentModal')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeEditCommitmentModal();
     }
 });
 

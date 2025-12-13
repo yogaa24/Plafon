@@ -10,33 +10,99 @@ class DatabaseSeeder extends Seeder
 {
     public function run()
     {
+        // ==========================================
+        // APPROVERS
+        // ==========================================
+        
         // Approver 1
-        User::create([
-            'name' => 'Approver 1',
-            'email' => 'approver1@demo.com',
-            'password' => Hash::make('karisma'),
-            'role' => 'approver1'
-        ]);
+        User::updateOrCreate(
+            ['email' => 'approver1@demo.com'],
+            [
+                'name' => 'Approver Level 1',
+                'password' => Hash::make('karisma'),
+                'role' => 'approver1',
+                'is_level3_approver' => false,
+                'approver_name' => null,
+            ]
+        );
 
         // Approver 2
-        User::create([
-            'name' => 'Approver 2',
-            'email' => 'approver2@demo.com',
-            'password' => Hash::make('karisma'),
-            'role' => 'approver2'
-        ]);
+        User::updateOrCreate(
+            ['email' => 'approver2@demo.com'],
+            [
+                'name' => 'Approver Level 2',
+                'password' => Hash::make('karisma'),
+                'role' => 'approver2',
+                'is_level3_approver' => false,
+                'approver_name' => null,
+            ]
+        );
 
-        // Viewer
-        User::create([
-            'name' => 'Nila',
-            'email' => 'nila@gmail.com',
-            'password' => Hash::make('karisma'),
-            'role' => 'viewer'
-        ]);
+        // Approver 3
+        User::updateOrCreate(
+            ['email' => 'approver3@demo.com'],
+            [
+                'name' => 'Approver Level 3',
+                'password' => Hash::make('karisma'),
+                'role' => 'approver3',
+                'is_level3_approver' => false,
+                'approver_name' => null,
+            ]
+        );
 
-        /**
-         * Tambahan Daftar Sales Baru
-         */
+        // Approver 4
+        User::updateOrCreate(
+            ['email' => 'approver4@demo.com'],
+            [
+                'name' => 'Approver Level 4',
+                'password' => Hash::make('karisma'),
+                'role' => 'approver4',
+                'is_level3_approver' => false,
+                'approver_name' => null,
+            ]
+        );
+
+        // Approver 5
+        User::updateOrCreate(
+            ['email' => 'approver5@demo.com'],
+            [
+                'name' => 'Approver Level 5',
+                'password' => Hash::make('karisma'),
+                'role' => 'approver5',
+                'is_level3_approver' => false,
+                'approver_name' => null,
+            ]
+        );
+
+        // Approver 6
+        User::updateOrCreate(
+            ['email' => 'approver6@demo.com'],
+            [
+                'name' => 'Approver Level 6',
+                'password' => Hash::make('karisma'),
+                'role' => 'approver6',
+                'is_level3_approver' => false,
+                'approver_name' => null,
+            ]
+        );
+
+        // ==========================================
+        // VIEWER
+        // ==========================================
+        User::updateOrCreate(
+            ['email' => 'nila@gmail.com'],
+            [
+                'name' => 'Nila',
+                'password' => Hash::make('karisma'),
+                'role' => 'viewer',
+                'is_level3_approver' => false,
+                'approver_name' => null,
+            ]
+        );
+
+        // ==========================================
+        // SALES
+        // ==========================================
         $salesList = [
             'Zakia',
             'Reni',
@@ -63,5 +129,7 @@ class DatabaseSeeder extends Seeder
                 ]
             );
         }
+
+        $this->command->info('✅ Seeder selesai! Approver 1-6, Viewer, dan Sales berhasil dibuat.');
     }
 }

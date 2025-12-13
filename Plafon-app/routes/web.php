@@ -21,15 +21,15 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/', function () {
         $role = Auth::user()->role;
 
-        if ($role == 'sales') {
-            return redirect()->route('submissions.index');
-        } elseif ($role == 'viewer') {
-            return redirect()->route('viewer.index');
-        } elseif ($role == 'approver3') {
-            return redirect()->route('approvals.level3');
-        } else {
-            return redirect()->route('approvals.index');
-        }
+        return match($role) {
+            'sales' => redirect()->route('submissions.index'),
+            'viewer' => redirect()->route('viewer.index'),
+            'approver3' => redirect()->route('approvals.level3'),
+            'approver4' => redirect()->route('approvals.level4'),
+            'approver5' => redirect()->route('approvals.level5'),
+            'approver6' => redirect()->route('approvals.level6'),
+            default => redirect()->route('approvals.index'),
+        };
     })->name('home');
 
     // ------------------------
@@ -50,22 +50,45 @@ Route::middleware(['auth'])->group(function () {
     });
 
     // ------------------------
-    // APPROVER 1, 2, (UMUM)
+    // APPROVERS (ALL LEVELS)
     // ------------------------
-    Route::middleware(['role:approver1,approver2,approver3'])->group(function () {
+    Route::middleware(['role:approver1,approver2,approver3,approver4,approver5,approver6'])->group(function () {
+        // General approval index (untuk Level 1 & 2)
         Route::get('/approvals', [ApprovalController::class, 'index'])->name('approvals.index');
-        // Route::get('/approvals/{submission}', [ApprovalController::class, 'show'])->name('approvals.show');
+        
+        // Process approval (semua level)
         Route::post('/approvals/{submission}/process', [ApprovalController::class, 'process'])->name('approvals.process');
-        // ------------------------
-        // APPROVER LEVEL 3 (KHUSUS)
-        // ------------------------
-        Route::get('/approvals/level3', [ApprovalController::class, 'level3'])->name('approvals.level3')->middleware('role:approver3');
+        
+        // Update commitment (Level 1-3 saja)
+        Route::post('/approvals/{submission}/update-commitment', [ApprovalController::class, 'updateCommitment'])
+            ->name('approvals.updateCommitment')
+            ->middleware('role:approver1,approver2,approver3');
+        
+        // Level 3 Dashboard
+        Route::get('/approvals/level3', [ApprovalController::class, 'level3'])
+            ->name('approvals.level3')
+            ->middleware('role:approver3');
+        
+        // Level 3 Export
         Route::get('/approvals/level3/export', [ApprovalController::class, 'exportLevel3'])
-        ->name('approvals.level3.export')
-        ->middleware(['auth', 'role:approver3']);
-   
+            ->name('approvals.level3.export')
+            ->middleware('role:approver3');
+        
+        // Level 4 Dashboard
+        Route::get('/approvals/level4', [ApprovalController::class, 'level4'])
+            ->name('approvals.level4')
+            ->middleware('role:approver4');
+        
+        // Level 5 Dashboard
+        Route::get('/approvals/level5', [ApprovalController::class, 'level5'])
+            ->name('approvals.level5')
+            ->middleware('role:approver5');
+        
+        // Level 6 Dashboard
+        Route::get('/approvals/level6', [ApprovalController::class, 'level6'])
+            ->name('approvals.level6')
+            ->middleware('role:approver6');
     });
-
 
     // ------------------------
     // VIEWER

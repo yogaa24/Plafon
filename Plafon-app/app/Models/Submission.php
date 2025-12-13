@@ -35,6 +35,7 @@ class Submission extends Model
 
     protected $casts = [
         'payment_data' => 'array',
+        'current_level' => 'integer',
         'created_at'   => 'datetime',
         'updated_at'   => 'datetime',
     ];

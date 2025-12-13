@@ -2,14 +2,13 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    use Notifiable;
+    use Notifiable, HasFactory;
 
     protected $fillable = [
         'name',
@@ -49,7 +48,7 @@ class User extends Authenticatable
 
     public function isApprover()
     {
-        return in_array($this->role, ['approver1', 'approver2', 'approver3']);
+        return in_array($this->role, ['approver1', 'approver2', 'approver3', 'approver4', 'approver5', 'approver6']);
     }
 
     public function isLevel3Approver()
@@ -63,7 +62,15 @@ class User extends Authenticatable
             'approver1' => 1,
             'approver2' => 2,
             'approver3' => 3,
+            'approver4' => 4,
+            'approver5' => 5,
+            'approver6' => 6,
             default => 0
         };
+    }
+
+    public function isViewer()
+    {
+        return $this->role === 'viewer';
     }
 }

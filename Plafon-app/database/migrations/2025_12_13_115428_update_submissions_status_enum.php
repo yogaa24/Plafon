@@ -1,0 +1,50 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
+
+return new class extends Migration
+{
+    public function up()
+    {
+        // Update enum status untuk menambahkan status baru
+        DB::statement("ALTER TABLE submissions MODIFY COLUMN status ENUM(
+            'pending',
+            'approved_1',
+            'approved_2',
+            'approved_3',
+            'pending_approver4',
+            'pending_approver5',
+            'pending_approver6',
+            'pending_viewer',
+            'rejected',
+            'revision',
+            'done'
+        ) NOT NULL DEFAULT 'pending'");
+
+        // Update current_level - ubah ke integer atau nullable
+        // Opsi 1: Ubah ke integer
+        DB::statement("ALTER TABLE submissions MODIFY COLUMN current_level INT NULL");
+        
+        // Atau Opsi 2: Tetap integer tapi nullable dengan default NULL
+        // Schema::table('submissions', function (Blueprint $table) {
+        //     $table->integer('current_level')->nullable()->default(1)->change();
+        // });
+    }
+
+    public function down()
+    {
+        // Kembalikan ke enum lama
+        DB::statement("ALTER TABLE submissions MODIFY COLUMN status ENUM(
+            'pending',
+            'approved_1',
+            'approved_2',
+            'approved_3',
+            'rejected',
+            'revision',
+            'done'
+        ) NOT NULL DEFAULT 'pending'");
+    }
+};

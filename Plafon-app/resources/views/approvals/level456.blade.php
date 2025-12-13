@@ -1,32 +1,18 @@
 @extends('layouts.app')
 
-@section('title', 'Dashboard Approval Level 3')
+@section('title', 'Dashboard Approval Level ' . $level)
 
 @section('content')
 <div class="space-y-4">
     <!-- Header -->
-    <div class="flex justify-between items-center">
-        <div>
-            <h1 class="text-2xl font-bold text-gray-900">Dashboard Approval Level 3</h1>
-            <p class="text-sm text-gray-600">Review dan proses pengajuan yang menunggu approval Anda</p>
-        </div>
-        
-        <!-- Export Button (hanya untuk Approver Level 3) -->
-        @if(auth()->user()->role === 'approver3')
-            <a href="{{ route('approvals.level3.export', request()->query()) }}"
-            class="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                </svg>
-                Export Excel
-            </a>
-        @endif
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">Dashboard Approval Level {{ $level }}</h1>
+        <p class="text-sm text-gray-600">Review dan proses pengajuan yang menunggu approval Anda</p>
     </div>
 
     <!-- Filter & Search -->
     <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
-        <form method="GET" action="{{ route('approvals.level3') }}" class="space-y-4">
+        <form method="GET" action="{{ route('approvals.level' . $level) }}" class="space-y-4">
             <div class="flex flex-wrap gap-3">
                 <!-- Search -->
                 <div class="flex-1 min-w-[250px]">
@@ -52,7 +38,7 @@
                     <button type="submit" class="px-5 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition">
                         Filter
                     </button>
-                    <a href="{{ route('approvals.level3') }}" 
+                    <a href="{{ route('approvals.level' . $level) }}" 
                        class="px-5 py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition">
                         Reset
                     </a>
@@ -134,12 +120,13 @@
                         </td>
                         <td class="px-4 py-3">
                             <div class="flex items-center justify-center space-x-1">
-                                @for($i = 1; $i < 3; $i++)
+                                @for($i = 1; $i < $level; $i++)
                                     @php
                                         $approval = $submission->approvals->where('level', $i)->first();
                                     @endphp
                                     <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold
                                         @if($approval && $approval->status == 'approved') bg-green-500 text-white
+                                        @elseif($approval && $approval->status == 'rejected') bg-red-500 text-white
                                         @else bg-gray-200 text-gray-500
                                         @endif">
                                         {{ $i }}
@@ -147,7 +134,7 @@
                                 @endfor
                                 <!-- Current Level -->
                                 <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold bg-yellow-500 text-white">
-                                    3
+                                    {{ $level }}
                                 </div>
                             </div>
                         </td>
@@ -168,15 +155,6 @@
                                         title="Tolak">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                                    </svg>
-                                </button>
-                                
-                                <!-- Edit Komitmen Button -->
-                                <button onclick="openEditCommitmentModal({{ $submission->id }}, '{{ addslashes($submission->komitmen_pembayaran) }}')" 
-                                        class="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 transition" 
-                                        title="Edit Komitmen">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                     </svg>
                                 </button>
                             </div>
@@ -367,12 +345,10 @@
                     <tr>
                         <td colspan="10" class="px-4 py-12 text-center">
                             <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586 a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                             </svg>
                             <h3 class="mt-2 text-sm font-medium text-gray-900">Tidak ada pengajuan</h3>
-                            <p class="mt-1 text-sm text-gray-500">
-                                {{ request('search') ? 'Tidak ada hasil yang cocok dengan filter' : 'Belum ada pengajuan yang menunggu approval Anda' }}
-                            </p>
+                            <p class="mt-1 text-sm text-gray-500">Belum ada pengajuan yang menunggu approval Anda</p>
                         </td>
                     </tr>
                 @endforelse
@@ -429,39 +405,6 @@
     </div>
 </div>
 
-<!-- Edit Komitmen Modal -->
-<div id="editCommitmentModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-    <div class="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-lg bg-white">
-        <div class="mt-3">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">Edit Komitmen Pembayaran</h3>
-            
-            <form id="editCommitmentForm" method="POST">
-                @csrf
-                
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        Komitmen Pembayaran <span class="text-red-500">*</span>
-                    </label>
-                    <input type="text" id="komitmenInput" name="komitmen_pembayaran" required
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                           placeholder="Contoh: 30 hari">
-                </div>
-
-                <div class="flex gap-3">
-                    <button type="button" onclick="closeEditCommitmentModal()" 
-                            class="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
-                        Batal
-                    </button>
-                    <button type="submit" 
-                            class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition">
-                        Simpan Perubahan
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
 @if(session('success'))
 <div id="success-alert" class="fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
     {{ session('success') }}
@@ -475,8 +418,7 @@
 @endif
 
 <script>
-const currentLevel = 3;
-const submissionsData = @json($submissionsArray);
+const currentLevel = {{ $level }};
 
 function toggleDetail(id) {
     const detailRow = document.getElementById('detail-' + id);
@@ -523,32 +465,10 @@ function closeApprovalModal() {
     modal.classList.add('hidden');
 }
 
-function openEditCommitmentModal(submissionId, currentCommitment) {
-    const modal = document.getElementById('editCommitmentModal');
-    const form = document.getElementById('editCommitmentForm');
-    const input = document.getElementById('komitmenInput');
-    
-    form.action = `/approvals/${submissionId}/update-commitment`;
-    input.value = currentCommitment;
-    
-    modal.classList.remove('hidden');
-}
-
-function closeEditCommitmentModal() {
-    const modal = document.getElementById('editCommitmentModal');
-    modal.classList.add('hidden');
-}
-
 // Close modal when clicking outside
 document.getElementById('approvalModal')?.addEventListener('click', function(e) {
     if (e.target === this) {
         closeApprovalModal();
-    }
-});
-
-document.getElementById('editCommitmentModal')?.addEventListener('click', function(e) {
-    if (e.target === this) {
-        closeEditCommitmentModal();
     }
 });
 
