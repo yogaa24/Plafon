@@ -1,13 +1,13 @@
 @extends('layouts.app')
 
-@section('title', 'Dashboard Approval Level 3')
+@section('title', 'Dashboard Approval')
 
 @section('content')
 <div class="space-y-4">
     <!-- Header -->
     <div class="flex justify-between items-center">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">Dashboard Approval Level 3</h1>
+            <h1 class="text-2xl font-bold text-gray-900">Dashboard Approval Kabag</h1>
             <p class="text-sm text-gray-600">Review dan proses pengajuan yang menunggu approval Anda</p>
         </div>
         
@@ -187,37 +187,6 @@
                     <tr id="detail-{{ $submission->id }}" class="hidden bg-gray-50">
                         <td colspan="10" class="px-4 py-4">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-white rounded-lg border border-gray-200">
-                                <!-- Progress Section -->
-                                <div class="col-span-1 md:col-span-2 mb-4 pb-4 border-b border-gray-200">
-                                    <h4 class="font-semibold text-gray-700 mb-3 text-sm uppercase tracking-wide">Progress Approval</h4>
-                                    <div class="flex items-center justify-center space-x-4">
-                                        @for($i = 1; $i <= 6; $i++)
-                                            @php
-                                                $approved = $submission->approvals->where('level', $i)->where('status', 'approved')->first();
-                                                $rejected = $submission->approvals->where('level', $i)->where('status', 'rejected')->first();
-                                            @endphp
-                                            <div class="flex flex-col items-center">
-                                                <div class="w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold
-                                                    @if($approved) bg-green-500 text-white
-                                                    @elseif($rejected) bg-red-500 text-white
-                                                    @elseif($submission->current_level == $i) bg-yellow-500 text-white
-                                                    @else bg-gray-200 text-gray-500
-                                                    @endif">
-                                                    {{ $i }}
-                                                </div>
-                                                <span class="text-xs text-gray-600 mt-2">Level {{ $i }}</span>
-                                            </div>
-                                            @if($i < 6)
-                                            <div class="w-16 h-1 -mt-4 
-                                                @if($approved) bg-green-500
-                                                @else bg-gray-200
-                                                @endif">
-                                            </div>
-                                            @endif
-                                        @endfor
-                                    </div>
-                                </div>
-
                                 <!-- Informasi Umum -->
                                 <div>
                                     <h4 class="font-semibold text-gray-700 mb-3 text-sm uppercase tracking-wide">Informasi Umum</h4>
@@ -308,6 +277,61 @@
                                     </div>
                                 </div>
 
+                                <!-- OD/Over Information Section -->
+                                @if($submission->payment_type)
+                                <div class="col-span-1 md:col-span-2">
+                                    <h4 class="font-semibold text-gray-700 mb-3 text-sm uppercase tracking-wide">Informasi Pembayaran</h4>
+
+                                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                        <div class="flex items-start">
+
+                                            <svg class="w-5 h-5 mr-2 text-blue-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                            </svg>
+
+                                            <div class="flex-1">
+                                                <p class="text-sm font-semibold text-blue-900 mb-2">
+                                                    Jenis: <span class="uppercase">{{ $submission->payment_type }}</span>
+                                                </p>
+
+                                                @php
+                                                    $paymentData = is_array($submission->payment_data)
+                                                        ? $submission->payment_data
+                                                        : json_decode($submission->payment_data, true);
+                                                @endphp
+
+                                                @if($paymentData && count($paymentData) > 0)
+
+                                                {{-- GRID 2 KOLOM / TIDAK PANJANG KE BAWAH --}}
+                                                <div class="grid grid-cols-2 gap-y-2 gap-x-6">
+
+                                                    @foreach($paymentData as $key => $value)
+                                                        @if($value)
+                                                        <div class="flex justify-between text-sm">
+                                                            <span class="text-blue-700">
+                                                                @if($key === 'piutang') Piutang
+                                                                @elseif($key === 'jml_over') Jml Over
+                                                                @elseif($key === 'od_30') Jml OD 30
+                                                                @elseif($key === 'od_60') Jml OD 60
+                                                                @elseif($key === 'od_90') Jml OD 90
+                                                                @endif:
+                                                            </span>
+                                                            <span class="font-semibold text-blue-900">
+                                                                Rp {{ number_format($value, 0, ',', '.') }}
+                                                            </span>
+                                                        </div>
+                                                        @endif
+                                                    @endforeach
+
+                                                </div>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                @endif
+
                                 <!-- Log Edit Komitmen -->
                                 @if($commitmentLog && count($commitmentLog) > 0)
                                 <div class="col-span-1 md:col-span-2">
@@ -394,9 +418,12 @@
     </div>
 </div>
 
+
 <!-- Approval Modal (NOTES WAJIB) -->
-<div id="approvalModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-    <div class="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-lg bg-white">
+<div id="approvalModal" class="hidden fixed inset-0 bg-black/40 backdrop-blur-[2px] overflow-y-auto h-full w-full z-50 
+    transition-opacity duration-200 opacity-0">
+    <div id="approvalModalContent" class="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-lg bg-white 
+        transform transition-all duration-300 -translate-y-12 scale-95 opacity-0">
         <div class="mt-3">
             <h3 id="modalTitle" class="text-lg font-semibold text-gray-900 mb-4"></h3>
             
@@ -430,7 +457,7 @@
 </div>
 
 <!-- Edit Komitmen Modal -->
-<div id="editCommitmentModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+<div id="editCommitmentModal" class="hidden fixed inset-0 bg-black/40 backdrop-blur-[2px] overflow-y-auto h-full w-full z-50">
     <div class="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-lg bg-white">
         <div class="mt-3">
             <h3 class="text-lg font-semibold text-gray-900 mb-4">Edit Komitmen Pembayaran</h3>
@@ -493,6 +520,7 @@ function toggleDetail(id) {
 
 function openApprovalModal(submissionId, action) {
     const modal = document.getElementById('approvalModal');
+    const modalContent = document.getElementById('approvalModalContent');
     const modalTitle = document.getElementById('modalTitle');
     const approvalNote = document.getElementById('approvalNote');
     const submitButton = document.getElementById('submitButton');
@@ -515,13 +543,59 @@ function openApprovalModal(submissionId, action) {
     }
     
     approvalNote.value = '';
+    
+    // Show modal (remove hidden first)
     modal.classList.remove('hidden');
+    
+    // Trigger animation with slight delay
+    setTimeout(() => {
+        // Fade in overlay
+        modal.classList.remove('opacity-0');
+        modal.classList.add('opacity-100');
+        
+        // Slide down + scale modal content
+        modalContent.classList.remove('-translate-y-12', 'scale-95', 'opacity-0');
+        modalContent.classList.add('translate-y-0', 'scale-100', 'opacity-100');
+    }, 10);
+    
+    // Prevent body scroll
+    document.body.style.overflow = 'hidden';
 }
 
 function closeApprovalModal() {
     const modal = document.getElementById('approvalModal');
+    const modalContent = document.getElementById('approvalModalContent');
+    
+    // NO ANIMATION - Langsung hide
     modal.classList.add('hidden');
+    
+    // Reset classes untuk next time
+    modal.classList.remove('opacity-100');
+    modal.classList.add('opacity-0');
+    
+    modalContent.classList.remove('translate-y-0', 'scale-100', 'opacity-100');
+    modalContent.classList.add('-translate-y-12', 'scale-95', 'opacity-0');
+    
+    // Re-enable body scroll
+    document.body.style.overflow = '';
 }
+
+// Close modal when clicking outside
+document.getElementById('approvalModal')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeApprovalModal();
+    }
+});
+
+// Close modal with ESC key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const modal = document.getElementById('approvalModal');
+        if (!modal.classList.contains('hidden')) {
+            closeApprovalModal();
+        }
+    }
+});
 
 function openEditCommitmentModal(submissionId, currentCommitment) {
     const modal = document.getElementById('editCommitmentModal');

@@ -18,7 +18,7 @@ class DatabaseSeeder extends Seeder
         User::updateOrCreate(
             ['email' => 'approver1@demo.com'],
             [
-                'name' => 'Approver Level 1',
+                'name' => 'Koor SC',
                 'password' => Hash::make('karisma'),
                 'role' => 'approver1',
                 'is_level3_approver' => false,
@@ -30,7 +30,7 @@ class DatabaseSeeder extends Seeder
         User::updateOrCreate(
             ['email' => 'approver2@demo.com'],
             [
-                'name' => 'Approver Level 2',
+                'name' => 'TC',
                 'password' => Hash::make('karisma'),
                 'role' => 'approver2',
                 'is_level3_approver' => false,
@@ -42,7 +42,7 @@ class DatabaseSeeder extends Seeder
         User::updateOrCreate(
             ['email' => 'approver3@demo.com'],
             [
-                'name' => 'Approver Level 3',
+                'name' => 'Kabag',
                 'password' => Hash::make('karisma'),
                 'role' => 'approver3',
                 'is_level3_approver' => false,
@@ -54,7 +54,7 @@ class DatabaseSeeder extends Seeder
         User::updateOrCreate(
             ['email' => 'approver4@demo.com'],
             [
-                'name' => 'Approver Level 4',
+                'name' => 'Kadep',
                 'password' => Hash::make('karisma'),
                 'role' => 'approver4',
                 'is_level3_approver' => false,
@@ -64,7 +64,7 @@ class DatabaseSeeder extends Seeder
 
         // Approver 5
         User::updateOrCreate(
-            ['email' => 'approver5@demo.com'],
+            ['email' => 'HRD KU'],
             [
                 'name' => 'Approver Level 5',
                 'password' => Hash::make('karisma'),
@@ -78,7 +78,7 @@ class DatabaseSeeder extends Seeder
         User::updateOrCreate(
             ['email' => 'approver6@demo.com'],
             [
-                'name' => 'Approver Level 6',
+                'name' => 'Direksi',
                 'password' => Hash::make('karisma'),
                 'role' => 'approver6',
                 'is_level3_approver' => false,

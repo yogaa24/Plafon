@@ -21,7 +21,7 @@
             <p class="text-blue-100 text-sm mt-1">Perbarui informasi pengajuan penjualan</p>
         </div>
 
-        <form action="{{ route('submissions.update', $submission) }}" method="POST" class="p-6" id="editForm" enctype="multipart/form-data">
+        <form action="{{ route('submissions.update', $submission) }}" method="POST" class="p-6" id="editForm">
             @csrf
             @method('PUT')
 
@@ -63,20 +63,6 @@
                     </span>
                 @endif
             </div>
-
-            @if($submission->revision_note)
-            <div class="mb-6 bg-orange-50 border-l-4 border-orange-500 p-4 rounded">
-                <div class="flex">
-                    <svg class="w-5 h-5 text-orange-600 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                    </svg>
-                    <div>
-                        <p class="text-sm font-semibold text-orange-800">Catatan Revisi:</p>
-                        <p class="text-sm text-orange-700 mt-1">{{ $submission->revision_note }}</p>
-                    </div>
-                </div>
-            </div>
-            @endif
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- Nama (Read-Only) -->
@@ -351,54 +337,6 @@
                 @endif
             </div>
 
-            <!-- Keterangan -->
-            <div class="mt-6">
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Keterangan (Opsional)
-                </label>
-                <textarea 
-                    name="keterangan" 
-                    rows="3" 
-                    class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                    placeholder="Tambahkan keterangan jika diperlukan">{{ old('keterangan', $submission->keterangan) }}</textarea>
-            </div>
-
-            <!-- Upload Lampiran -->
-            <div class="mt-6">
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Lampiran Gambar (Opsional)
-                </label>
-                
-                @if($submission->lampiran_path)
-                <div class="mb-3">
-                    <p class="text-sm text-gray-600 mb-2">Lampiran saat ini:</p>
-                    <div class="relative inline-block">
-                        <img src="{{ Storage::url($submission->lampiran_path) }}" 
-                            alt="Lampiran" 
-                            class="w-60 max-h-60 object-contain rounded-lg border border-gray-300">
-                        <label class="flex items-center mt-2 text-sm text-gray-600">
-                            <input type="checkbox" name="hapus_lampiran" value="1" class="mr-2">
-                            Hapus lampiran ini
-                        </label>
-                    </div>
-                </div>
-                @endif
-                
-                <input 
-                    type="file" 
-                    name="lampiran" 
-                    accept="image/*"
-                    class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                    onchange="previewImage(event)">
-                <p class="text-xs text-gray-500 mt-1">Format: JPG, PNG, JPEG (Max: 2MB) - Upload file baru untuk mengganti</p>
-                
-                <!-- Image Preview -->
-                <div id="imagePreview" class="mt-3 hidden">
-                    <p class="text-sm text-gray-600 mb-2">Preview gambar baru:</p>
-                    <img id="preview" class="w-60 max-h-60 object-contain rounded-lg border border-gray-300" alt="Preview">
-                </div>
-            </div>
-
             <!-- Action Buttons -->
             <div class="flex items-center justify-end space-x-4 mt-8 pt-6 border-t border-gray-200">
                 <a href="{{ route('submissions.index') }}" 
@@ -412,20 +350,6 @@
             </div>
         </form>
     </div>
-
-    @if($submission->status == 'revision')
-    <div class="mt-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-        <div class="flex">
-            <svg class="w-5 h-5 text-yellow-600 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-            <div class="text-sm text-yellow-800">
-                <p class="font-semibold mb-1">Informasi:</p>
-                <p class="text-yellow-700">Setelah update, pengajuan akan kembali ke status "Pending" dan approval akan dimulai dari awal (Level 1).</p>
-            </div>
-        </div>
-    </div>
-    @endif
 </div>
 
 @if($submission->plafon_type === 'open')

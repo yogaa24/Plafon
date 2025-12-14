@@ -17,7 +17,7 @@
 
     <!-- Form -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <form action="{{ route('submissions.store') }}" method="POST" id="openPlafonForm" enctype="multipart/form-data">
+    <form action="{{ route('submissions.store') }}" method="POST" id="openPlafonForm">
             @csrf
             
             <!-- Hidden fields -->
@@ -83,12 +83,22 @@
                             value="{{ old('jumlah_buka_faktur') }}"
                             required 
                             min="1"
+                            max="{{ $customer->plafon_aktif }}"
                             class="w-full px-4 py-2.5 border @error('jumlah_buka_faktur') border-red-500 @else border-gray-300 @enderror rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="Masukkan jumlah buka faktur">
+                            placeholder="Masukkan jumlah value faktur">
                         @error('jumlah_buka_faktur')
                             <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                         @enderror
-                        <p class="text-xs text-gray-500 mt-1">Jumlah faktur yang dapat dibuka</p>
+                        
+                        <!-- Auto-calculated info -->
+                        <div id="selisihInfo" class="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs hidden">
+                            <p class="text-blue-800">
+                                <strong>Selisih (Auto-filled):</strong> 
+                                <span id="selisihValue" class="font-mono font-semibold">Rp 0</span>
+                            </p>
+                        </div>
+                        
+                        <p class="text-xs text-gray-500 mt-1">Maksimal: Rp {{ number_format($customer->plafon_aktif, 0, ',', '.') }}</p>
                     </div>
                 </div>
 
@@ -132,28 +142,40 @@
                         <div id="odSection" class="space-y-3 hidden">
                             <!-- Piutang -->
                             <div class="flex items-center justify-between">
-                                <label class="text-sm text-gray-700">Piutang</label>
+                                <label class="text-sm text-gray-700 flex items-center">
+                                    Piutang
+                                    <svg class="w-4 h-4 ml-1 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" title="Auto-filled dari Plafon - Value Faktur">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                </label>
                                 <input 
                                     type="number" 
                                     id="od_piutang_value"
                                     name="od_piutang_value"
                                     min="0"
-                                    class="w-48 px-3 py-1.5 text-sm border border-gray-300 rounded-lg 
+                                    readonly
+                                    class="w-48 px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-blue-50
                                         focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    placeholder="Jumlah">
+                                    placeholder="Auto-filled">
                             </div>
 
                             <!-- Jml Over -->
                             <div class="flex items-center justify-between">
-                                <label class="text-sm text-gray-700">Jml Over</label>
+                                <label class="text-sm text-gray-700 flex items-center">
+                                    Jml Over
+                                    <svg class="w-4 h-4 ml-1 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" title="Auto-filled dari Plafon - Value Faktur">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                </label>
                                 <input 
                                     type="number" 
                                     id="od_jml_over_value"
                                     name="od_jml_over_value"
                                     min="0"
-                                    class="w-48 px-3 py-1.5 text-sm border border-gray-300 rounded-lg 
+                                    readonly
+                                    class="w-48 px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-blue-50
                                         focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    placeholder="Jumlah">
+                                    placeholder="Auto-filled">
                             </div>
 
                             <!-- Jml OD 30 -->
@@ -201,28 +223,40 @@
                         <div id="overSection" class="space-y-3 hidden">
                             <!-- Piutang -->
                             <div class="flex items-center justify-between">
-                                <label class="text-sm text-gray-700">Piutang</label>
+                                <label class="text-sm text-gray-700 flex items-center">
+                                    Piutang
+                                    <svg class="w-4 h-4 ml-1 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" title="Auto-filled dari Plafon - Value Faktur">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                </label>
                                 <input 
                                     type="number" 
                                     id="over_piutang_value"
                                     name="over_piutang_value"
                                     min="0"
-                                    class="w-48 px-3 py-1.5 text-sm border border-gray-300 rounded-lg 
+                                    readonly
+                                    class="w-48 px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-blue-50
                                         focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    placeholder="Jumlah">
+                                    placeholder="Auto-filled">
                             </div>
 
                             <!-- Jml Over -->
                             <div class="flex items-center justify-between">
-                                <label class="text-sm text-gray-700">Jml Over</label>
+                                <label class="text-sm text-gray-700 flex items-center">
+                                    Jml Over
+                                    <svg class="w-4 h-4 ml-1 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" title="Auto-filled dari Plafon - Value Faktur">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                </label>
                                 <input 
                                     type="number" 
                                     id="over_jml_over_value"
                                     name="over_jml_over_value"
                                     min="0"
-                                    class="w-48 px-3 py-1.5 text-sm border border-gray-300 rounded-lg 
+                                    readonly
+                                    class="w-48 px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-blue-50
                                         focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    placeholder="Jumlah">
+                                    placeholder="Auto-filled">
                             </div>
 
                             <!-- Jml OD 30 -->
@@ -286,38 +320,6 @@
                     @enderror
                 </div>
 
-                <!-- Keterangan -->
-                <div class="mt-6">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        Keterangan (Opsional)
-                    </label>
-                    <textarea 
-                        name="keterangan" 
-                        rows="3" 
-                        class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Tambahkan keterangan jika diperlukan">{{ old('keterangan') }}</textarea>
-                </div>
-
-                <!-- Upload Lampiran -->
-                <div class="mt-6">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        Lampiran Gambar (Opsional)
-                    </label>
-                    <input 
-                        type="file" 
-                        name="lampiran" 
-                        accept="image/*"
-                        class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        onchange="previewImage(event)">
-                    <p class="text-xs text-gray-500 mt-1">Format: JPG, PNG, JPEG (Max: 2MB)</p>
-                    
-                    <!-- Image Preview -->
-                    <div id="imagePreview" class="mt-3 hidden">
-                        <img id="preview" class="max-w-xs rounded-lg border border-gray-300" alt="Preview">
-                    </div>
-                </div>
-            </div>
-
             <!-- Submit Buttons -->
             <div class="flex justify-end space-x-3 pt-6 border-t">
                 <a href="{{ route('submissions.index') }}" class="px-6 py-2.5 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition">
@@ -335,47 +337,80 @@
 </div>
 
 <script>
+// Data plafon aktif dari backend
+const plafonAktif = {{ $customer->plafon_aktif }};
+
+// Toggle payment type sections
 function togglePaymentType() {
     const od = document.getElementById('type_od').checked;
     const over = document.getElementById('type_over').checked;
 
     document.getElementById('odSection').classList.toggle('hidden', !od);
     document.getElementById('overSection').classList.toggle('hidden', !over);
-}
-
-
-function toggleOdInput(checkbox, inputId) {
-    const input = document.getElementById(inputId);
-    input.disabled = !checkbox.checked;
-    if (!checkbox.checked) {
-        input.value = '';
-    }
-}
-
-function previewImage(event) {
-    const file = event.target.files[0];
-    const preview = document.getElementById('preview');
-    const previewContainer = document.getElementById('imagePreview');
     
-    if (file) {
-        // Validasi ukuran file (max 2MB)
-        if (file.size > 2 * 1024 * 1024) {
-            alert('Ukuran file maksimal 2MB');
-            event.target.value = '';
-            previewContainer.classList.add('hidden');
-            return;
-        }
-        
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            preview.src = e.target.result;
-            previewContainer.classList.remove('hidden');
-        }
-        reader.readAsDataURL(file);
-    } else {
-        previewContainer.classList.add('hidden');
+    // Auto-calculate when switching type
+    if (od || over) {
+        calculateAutoFill();
     }
 }
+
+// Show selisih info
+function showSelisihInfo(selisih) {
+    const selisihInfo = document.getElementById('selisihInfo');
+    const selisihValue = document.getElementById('selisihValue');
+    
+    if (selisihInfo && selisihValue) {
+        if (selisih >= 0) {
+            selisihInfo.classList.remove('hidden');
+            selisihValue.textContent = 'Rp ' + new Intl.NumberFormat('id-ID').format(selisih);
+        } else {
+            selisihInfo.classList.add('hidden');
+        }
+    }
+}
+
+// Update calculateAutoFill function
+function calculateAutoFill() {
+    const jumlahValueFaktur = parseFloat(document.querySelector('[name="jumlah_buka_faktur"]').value) || 0;
+    const selisih = plafonAktif - jumlahValueFaktur;
+    
+    // Format angka dengan pemisah ribuan
+    const formattedSelisih = selisih.toFixed(0);
+    
+    // Show info selisih
+    showSelisihInfo(selisih);
+    
+    // Update OD section
+    const odPiutang = document.getElementById('od_piutang_value');
+    const odJmlOver = document.getElementById('od_jml_over_value');
+    if (odPiutang && document.getElementById('type_od').checked) {
+        odPiutang.value = formattedSelisih;
+        odJmlOver.value = formattedSelisih;
+    }
+    
+    // Update Over section
+    const overPiutang = document.getElementById('over_piutang_value');
+    const overJmlOver = document.getElementById('over_jml_over_value');
+    if (overPiutang && document.getElementById('type_over').checked) {
+        overPiutang.value = formattedSelisih;
+        overJmlOver.value = formattedSelisih;
+    }
+}
+
+// Trigger calculation when jumlah_buka_faktur changes
+document.addEventListener('DOMContentLoaded', function() {
+    const jumlahBukaFakturInput = document.querySelector('[name="jumlah_buka_faktur"]');
+    
+    if (jumlahBukaFakturInput) {
+        jumlahBukaFakturInput.addEventListener('input', function() {
+            calculateAutoFill();
+        });
+        
+        jumlahBukaFakturInput.addEventListener('change', function() {
+            calculateAutoFill();
+        });
+    }
+});
 
 // Validate before submit
 document.getElementById('openPlafonForm').addEventListener('submit', function(e) {
@@ -384,7 +419,14 @@ document.getElementById('openPlafonForm').addEventListener('submit', function(e)
     // Validate jumlah buka faktur
     if (jumlahBukaFaktur <= 0) {
         e.preventDefault();
-        alert('Jumlah buka faktur harus lebih besar dari 0');
+        alert('Jumlah value faktur harus lebih besar dari 0');
+        return;
+    }
+    
+    // Validate jumlah tidak boleh lebih besar dari plafon aktif
+    if (jumlahBukaFaktur > plafonAktif) {
+        e.preventDefault();
+        alert(`Jumlah value faktur tidak boleh lebih besar dari plafon aktif (Rp ${new Intl.NumberFormat('id-ID').format(plafonAktif)})`);
         return;
     }
     
@@ -392,45 +434,27 @@ document.getElementById('openPlafonForm').addEventListener('submit', function(e)
     const typeOd = document.getElementById('type_od');
     const typeOver = document.getElementById('type_over');
     
-    // If payment type is selected, validate the items
-    if (typeOd.checked || typeOver.checked) {
-        let hasInvalidValue = false;
-        
-        if (typeOver.checked && !hasInvalidValue) {
-            const overCheckboxes = document.querySelectorAll('[name="over_items[]"]:checked');
-            
-            if (overCheckboxes.length > 0) {
-                // Validate each selected item has a valid value
-                overCheckboxes.forEach(cb => {
-                    const valueInputId = cb.id + '_value';
-                    const valueInput = document.getElementById(valueInputId);
-                    const value = parseInt(valueInput.value) || 0;
-                    
-                    if (value <= 0) {
-                        hasInvalidValue = true;
-                        e.preventDefault();
-                        alert(`Masukkan jumlah yang valid untuk ${cb.nextElementSibling.textContent}`);
-                    }
-                });
-            }
-        }
-        
-        if (hasInvalidValue) {
-            return;
-        }
+    // Validate payment type is selected
+    if (!typeOd.checked && !typeOver.checked) {
+        e.preventDefault();
+        alert('Pilih jenis pembayaran: OD atau Over');
+        return;
     }
     
     // Confirmation
     const plafonValue = {{ $customer->plafon_aktif }};
     const formattedPlafon = new Intl.NumberFormat('id-ID').format(plafonValue);
+    const selisih = plafonValue - jumlahBukaFaktur;
+    const formattedSelisih = new Intl.NumberFormat('id-ID').format(selisih);
     
     let paymentType = 'Tidak ada';
     if (typeOd.checked) paymentType = 'OD';
     if (typeOver.checked) paymentType = 'Over';
     
     const confirmMessage = `Konfirmasi Pengajuan Open Plafon:\n\n` +
-        `Plafon: Rp ${formattedPlafon}\n` +
-        `Jumlah Buka Faktur: ${jumlahBukaFaktur}\n` +
+        `Plafon Aktif: Rp ${formattedPlafon}\n` +
+        `Jumlah Value Faktur: Rp ${new Intl.NumberFormat('id-ID').format(jumlahBukaFaktur)}\n` +
+        `Selisih (Piutang): Rp ${formattedSelisih}\n` +
         `Jenis Pembayaran: ${paymentType}\n\n` +
         `Lanjutkan pengajuan?`;
     

@@ -117,24 +117,6 @@
                 <p class="text-sm text-gray-500 mb-1">Komitmen Pembayaran</p>
                 <p class="text-gray-900">{{ $submission->komitmen_pembayaran }}</p>
             </div>
-            
-            @if($submission->keterangan)
-            <div class="mb-4">
-                <h3 class="text-sm font-semibold text-gray-700 mb-2">Keterangan:</h3>
-                <p class="text-gray-600">{{ $submission->keterangan }}</p>
-            </div>
-            @endif
-
-            @if($submission->lampiran_path)
-            <div class="mb-4">
-                <h3 class="text-sm font-semibold text-gray-700 mb-2">Lampiran:</h3>
-                <a href="{{ Storage::url($submission->lampiran_path) }}" target="_blank">
-                    <img src="{{ Storage::url($submission->lampiran_path) }}" 
-                        alt="Lampiran" 
-                        class="w-60 max-h-60 object-contain rounded-lg border border-gray-300 hover:opacity-90 transition">
-                </a>
-            </div>
-            @endif
 
             @if($submission->payment_type && $submission->payment_data)
             <div class="md:col-span-2">
@@ -178,13 +160,6 @@
             </div>
             @endif
         </div>
-
-        @if($submission->revision_note)
-        <div class="mt-6 p-4 bg-orange-50 border-l-4 border-orange-500 rounded-lg">
-            <p class="text-sm font-semibold text-orange-800 mb-2">Catatan Revisi:</p>
-            <p class="text-sm text-orange-700">{{ $submission->revision_note }}</p>
-        </div>
-        @endif
 
         @if($submission->rejection_note)
         <div class="mt-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-lg">

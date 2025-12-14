@@ -141,7 +141,7 @@ class ApprovalController extends Controller
         }
 
         $query = Submission::where('current_level', 4)
-            ->whereIn('status', ['approved_3', 'pending_approver4'])
+            ->whereIn('status', ['approved_3', 'approver_4'])
             ->with(['sales', 'approvals.approver', 'customer']);
 
         // Search & Filter (sama seperti index)
@@ -179,7 +179,7 @@ class ApprovalController extends Controller
         }
 
         $query = Submission::where('current_level', 5)
-            ->whereIn('status', ['pending_approver5'])
+            ->whereIn('status', ['approver_5'])
             ->with(['sales', 'approvals.approver', 'customer']);
 
         // Search & Filter
@@ -217,7 +217,7 @@ class ApprovalController extends Controller
         }
 
         $query = Submission::where('current_level', 6)
-            ->whereIn('status', ['pending_approver6'])
+            ->whereIn('status', ['approver_6'])
             ->with(['sales', 'approvals.approver', 'customer']);
 
         // Search & Filter
@@ -246,41 +246,54 @@ class ApprovalController extends Controller
         ]);
     }
 
+    // Di ApprovalController.php
     public function exportLevel3(Request $request)
     {
         $user = Auth::user();
         
-        // HANYA User tertentu yang bisa export (sesuaikan dengan kebutuhan)
-        if (!in_array($user->approver_name, ['Fairin', 'Admin'])) {
-            abort(403, 'Unauthorized: Hanya user tertentu yang dapat mengekspor data.');
+        // HANYA Approver Level 3 yang bisa export
+        if ($user->role !== 'approver3') {
+            abort(403, 'Unauthorized: Hanya Approver Level 3 yang dapat mengekspor data.');
         }
-
-        // Query pengajuan dengan status DONE
-        $query = Submission::where('status', 'done')
-            ->with(['sales', 'customer', 'previousSubmission', 'approvals.approver']);
-
+    
+        // Query pengajuan yang SUDAH MELEWATI Level 3 ke atas
+        $query = Submission::whereIn('status', [
+                'approved_3',           // Di Level 4
+                'pending_approver4',    // Di Level 4
+                'pending_approver5',    // Di Level 5
+                'pending_approver6',    // Di Level 6
+                'pending_viewer',       // Di Viewer (Proses Input)
+                'done'                  // Selesai
+            ])
+            ->with(['sales', 'customer', 'previousSubmission'])
+            ->with(['approvals' => function($q) {
+                // Load approvals dari Level 3 sampai 6
+                $q->whereIn('level', [3, 4, 5, 6])->with('approver');
+            }]);
+    
         // Apply filter search, date jika ada
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
                 $q->where('kode', 'like', "%{$search}%")
-                ->orWhere('nama', 'like', "%{$search}%")
-                ->orWhere('nama_kios', 'like', "%{$search}%");
+                  ->orWhere('nama', 'like', "%{$search}%")
+                  ->orWhere('nama_kios', 'like', "%{$search}%");
             });
         }
-
+    
         if ($request->filled('date_from')) {
             $query->whereDate('created_at', '>=', $request->date_from);
         }
-
+    
         if ($request->filled('date_to')) {
             $query->whereDate('created_at', '<=', $request->date_to);
         }
-
+    
         $submissions = $query->orderBy('created_at', 'desc')->get();
-
-        $filename = 'Pengajuan_Done_' . date('Y-m-d_His') . '.xlsx';
-
+    
+        // Tidak perlu kirim daftar approver, karena akan diambil dari approval records
+        $filename = 'Pengajuan_Level3_Keatas_' . date('Y-m-d_His') . '.xlsx';
+    
         return Excel::download(
             new Level3DoneExport($submissions), 
             $filename
@@ -306,14 +319,13 @@ class ApprovalController extends Controller
                 'jml_od_30' => 'required|numeric|min:0',
                 'jml_od_60' => 'required|numeric|min:0',
                 'jml_od_90' => 'required|numeric|min:0',
-                'lampiran' => 'required|image|mimes:jpeg,jpg,png|max:2048',
+                'lampiran' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
             ], [
                 'piutang.required' => 'Piutang wajib diisi',
                 'jml_over.required' => 'Jumlah Over wajib diisi',
                 'jml_od_30.required' => 'Jumlah OD 30 wajib diisi',
                 'jml_od_60.required' => 'Jumlah OD 60 wajib diisi',
                 'jml_od_90.required' => 'Jumlah OD 90 wajib diisi',
-                'lampiran.required' => 'Lampiran gambar wajib diupload',
                 'lampiran.image' => 'File harus berupa gambar',
                 'lampiran.mimes' => 'Format gambar harus jpeg, jpg, atau png',
                 'lampiran.max' => 'Ukuran gambar maksimal 2MB',
@@ -355,7 +367,7 @@ class ApprovalController extends Controller
         try {
             // Validasi NOTES WAJIB untuk SEMUA level dan SEMUA action
             $request->validate([
-                'note' => 'required|string|min:3'
+                'note' => 'required|string|min:1'
             ], [
                 'note.required' => 'Catatan wajib diisi',
                 'note.min' => 'Catatan minimal 3 karakter'
@@ -408,10 +420,6 @@ class ApprovalController extends Controller
                 } elseif ($action === 'rejected') {
                     $submission->status = 'rejected';
                     $submission->rejection_note = $request->input('note');
-                } elseif ($action === 'revision') {
-                    $submission->status = 'revision';
-                    $submission->revision_note = $request->input('note');
-                    $submission->current_level = 1;
                 }
             } 
             elseif ($level == 2) {
@@ -421,17 +429,13 @@ class ApprovalController extends Controller
                 } elseif ($action === 'rejected') {
                     $submission->status = 'rejected';
                     $submission->rejection_note = $request->input('note');
-                } elseif ($action === 'revision') {
-                    $submission->status = 'revision';
-                    $submission->revision_note = $request->input('note');
-                    $submission->current_level = 1;
                 }
             }
             elseif ($level == 3) {
-                // Level 3: APPROVE/REJECT tetap lanjut ke Level 4
+                // Level 3: APPROVE/REJECT tetap lanjut ke Level 4 // PENTING: Status berubah ke approver4,
                 $this->handleLevel3Approval($submission, $action);
+                $submission->status = 'approver_4';
                 $submission->current_level = 4;
-                $submission->status = 'approved_3'; // atau bisa 'pending_approver4'
             }
             elseif ($level == 4) {
                 if ($action === 'approved') {
@@ -440,7 +444,7 @@ class ApprovalController extends Controller
                     $submission->current_level = null; // Set NULL karena sudah selesai approval
                 } else {
                     // Reject → lanjut ke Level 5
-                    $submission->status = 'pending_approver5';
+                    $submission->status = 'approver_5';
                     $submission->current_level = 5;
                 }
             }
@@ -451,7 +455,7 @@ class ApprovalController extends Controller
                     $submission->current_level = null; // Set NULL
                 } else {
                     // Reject → lanjut ke Level 6
-                    $submission->status = 'pending_approver6';
+                    $submission->status = 'approver_6';
                     $submission->current_level = 6;
                 }
             }
@@ -475,7 +479,6 @@ class ApprovalController extends Controller
             $message = match($action) {
                 'approved' => 'Pengajuan berhasil disetujui',
                 'rejected' => 'Pengajuan berhasil ditolak',
-                'revision' => 'Pengajuan dikembalikan untuk revisi',
                 default => 'Proses approval berhasil'
             };
 

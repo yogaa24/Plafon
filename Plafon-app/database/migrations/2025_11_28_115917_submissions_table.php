@@ -22,8 +22,8 @@ return new class extends Migration
             
             // Data Plafon
             $table->decimal('plafon', 15, 2);
-            $table->enum('plafon_type', ['open', 'rubah'])->default('open')->comment('Jenis pengajuan: open=baru, rubah=perubahan');
-            $table->enum('plafon_direction', ['naik', 'turun'])->nullable()->comment('Arah perubahan plafon (hanya untuk type=rubah)');
+            $table->enum('plafon_type', ['open', 'rubah'])->default('open');
+            $table->enum('plafon_direction', ['naik', 'turun'])->nullable()->comment('naik/turun');
             $table->unsignedBigInteger('previous_submission_id')->nullable()->comment('ID submission sebelumnya (untuk rubah plafon)');
             
             // Data Faktur & Komitmen
@@ -39,14 +39,12 @@ return new class extends Migration
                 'approved_1',   // Disetujui level 1, menunggu level 2
                 'approved_2',   // Disetujui level 2, menunggu level 3
                 'approved_3',   // Disetujui level 3, proses input
-                'rejected',     // Ditolak
-                'revision',     // Perlu revisi
+                'rejected',     // Ditola
                 'done'          // Selesai/Aktif
             ])->default('pending');
             $table->integer('current_level')->default(1)->comment('Level approval saat ini (1-3)');
             
             // Notes
-            $table->text('revision_note')->nullable();
             $table->text('rejection_note')->nullable();
             
             $table->timestamps();

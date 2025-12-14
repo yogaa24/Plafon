@@ -50,16 +50,26 @@ class Customer extends Model
     }
 
     /**
-     * Get pending submissions
+     * Get pending submissions (UPDATED - tambah status baru)
      */
     public function pendingSubmissions()
     {
         return $this->hasMany(Submission::class)
-            ->whereIn('status', ['pending', 'approved_1', 'approved_2', 'approved_3', 'revision']);
+            ->whereIn('status', [
+                'pending',              // Menunggu Approval 1
+                'approved_1',           // Menunggu Approval 2
+                'approved_2',           // Menunggu Approval 3
+                'approved_3',           // Menunggu Approval 4 (status lama)
+                'approver_4',    // Menunggu Approval 4
+                'approver_5',    // Menunggu Approval 5
+                'approver_6',    // Menunggu Approval 6
+                'pending_viewer',       // Proses Input Viewer
+                'revision'              // Perlu Revisi
+            ]);
     }
 
     /**
-     * Check if customer has pending submission
+     * Check if customer has pending submission (UPDATED)
      */
     public function hasPendingSubmission()
     {

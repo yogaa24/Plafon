@@ -13,16 +13,31 @@ class SubmissionController extends Controller
 {
     public function index(Request $request)
     {
-        // Cek apakah ada filter yang dipilih
-        $hasFilter = $request->filled('status') || $request->filled('search') || $request->filled('view');
-        
-        $submissions = collect();
-        $customers = collect();
-        
-        if ($hasFilter && $request->view === 'submissions') {
-            // Jika ada filter, tampilkan pengajuan
-            $query = Submission::where('sales_id', Auth::id())
-                ->with(['approvals.approver', 'customer']);
+        $user = Auth::user();
+        $hasFilter = $request->filled('view') || $request->filled('status') || $request->filled('search');
+
+        // PERUBAHAN 1: Tambahkan paginate(15) untuk customers
+        if ($request->filled('customer_search')) {
+            $search = $request->customer_search;
+            $customers = Customer::where('sales_id', $user->id)
+                ->where(function($q) use ($search) {
+                    $q->where('nama', 'like', "%{$search}%")
+                    ->orWhere('nama_kios', 'like', "%{$search}%")
+                    ->orWhere('kode_customer', 'like', "%{$search}%");
+                })
+                ->orderBy('nama')
+                ->paginate(15)  // ← TAMBAHKAN INI
+                ->appends($request->except('page'));  // ← DAN INI untuk maintain query params
+        } else {
+            $customers = Customer::where('sales_id', $user->id)
+                ->orderBy('nama')
+                ->paginate(15)  // ← TAMBAHKAN INI
+                ->appends($request->except('page'));  // ← DAN INI
+        }
+
+        // Submissions query (sudah ada paginate)
+        if ($hasFilter) {
+            $query = Submission::where('sales_id', $user->id);
 
             if ($request->filled('status')) {
                 $query->where('status', $request->status);
@@ -37,28 +52,15 @@ class SubmissionController extends Controller
                 });
             }
 
-            $sortBy = $request->get('sort_by', 'created_at');
-            $sortOrder = $request->get('sort_order', 'desc');
-            $query->orderBy($sortBy, $sortOrder);
-
-            $submissions = $query->paginate(15)->appends($request->query());
+            $submissions = $query->with(['customer', 'approvals'])
+                ->orderBy('created_at', 'desc')
+                ->paginate(15)
+                ->appends($request->except('page'));
         } else {
-            // Tampilan default: customer dari tabel customers milik sales yang login
-            $query = Customer::active()->bySales(Auth::id());
-
-            // Tambahkan search untuk customer
-            if ($request->filled('customer_search')) {
-                $query->search($request->customer_search);
-            }
-
-            $customers = $query->orderBy('nama', 'asc')->get();
+            $submissions = collect();
         }
 
-        return view('submissions.index', [
-            'submissions' => $submissions,
-            'customers' => $customers,
-            'hasFilter' => $hasFilter,
-        ]);
+        return view('submissions.index', compact('customers', 'submissions', 'hasFilter'));
     }
 
     public function create()
@@ -252,7 +254,7 @@ class SubmissionController extends Controller
             abort(403);
         }
 
-        if (!in_array($submission->status, ['pending', 'revision'])) {
+        if (!in_array($submission->status, ['pending'])) {
             return redirect()->route('submissions.index')
                 ->with('error', 'Pengajuan tidak dapat diedit!');
         }
@@ -336,13 +338,6 @@ class SubmissionController extends Controller
         } else {
             $validated['payment_type'] = null;
             $validated['payment_data'] = null;
-        }
-    
-        // Reset approval status if revision
-        if ($submission->status == 'revision') {
-            $validated['status'] = 'pending';
-            $validated['current_level'] = 1;
-            $validated['revision_note'] = null;
         }
     
         // Update plafon_direction for rubah plafon

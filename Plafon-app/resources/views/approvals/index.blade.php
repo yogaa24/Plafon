@@ -165,15 +165,6 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                                     </svg>
                                 </button>
-                                
-                                <!-- Revision Button -->
-                                <button onclick="openApprovalModal({{ $submission->id }}, 'revision')" 
-                                        class="px-3 py-1.5 bg-orange-600 text-white text-xs font-medium rounded hover:bg-orange-700 transition" 
-                                        title="Minta Revisi">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                                    </svg>
-                                </button>
 
                                 <!-- Edit Komitmen Button (hanya Level 1, 2, 3) -->
                                 @if(in_array($level, [1, 2, 3]))
@@ -193,39 +184,6 @@
                     <tr id="detail-{{ $submission->id }}" class="hidden bg-gray-50">
                         <td colspan="11" class="px-4 py-4">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-white rounded-lg border border-gray-200">
-                                <!-- Progress Section -->
-                                <div class="col-span-1 md:col-span-2 mb-4 pb-4 border-b border-gray-200">
-                                    <h4 class="font-semibold text-gray-700 mb-3 text-sm uppercase tracking-wide">Progress Approval</h4>
-                                    <div class="flex items-center justify-center space-x-4">
-                                        @for($i = 1; $i <= 3; $i++)
-                                            @php
-                                                $approved = $submission->approvals->where('level', $i)->where('status', 'approved')->first();
-                                                $rejected = $submission->approvals->where('level', $i)->where('status', 'rejected')->first();
-                                                $revision = $submission->approvals->where('level', $i)->where('status', 'revision')->first();
-                                            @endphp
-                                            <div class="flex flex-col items-center">
-                                                <div class="w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold
-                                                    @if($approved) bg-green-500 text-white
-                                                    @elseif($rejected) bg-red-500 text-white
-                                                    @elseif($revision) bg-orange-500 text-white
-                                                    @elseif($submission->current_level == $i && in_array($submission->status, ['pending', 'approved_1', 'approved_2'])) bg-yellow-500 text-white
-                                                    @else bg-gray-200 text-gray-500
-                                                    @endif">
-                                                    {{ $i }}
-                                                </div>
-                                                <span class="text-xs text-gray-600 mt-2">Level {{ $i }}</span>
-                                            </div>
-                                            @if($i < 3)
-                                            <div class="w-16 h-1 -mt-4 
-                                                @if($approved) bg-green-500
-                                                @else bg-gray-200
-                                                @endif">
-                                            </div>
-                                            @endif
-                                        @endfor
-                                    </div>
-                                </div>
-
                                 <div>
                                     <h4 class="font-semibold text-gray-700 mb-3 text-sm uppercase tracking-wide">Informasi Umum</h4>
                                     <div class="space-y-2">
@@ -247,19 +205,6 @@
                                                 @endif
                                             </span>
                                         </div>
-                                        <!-- Tampil hanya jika open plafon -->
-                                        @if($submission->plafon_type === 'open')
-                                        <div class="flex justify-between py-1 border-b border-gray-100">
-                                            <span class="text-sm text-gray-600">Jenis Pembayaran:</span>
-                                            <span class="text-sm font-medium text-gray-900">
-                                                @if($submission->payment_type === 'over')
-                                                    <span class="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs font-semibold">OVER</span>
-                                                @else
-                                                    <span class="px-2 py-1 bg-orange-100 text-orange-700 rounded text-xs font-semibold">OD</span>
-                                                @endif
-                                            </span>
-                                        </div>
-                                        @endif
                                         <div class="flex justify-between py-1 border-b border-gray-100">
                                             <span class="text-sm text-gray-600">Nama:</span>
                                             <span class="text-sm font-medium text-gray-900">{{ $submission->nama }}</span>
@@ -272,12 +217,6 @@
                                             <span class="text-sm text-gray-600 block mb-1">Alamat:</span>
                                             <span class="text-sm text-gray-900">{{ $submission->alamat }}</span>
                                         </div>
-                                        @if($submission->keterangan)
-                                        <div class="py-1 border-t border-gray-100 mt-2 pt-2">
-                                            <span class="text-sm text-gray-600 block mb-1">Keterangan:</span>
-                                            <span class="text-sm text-gray-900 bg-gray-50 p-2 rounded">{{ $submission->keterangan }}</span>
-                                        </div>
-                                        @endif
                                     </div>
                                 </div>
                                 <div>
@@ -312,22 +251,57 @@
                                             <span class="text-sm text-gray-500">{{ $submission->created_at->format('d M Y, H:i') }}</span>
                                         </div>
 
-                                        <!-- Lampiran Gambar Section -->
-                                        @if($submission->lampiran_path)
+                                        <!-- OD/Over Information Section -->
+                                        @if($submission->payment_type)
                                         <div class="col-span-1 md:col-span-2">
-                                            <h4 class="font-semibold text-gray-700 mb-3 text-sm uppercase tracking-wide">Lampiran</h4>
-                                            <div class=" rounded-lg p-4">
-                                                <a href="{{ Storage::url($submission->lampiran_path) }}" target="_blank" class="inline-block">
-                                                    <img src="{{ Storage::url($submission->lampiran_path) }}" 
-                                                        alt="Lampiran Pengajuan" 
-                                                        class="w-30 max-h-30 object-contain rounded-lg border-2 border-gray-300 hover:border-blue-500 transition cursor-pointer shadow hover:shadow-lg">
-                                                </a>
-                                                <p class="text-xs text-gray-500 mt-2">
-                                                    <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"/>
+                                            <h4 class="font-semibold text-gray-700 mb-3 text-sm uppercase tracking-wide">Informasi Pembayaran</h4>
+
+                                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                                <div class="flex items-start">
+
+                                                    <svg class="w-5 h-5 mr-2 text-blue-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                                                     </svg>
-                                                    Klik gambar untuk melihat ukuran penuh
-                                                </p>
+
+                                                    <div class="flex-1">
+                                                        <p class="text-sm font-semibold text-blue-900 mb-2">
+                                                            Jenis: <span class="uppercase">{{ $submission->payment_type }}</span>
+                                                        </p>
+
+                                                        @php
+                                                            $paymentData = is_array($submission->payment_data)
+                                                                ? $submission->payment_data
+                                                                : json_decode($submission->payment_data, true);
+                                                        @endphp
+
+                                                        @if($paymentData && count($paymentData) > 0)
+
+                                                        {{-- GRID 2 KOLOM / TIDAK PANJANG KE BAWAH --}}
+                                                        <div class="grid grid-cols-2 gap-y-2 gap-x-6">
+
+                                                            @foreach($paymentData as $key => $value)
+                                                                @if($value)
+                                                                <div class="flex justify-between text-sm">
+                                                                    <span class="text-blue-700">
+                                                                        @if($key === 'piutang') Piutang
+                                                                        @elseif($key === 'jml_over') Jml Over
+                                                                        @elseif($key === 'od_30') Jml OD 30
+                                                                        @elseif($key === 'od_60') Jml OD 60
+                                                                        @elseif($key === 'od_90') Jml OD 90
+                                                                        @endif:
+                                                                    </span>
+                                                                    <span class="font-semibold text-blue-900">
+                                                                        Rp {{ number_format($value, 0, ',', '.') }}
+                                                                    </span>
+                                                                </div>
+                                                                @endif
+                                                            @endforeach
+
+                                                        </div>
+                                                        @endif
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                         @endif
@@ -428,7 +402,7 @@
 </div>
 
 <!-- Approval Modal -->
-<div id="approvalModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+<div id="approvalModal" class="hidden fixed inset-0 bg-black/40 backdrop-blur-[2px] overflow-y-auto h-full w-full z-50">
     <div class="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-lg bg-white">
         <div class="mt-3">
             <h3 id="modalTitle" class="text-lg font-semibold text-gray-900 mb-4"></h3>
@@ -479,16 +453,39 @@
                         <!-- Upload Lampiran -->
                         <div class="mt-4">
                             <label class="block text-sm font-medium text-gray-700 mb-2">
-                                Upload Lampiran <span class="text-red-500">*</span>
+                                Upload Lampiran <span class="text-gray-400">(Opsional)</span>
                             </label>
                             <input type="file" 
-                                   name="lampiran" 
-                                   id="lampiranInput" 
-                                   accept="image/jpeg,image/jpg,image/png" 
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                   onchange="previewImage(event)">
-                                   
-                            <p class="text-xs text-gray-500 mt-1">Format: JPG, JPEG, PNG. Maksimal 2MB</p>
+                                name="lampiran" 
+                                id="lampiranInput" 
+                                accept="image/jpeg,image/jpg,image/png" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                onchange="previewLampiranImage(event)">
+                            <p class="text-xs text-gray-500 mt-1">
+                                Format: JPG, JPEG, PNG. Maksimal 2MB
+                            </p>
+                            <!-- TAMBAHKAN IMAGE PREVIEW DI SINI -->
+                            <div id="lampiranPreview" class="mt-3 hidden">
+                                <div class="relative inline-block">
+                                    <img id="lampiranPreviewImg" 
+                                        class="max-w-xs max-h-64 rounded-lg border-2 border-gray-300 shadow-sm" 
+                                        alt="Preview Lampiran">
+                                    <button type="button" 
+                                            onclick="removeLampiranPreview()" 
+                                            class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 transition shadow-lg"
+                                            title="Hapus gambar">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-2">
+                                    <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                    </svg>
+                                    Preview gambar yang akan diupload
+                                </p>
+                            </div>
                         </div>
                         
                         <div class="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
@@ -521,7 +518,7 @@
 </div>
 
 <!-- Edit Komitmen Modal -->
-<div id="editCommitmentModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+<div id="editCommitmentModal" class="hidden fixed inset-0 bg-black/40 backdrop-blur-[2px] overflow-y-auto h-full w-full z-50">
     <div class="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-lg bg-white">
         <div class="mt-3">
             <h3 class="text-lg font-semibold text-gray-900 mb-4">Edit Komitmen Pembayaran</h3>
@@ -614,19 +611,21 @@ function openApprovalModal(submissionId, action) {
         // Display jenis pembayaran
         const jenisPembayaranDisplay = document.getElementById('jenisPembayaranDisplay');
         if (jenisPembayaran === 'over') {
-            jenisPembayaranDisplay.innerHTML = '<span class="px-3 py-1 bg-purple-100 text-purple-700 rounded">OVER</span>';
+            jenisPembayaranDisplay.innerHTML =
+                '<span class="px-3 py-1 bg-purple-100 text-purple-700 rounded">OVER</span>';
         } else {
-            jenisPembayaranDisplay.innerHTML = '<span class="px-3 py-1 bg-orange-100 text-orange-700 rounded">OD</span>';
+            jenisPembayaranDisplay.innerHTML =
+                '<span class="px-3 py-1 bg-orange-100 text-orange-700 rounded">OD</span>';
         }
         
-        // PRE-FILL dengan data dari sales (jika ada)
+        // PRE-FILL data dari sales
         document.getElementById('piutangInput').value = paymentData.piutang || '';
         document.getElementById('jmlOverInput').value = paymentData.jml_over || '';
         document.getElementById('jmlOd30Input').value = paymentData.jml_od_30 || paymentData.od_30 || '';
         document.getElementById('jmlOd60Input').value = paymentData.jml_od_60 || paymentData.od_60 || '';
         document.getElementById('jmlOd90Input').value = paymentData.jml_od_90 || paymentData.od_90 || '';
         
-        // Tampilkan info sumber data
+        // Info sumber data
         const dataSourceInfo = document.getElementById('dataSourceInfo');
         if (paymentData && (paymentData.piutang || paymentData.jml_over || paymentData.od_30 || paymentData.jml_od_30)) {
             dataSourceInfo.textContent = '✓ Data dari Sales';
@@ -636,53 +635,42 @@ function openApprovalModal(submissionId, action) {
             dataSourceInfo.className = 'text-xs px-2 py-1 rounded bg-orange-50 text-orange-700';
         }
 
-        // Make level 2 fields required
+        // Required Level 2
         ['piutangInput', 'jmlOverInput', 'jmlOd30Input', 'jmlOd60Input', 'jmlOd90Input'].forEach(id => {
             document.getElementById(id).required = true;
         });
         
-        // Make lampiran required for Level 2
         const lampiranInput = document.getElementById('lampiranInput');
-        if (lampiranInput) {
-            lampiranInput.required = true;
-        }
         
         modalTitle.textContent = 'Setujui Pengajuan - Verifikasi Data (Open Plafon)';
         approvalNote.placeholder = 'Catatan tambahan (wajib diisi)...';
         approvalNote.required = true;
         noteRequired.classList.remove('hidden');
-        submitButton.className = 'flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition';
+        submitButton.className =
+            'flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition';
         submitButton.textContent = 'Setujui';
+
     } else {
         level2Fields.classList.add('hidden');
         
-        // Remove level 2 fields required
+        // Remove required
         ['piutangInput', 'jmlOverInput', 'jmlOd30Input', 'jmlOd60Input', 'jmlOd90Input'].forEach(id => {
             const elem = document.getElementById(id);
             if (elem) elem.required = false;
         });
         
-        // Remove lampiran required for non-Level 2
         const lampiranInput = document.getElementById('lampiranInput');
-        if (lampiranInput) {
-            lampiranInput.required = false;
-        }
+        if (lampiranInput) lampiranInput.required = false;
         
-        // Configure modal for reject/revision
+        // Reject only
         if (action === 'rejected') {
             modalTitle.textContent = 'Tolak Pengajuan';
             approvalNote.placeholder = 'Jelaskan alasan penolakan...';
             approvalNote.required = true;
             noteRequired.classList.remove('hidden');
-            submitButton.className = 'flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition';
+            submitButton.className =
+                'flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition';
             submitButton.textContent = 'Tolak';
-        } else if (action === 'revision') {
-            modalTitle.textContent = 'Minta Revisi';
-            approvalNote.placeholder = 'Jelaskan revisi yang diperlukan...';
-            approvalNote.required = true;
-            noteRequired.classList.remove('hidden');
-            submitButton.className = 'flex-1 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition';
-            submitButton.textContent = 'Minta Revisi';
         }
     }
     
@@ -690,6 +678,65 @@ function openApprovalModal(submissionId, action) {
     approvalNote.value = '';
     
     modal.classList.remove('hidden');
+}
+
+
+function previewLampiranImage(event) {
+    const file = event.target.files[0];
+    const preview = document.getElementById('lampiranPreviewImg');
+    const previewContainer = document.getElementById('lampiranPreview');
+    
+    if (file) {
+        // Validasi ukuran file (max 2MB)
+        if (file.size > 2 * 1024 * 1024) {
+            alert('Ukuran file maksimal 2MB');
+            event.target.value = '';
+            previewContainer.classList.add('hidden');
+            return;
+        }
+        
+        // Validasi tipe file
+        const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+        if (!validTypes.includes(file.type)) {
+            alert('Format file harus JPG, JPEG, atau PNG');
+            event.target.value = '';
+            previewContainer.classList.add('hidden');
+            return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            preview.src = e.target.result;
+            previewContainer.classList.remove('hidden');
+        }
+        reader.readAsDataURL(file);
+    } else {
+        previewContainer.classList.add('hidden');
+    }
+}
+
+// Function untuk menghapus preview dan reset input file
+function removeLampiranPreview() {
+    const input = document.getElementById('lampiranInput');
+    const preview = document.getElementById('lampiranPreviewImg');
+    const previewContainer = document.getElementById('lampiranPreview');
+    
+    input.value = '';
+    preview.src = '';
+    previewContainer.classList.add('hidden');
+}
+
+// Update fungsi closeApprovalModal untuk reset preview juga
+function closeApprovalModal() {
+    const modal = document.getElementById('approvalModal');
+    modal.classList.add('hidden');
+    
+    // Reset form
+    const form = document.getElementById('approvalForm');
+    form.reset();
+    
+    // Reset preview lampiran
+    removeLampiranPreview();
 }
 
 // Modal SIMPLE untuk Level 1, Level 2 Rubah Plafon (hanya notes)

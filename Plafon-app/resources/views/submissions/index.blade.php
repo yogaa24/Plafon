@@ -31,9 +31,12 @@
                         <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Menunggu Approval 1</option>
                         <option value="approved_1" {{ request('status') == 'approved_1' ? 'selected' : '' }}>Menunggu Approval 2</option>
                         <option value="approved_2" {{ request('status') == 'approved_2' ? 'selected' : '' }}>Menunggu Approval 3</option>
-                        <option value="approved_3" {{ request('status') == 'approved_3' ? 'selected' : '' }}>Proses Input</option>
+                        <option value="approved_3" {{ request('status') == 'approved_3' ? 'selected' : '' }}>Menunggu Approval 4</option>
+                        <option value="approver_4" {{ request('status') == 'pending_approver4' ? 'selected' : '' }}>Menunggu Approval 4</option>
+                        <option value="approver_5" {{ request('status') == 'pending_approver5' ? 'selected' : '' }}>Menunggu Approval 5</option>
+                        <option value="approver_6" {{ request('status') == 'pending_approver6' ? 'selected' : '' }}>Menunggu Approval 6</option>
+                        <option value="pending_viewer" {{ request('status') == 'pending_viewer' ? 'selected' : '' }}>Proses Input</option>
                         <option value="done" {{ request('status') == 'done' ? 'selected' : '' }}>✓ Selesai</option>
-                        <option value="revision" {{ request('status') == 'revision' ? 'selected' : '' }}>Perlu Revisi</option>
                         <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Ditolak</option>
                     </select>
                 </div>
@@ -75,7 +78,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
             </svg>
             <h3 class="text-lg font-bold text-black">Daftar Customer</h3>
-            <span class="ml-auto text-sm text-green-700">Total: {{ $customers->count() }} customer</span>
+            <span class="ml-auto text-sm text-green-700">Total: {{ $customers->total() }} customer</span>
         </div>
         
         <div class="overflow-x-auto">
@@ -95,7 +98,7 @@
                 <tbody class="bg-white divide-y divide-gray-200">
                     @foreach($customers as $index => $customer)
                     <tr class="hover:bg-blue-50 transition">
-                        <td class="px-4 py-3 text-center text-sm text-gray-900">{{ $index + 1 }}</td>
+                        <td class="px-4 py-3 text-center text-sm text-gray-900">{{ $customers->firstItem() + $index }}</td>
                         <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ $customer->kode_customer }}</td>
                         <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ $customer->nama }}</td>
                         <td class="px-4 py-3 text-sm text-gray-900">{{ $customer->nama_kios }}</td>
@@ -143,6 +146,13 @@
                 </tbody>
             </table>
         </div>
+
+        @if($customers->hasPages())
+        <div class="mt-4 border-t border-gray-200 pt-4">
+            {{ $customers->links() }}
+        </div>
+        @endif
+
     </div>
     @elseif(!$hasFilter)
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
@@ -165,9 +175,12 @@
                         @case('pending') Menunggu Approval 1 @break
                         @case('approved_1') Menunggu Approval 2 @break
                         @case('approved_2') Menunggu Approval 3 @break
-                        @case('approved_3') Proses Input @break
+                        @case('approved_3') Menunggu Approval 4 @break
+                        @case('approver_4') Menunggu Approval 4 @break
+                        @case('approver_5') Menunggu Approval 5 @break
+                        @case('approver_6') Menunggu Approval 6 @break
+                        @case('pending_viewer') Proses Input @break
                         @case('done') Selesai @break
-                        @case('revision') Perlu Revisi @break
                         @case('rejected') Ditolak @break
                         @default Semua Status @break
                     @endswitch
@@ -272,7 +285,7 @@
                                     </form>
                                 @endif
                                 
-                                @if(in_array($submission->status, ['pending', 'revision']))
+                                @if(in_array($submission->status, ['pending']))
                                 <a href="{{ route('submissions.edit', $submission) }}" class="text-blue-600 hover:text-blue-900 font-medium text-sm" title="Edit">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
@@ -296,40 +309,6 @@
                     <tr id="detail-{{ $submission->id }}" class="hidden bg-gray-50">
                         <td colspan="9" class="px-4 py-4">
                             <div class="p-4 bg-white rounded-lg border border-gray-200">
-                                
-                                <!-- Progress Section -->
-                                <div class="mb-4 pb-4 border-b border-gray-200">
-                                    <h4 class="font-semibold text-gray-700 mb-3 text-sm uppercase tracking-wide">Progress Approval</h4>
-                                    <div class="flex items-center justify-center space-x-4">
-                                        @for($i = 1; $i <= 3; $i++)
-                                            @php
-                                                $approved = $submission->approvals->where('level', $i)->where('status', 'approved')->first();
-                                                $rejected = $submission->approvals->where('level', $i)->where('status', 'rejected')->first();
-                                                $revision = $submission->approvals->where('level', $i)->where('status', 'revision')->first();
-                                            @endphp
-                                            <div class="flex flex-col items-center">
-                                                <div class="w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold
-                                                    @if($approved) bg-green-500 text-white
-                                                    @elseif($rejected) bg-red-500 text-white
-                                                    @elseif($revision) bg-orange-500 text-white
-                                                    @elseif($submission->current_level == $i && in_array($submission->status, ['pending', 'approved_1', 'approved_2'])) bg-yellow-500 text-white
-                                                    @else bg-gray-200 text-gray-500
-                                                    @endif">
-                                                    {{ $i }}
-                                                </div>
-                                                <span class="text-xs text-gray-600 mt-2">Level {{ $i }}</span>
-                                            </div>
-                                            @if($i < 3)
-                                            <div class="w-16 h-1 -mt-4 
-                                                @if($approved) bg-green-500
-                                                @else bg-gray-200
-                                                @endif">
-                                            </div>
-                                            @endif
-                                        @endfor
-                                    </div>
-                                </div>
-
                                 <!-- Information Grid -->
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
@@ -436,20 +415,12 @@
                                     @endif
 
                                     <!-- Notes Section -->
-                                    @if($submission->revision_note || $submission->rejection_note)
+                                    @if($submission->rejection_note)
                                     <div class="col-span-1 md:col-span-2">
-                                        @if($submission->revision_note)
-                                        <div class="text-sm text-orange-700 bg-orange-50 px-4 py-3 rounded-lg border-l-4 border-orange-500">
-                                            <span class="font-semibold block mb-1">Catatan Revisi:</span>
-                                            <p>{{ $submission->revision_note }}</p>
-                                        </div>
-                                        @endif
-                                        @if($submission->rejection_note)
-                                        <div class="text-sm text-red-700 bg-red-50 px-4 py-3 rounded-lg border-l-4 border-red-500 mt-2">
+                                        <div class="text-sm text-red-700 bg-red-50 px-4 py-3 rounded-lg border-l-4 border-red-500">
                                             <span class="font-semibold block mb-1">Alasan Penolakan:</span>
                                             <p>{{ $submission->rejection_note }}</p>
                                         </div>
-                                        @endif
                                     </div>
                                     @endif
                                 </div>

@@ -15,12 +15,11 @@ return new class extends Migration
             'approved_1',
             'approved_2',
             'approved_3',
-            'pending_approver4',
-            'pending_approver5',
-            'pending_approver6',
+            'approver_4',
+            'approver_5',
+            'approver_6',
             'pending_viewer',
             'rejected',
-            'revision',
             'done'
         ) NOT NULL DEFAULT 'pending'");
 
@@ -43,7 +42,6 @@ return new class extends Migration
             'approved_2',
             'approved_3',
             'rejected',
-            'revision',
             'done'
         ) NOT NULL DEFAULT 'pending'");
     }

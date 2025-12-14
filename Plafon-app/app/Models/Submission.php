@@ -29,7 +29,6 @@ class Submission extends Model
         'sales_id',
         'status',
         'current_level',
-        'revision_note',
         'rejection_note',
     ];
 
@@ -98,16 +97,19 @@ class Submission extends Model
     public function getStatusBadgeAttribute()
     {
         $badges = [
-            'pending'      => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Menunggu Approval 1</span>',
-            'approved_1'   => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Menunggu Approval 2</span>',
-            'approved_2'   => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-800">Menunggu Approval 3</span>',
-            'approved_3'   => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">Proses Input</span>',
-            'done'         => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Selesai</span>',
-            'rejected'     => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Ditolak</span>',
-            'revision'     => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">Perlu Revisi</span>',
+            'pending'               => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Menunggu Approval 1</span>',
+            'approved_1'            => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Menunggu Approval 2</span>',
+            'approved_2'            => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-800">Menunggu Approval 3</span>',
+            'approved_3'            => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">Menunggu Approval 4</span>',
+            'approver_4'            => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">Menunggu Approval 4</span>',
+            'approver_5'            => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">Menunggu Approval 5</span>',
+            'approver_6'            => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">Menunggu Approval 6</span>',
+            'pending_viewer'        => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-cyan-100 text-cyan-800">Proses Input</span>',
+            'done'                  => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Selesai</span>',
+            'rejected'              => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Ditolak</span>',
         ];
 
-        return $badges[$this->status] ?? '';
+        return $badges[$this->status] ?? '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">' . ucfirst($this->status) . '</span>';
     }
 
     public function getPlafonDirectionBadgeAttribute()
