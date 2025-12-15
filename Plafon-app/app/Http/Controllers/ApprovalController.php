@@ -63,20 +63,36 @@ class ApprovalController extends Controller
 
         $submissions = $query->paginate(15);
 
-        $submissionsArray = $submissions->map(function($s) {
+        $submissionsArray = $submissions->map(function($submission) {
+            // Decode payment_data jika masih string
+            $paymentData = $submission->payment_data;
+            if (is_string($paymentData)) {
+                $paymentData = json_decode($paymentData, true);
+            }
+            
             return [
-                'id' => $s->id,
-                'plafon_type' => $s->plafon_type,
-                'payment_type' => $s->payment_type ?? 'od',
-                'payment_data' => $s->payment_data ?? []
+                'id' => $submission->id,
+                'kode' => $submission->kode,
+                'nama' => $submission->nama,
+                'nama_kios' => $submission->nama_kios,
+                'plafon_type' => $submission->plafon_type,
+                
+                // PENTING: Ini field yang dibutuhkan untuk calculation
+                'plafon' => $submission->plafon, // Plafon aktif customer
+                'jumlah_buka_faktur' => $submission->jumlah_buka_faktur, // Value faktur
+                
+                'payment_type' => $submission->payment_type,
+                'payment_data' => $paymentData,
+                
+                // Data customer jika ada
+                'customer' => $submission->customer ? [
+                    'id' => $submission->customer->id,
+                    'plafon_aktif' => $submission->customer->plafon_aktif,
+                ] : null,
             ];
         })->toArray();
-
-        return view('approvals.index', [
-            'submissions' => $submissions,
-            'submissionsArray' => $submissionsArray,
-            'level' => $level,
-        ]);
+        
+        return view('approvals.index', compact('level', 'submissions', 'submissionsArray'));
     }
 
     // Dashboard khusus Level 3
@@ -438,16 +454,32 @@ class ApprovalController extends Controller
                 $submission->current_level = 4;
             }
             elseif ($level == 4) {
-                if ($action === 'approved') {
-                    // Approve → langsung ke Viewer
-                    $submission->status = 'pending_viewer';
-                    $submission->current_level = null; // Set NULL karena sudah selesai approval
-                } else {
-                    // Reject → lanjut ke Level 5
+            // Cek apakah Level 3 ada yang reject
+            $level3Rejected = $submission->approvals
+                ->where('level', 3)
+                ->where('status', 'rejected')
+                ->count() > 0;
+            
+            // Cek apakah Level 4 reject
+            $level4Rejected = ($action === 'rejected');
+            
+            if ($action === 'approved') {
+                // Level 4 APPROVE
+                if ($level3Rejected) {
+                    // Jika Level 3 ada yang reject → Lanjut ke Level 5
                     $submission->status = 'approver_5';
                     $submission->current_level = 5;
+                } else {
+                    // Jika Level 3 SEMUA approve DAN Level 4 approve → Langsung ke Viewer
+                    $submission->status = 'pending_viewer';
+                    $submission->current_level = null;
                 }
+            } else {
+                // Level 4 REJECT → Lanjut ke Level 5
+                $submission->status = 'approver_5';
+                $submission->current_level = 5;
             }
+        }
             elseif ($level == 5) {
                 if ($action === 'approved') {
                     // Approve → langsung ke Viewer

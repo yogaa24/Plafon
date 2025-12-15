@@ -434,7 +434,9 @@
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Jml Over <span class="text-red-500">*</span></label>
-                                <input type="number" name="jml_over" id="jmlOverInput" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="0" step="0.01">
+                                <input type="number" name="jml_over" id="jmlOverInput"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100"
+                                        placeholder="0" step="0.01">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Jml OD 30 <span class="text-red-500">*</span></label>
@@ -567,6 +569,15 @@
 const currentLevel = {{ $level }};
 const submissionsData = @json($submissionsArray);
 
+// Store plafon dan value faktur per submission
+const submissionDetails = {};
+submissionsData.forEach(s => {
+    submissionDetails[s.id] = {
+        plafonAktif: s.plafon || 0,
+        valueFaktur: s.jumlah_buka_faktur || 0
+    };
+});
+
 function toggleDetail(id) {
     const detailRow = document.getElementById('detail-' + id);
     const icon = document.getElementById('icon-' + id);
@@ -603,6 +614,7 @@ function openApprovalModal(submissionId, action) {
     
     // Set jenis pembayaran hidden input
     document.getElementById('jenisPembayaranInput').value = jenisPembayaran;
+    document.getElementById('jmlOverInput').readOnly = true;
     
     // Show Level 2 fields only for approved action, level 2, AND Open Plafon
     if (action === 'approved' && currentLevel === 2 && plafonType === 'open') {
@@ -624,7 +636,11 @@ function openApprovalModal(submissionId, action) {
         document.getElementById('jmlOd30Input').value = paymentData.jml_od_30 || paymentData.od_30 || '';
         document.getElementById('jmlOd60Input').value = paymentData.jml_od_60 || paymentData.od_60 || '';
         document.getElementById('jmlOd90Input').value = paymentData.jml_od_90 || paymentData.od_90 || '';
-        
+
+        // TAMBAHKAN INI - Setup auto-calculation untuk Over
+        if (jenisPembayaran === 'over') {
+            setupOverAutoCalculation(submissionId);
+        }
         // Info sumber data
         const dataSourceInfo = document.getElementById('dataSourceInfo');
         if (paymentData && (paymentData.piutang || paymentData.jml_over || paymentData.od_30 || paymentData.jml_od_30)) {
@@ -739,6 +755,69 @@ function closeApprovalModal() {
     removeLampiranPreview();
 }
 
+// Auto-calculation untuk Jml Over di modal approval
+function setupOverAutoCalculation(submissionId) {
+    const piutangInput = document.getElementById('piutangInput');
+    const jmlOverInput = document.getElementById('jmlOverInput');
+    
+    if (!piutangInput || !jmlOverInput) return;
+    
+    // Get data submission
+    const details = submissionDetails[submissionId];
+    if (!details) return;
+    
+    const plafonAktif = details.plafonAktif;
+    const valueFaktur = details.valueFaktur;
+    
+    // Function untuk kalkulasi
+    function calculateJmlOver() {
+        const piutang = parseFloat(piutangInput.value) || 0;
+        
+        // Rumus: Plafon Aktif - (Value Faktur + Piutang)
+        const jmlOver = plafonAktif - (valueFaktur + piutang);
+        
+        jmlOverInput.value = jmlOver.toFixed(0);
+        
+        // Optional: Tambahkan warning jika minus
+        showOverWarning(jmlOver);
+    }
+    
+    // Trigger calculation on input
+    piutangInput.addEventListener('input', calculateJmlOver);
+    piutangInput.addEventListener('change', calculateJmlOver);
+    
+    // Calculate immediately if piutang sudah ada value
+    if (piutangInput.value) {
+        calculateJmlOver();
+    }
+}
+
+// Optional: Show warning jika Jml Over negatif
+function showOverWarning(jmlOver) {
+    let warningDiv = document.getElementById('overWarningModal');
+    
+    if (!warningDiv) {
+        // Create warning div jika belum ada
+        warningDiv = document.createElement('div');
+        warningDiv.id = 'overWarningModal';
+        warningDiv.className = 'mt-2 p-2 rounded text-xs';
+        document.getElementById('jmlOverInput').parentNode.appendChild(warningDiv);
+    }
+    
+    if (jmlOver < 0) {
+        warningDiv.className = 'mt-2 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-700';
+        warningDiv.innerHTML = `
+            <strong>⚠️ Perhatian:</strong> Jml Over negatif (${new Intl.NumberFormat('id-ID').format(jmlOver)}). 
+            Customer melebihi plafon sebesar Rp ${new Intl.NumberFormat('id-ID').format(Math.abs(jmlOver))}
+        `;
+    } else {
+        warningDiv.className = 'mt-2 p-2 bg-green-50 border border-green-200 rounded text-xs text-green-700';
+        warningDiv.innerHTML = `
+            Sisa plafon tersedia Rp ${new Intl.NumberFormat('id-ID').format(jmlOver)}
+        `;
+    }
+}
+
 // Modal SIMPLE untuk Level 1, Level 2 Rubah Plafon (hanya notes)
 function openApprovalModalSimple(submissionId, action) {
     const modal = document.getElementById('approvalModal');
@@ -784,6 +863,15 @@ function closeApprovalModal() {
     // Reset form
     const form = document.getElementById('approvalForm');
     form.reset();
+    
+    // Reset preview lampiran
+    removeLampiranPreview();
+    
+    // TAMBAHKAN INI - Remove warning
+    const warningDiv = document.getElementById('overWarningModal');
+    if (warningDiv) {
+        warningDiv.remove();
+    }
 }
 
 function openEditCommitmentModal(submissionId, currentCommitment) {
@@ -829,5 +917,29 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+document.getElementById('approvalForm').addEventListener('submit', function (e) {
+    const jmlOverInput = document.getElementById('jmlOverInput');
+
+    // Jika field Jml Over ada (khusus Level 2 Open Plafon)
+    if (jmlOverInput && !jmlOverInput.closest('.hidden')) {
+        const jmlOver = parseFloat(jmlOverInput.value) || 0;
+
+        if (jmlOver < 0) {
+            e.preventDefault(); // 🚫 STOP submit
+
+            alert(
+                '❌ Tidak bisa disimpan!\n\n' +
+                'Jml Over bernilai minus.\n' +
+                'Customer melebihi plafon.\n\n' +
+                'Silakan perbaiki nilai Piutang atau data terkait.'
+            );
+
+            jmlOverInput.focus();
+            return false;
+        }
+    }
+});
+
 </script>
 @endsection

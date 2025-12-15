@@ -64,7 +64,7 @@ class DatabaseSeeder extends Seeder
 
         // Approver 5
         User::updateOrCreate(
-            ['email' => 'HRD KU'],
+            ['email' => 'approver5@demo.com'],
             [
                 'name' => 'Approver Level 5',
                 'password' => Hash::make('karisma'),
