@@ -83,20 +83,15 @@
                             value="{{ old('jumlah_buka_faktur') }}"
                             required 
                             min="1"
-                            max="{{ $customer->plafon_aktif }}"
                             class="w-full px-4 py-2.5 border @error('jumlah_buka_faktur') border-red-500 @else border-gray-300 @enderror rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             placeholder="Masukkan jumlah value faktur">
                          @error('jumlah_buka_faktur')
                             <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                          @enderror
-
-                        <p id="fakturOverWarning" class="hidden text-red-600 text-xs mt-1">
-                            ⚠️ Jumlah value faktur melebihi plafon aktif
-                        </p>
                     </div>
                 </div>
 
-                <!-- Jenis Pembayaran Section (Optional) -->
+                <!-- Jenis Pembayaran Section -->
                 <div class="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
                     <h4 class="text-sm font-semibold text-gray-900 mb-4">Jenis Pembayaran <span class="text-red-500">*</span></h4>
                     
@@ -219,7 +214,7 @@
                             <div class="flex items-center justify-between">
                                 <label class="text-sm text-gray-700 flex items-center">
                                     Jml Over
-                                    <svg class="w-4 h-4 ml-1 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" title="Auto-filled dari Plafon - Value Faktur">
+                                    <svg class="w-4 h-4 ml-1 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" title="Auto-filled dari Plafon - (Value Faktur + Piutang)">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                     </svg>
                                 </label>
@@ -227,14 +222,16 @@
                                     type="number" 
                                     id="over_jml_over_value"
                                     name="over_jml_over_value"
-                                    min="0"
                                     readonly
                                     class="w-48 px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-blue-50
                                         focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                     placeholder="Auto-filled">
                             </div>
-                            <div id="overWarning" class="hidden text-red-600 text-sm mt-1">
-                                    ⚠️ Jml Over minus
+                            <div id="overWarning" class="hidden text-amber-600 text-sm mt-1 flex items-center">
+                                <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                </svg>
+                                Jml Over bernilai negatif (Piutang + Value Faktur melebihi Plafon)
                             </div>
                             
                             <!-- Jml OD 30 -->
@@ -277,8 +274,7 @@
                             </div>
                         </div>
 
-
-                        <p class="text-xs text-gray-500 mt-3">* Jika diisi, pilih OD atau Over kemudian centang item yang diinginkan</p>
+                        <p class="text-xs text-gray-500 mt-3">* Pilih OD atau Over kemudian isi item yang diinginkan</p>
                     </div>
                 </div>
 
@@ -297,6 +293,7 @@
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
                 </div>
+            </div>
 
             <!-- Submit Buttons -->
             <div class="flex justify-end space-x-3 pt-6 border-t">
@@ -339,21 +336,17 @@ function calculateOverAutoFill() {
     const valueFaktur = parseFloat(document.querySelector('[name="jumlah_buka_faktur"]').value) || 0;
     const piutang = parseFloat(document.getElementById('over_piutang_value').value) || 0;
     
-    // Rumus
+    // Rumus: Plafon Aktif - (Value Faktur + Piutang)
     const jmlOver = plafonAktif - (valueFaktur + piutang);
     
     // Update field (boleh minus)
     const overJmlOverField = document.getElementById('over_jml_over_value');
     if (overJmlOverField) {
-        overJmlOverField.value = jmlOver.toFixed(0);
+        overJmlOverField.value = Math.round(jmlOver);
     }
 
-    // Notifikasi minus
+    // Tampilkan notifikasi jika minus (warning saja, tidak menghalangi submit)
     toggleOverWarning(jmlOver);
-    
-    // Selisih
-    const selisih = plafonAktif - valueFaktur;
-    showSelisihInfo(selisih);
 }
 
 // Trigger calculation when inputs change
@@ -363,17 +356,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Calculate when Value Faktur changes
     if (jumlahBukaFakturInput) {
-        jumlahBukaFakturInput.addEventListener('input', function() {
-            const value = parseFloat(this.value) || 0;
-            toggleFakturWarning(value);
-            calculateOverAutoFill();
-        });
-
-        jumlahBukaFakturInput.addEventListener('change', function() {
-            const value = parseFloat(this.value) || 0;
-            toggleFakturWarning(value);
-            calculateOverAutoFill();
-        });
+        jumlahBukaFakturInput.addEventListener('input', calculateOverAutoFill);
+        jumlahBukaFakturInput.addEventListener('change', calculateOverAutoFill);
     }
     
     // Calculate when Piutang (Over) changes
@@ -383,6 +367,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+// Toggle warning untuk Jml Over minus (hanya informasi, tidak menghalangi)
 function toggleOverWarning(jmlOver) {
     const warning = document.getElementById('overWarning');
     if (!warning) return;
@@ -394,37 +379,14 @@ function toggleOverWarning(jmlOver) {
     }
 }
 
-function toggleFakturWarning(valueFaktur) {
-    const warning = document.getElementById('fakturOverWarning');
-    const fakturInput = document.querySelector('[name="jumlah_buka_faktur"]');
-
-    if (!warning || !fakturInput) return;
-
-    if (valueFaktur > plafonAktif) {
-        warning.classList.remove('hidden');
-        fakturInput.classList.add('border-red-500');
-    } else {
-        warning.classList.add('hidden');
-        fakturInput.classList.remove('border-red-500');
-    }
-}
-
-
-// Validate before submit
+// Validate before submit (validasi minimal)
 document.getElementById('openPlafonForm').addEventListener('submit', function(e) {
     const jumlahBukaFaktur = parseInt(document.querySelector('[name="jumlah_buka_faktur"]').value) || 0;
     
-    // Validate jumlah buka faktur
+    // Validate jumlah buka faktur harus lebih dari 0
     if (jumlahBukaFaktur <= 0) {
         e.preventDefault();
         alert('Jumlah value faktur harus lebih besar dari 0');
-        return;
-    }
-    
-    // Validate jumlah tidak boleh lebih besar dari plafon aktif
-    if (jumlahBukaFaktur > plafonAktif) {
-        e.preventDefault();
-        alert(`Jumlah value faktur tidak boleh lebih besar dari plafon aktif (Rp ${new Intl.NumberFormat('id-ID').format(plafonAktif)})`);
         return;
     }
     
@@ -440,21 +402,30 @@ document.getElementById('openPlafonForm').addEventListener('submit', function(e)
     }
     
     // Confirmation
-    const plafonValue = {{ $customer->plafon_aktif }};
-    const formattedPlafon = new Intl.NumberFormat('id-ID').format(plafonValue);
-    const selisih = plafonValue - jumlahBukaFaktur;
-    const formattedSelisih = new Intl.NumberFormat('id-ID').format(selisih);
-    
     let paymentType = 'Tidak ada';
     if (typeOd.checked) paymentType = 'OD';
     if (typeOver.checked) paymentType = 'Over';
     
-    const confirmMessage = `Konfirmasi Pengajuan Open Plafon:\n\n` +
+    const formattedPlafon = new Intl.NumberFormat('id-ID').format(plafonAktif);
+    const formattedValueFaktur = new Intl.NumberFormat('id-ID').format(jumlahBukaFaktur);
+    
+    let confirmMessage = `Konfirmasi Pengajuan Open Plafon:\n\n` +
         `Plafon Aktif: Rp ${formattedPlafon}\n` +
-        `Jumlah Value Faktur: Rp ${new Intl.NumberFormat('id-ID').format(jumlahBukaFaktur)}\n` +
-        `Selisih (Piutang): Rp ${formattedSelisih}\n` +
-        `Jenis Pembayaran: ${paymentType}\n\n` +
-        `Lanjutkan pengajuan?`;
+        `Jumlah Value Faktur: Rp ${formattedValueFaktur}\n` +
+        `Jenis Pembayaran: ${paymentType}\n`;
+    
+    // Tambahkan info Jml Over jika Over dipilih
+    if (typeOver.checked) {
+        const jmlOver = parseInt(document.getElementById('over_jml_over_value').value) || 0;
+        const formattedJmlOver = new Intl.NumberFormat('id-ID').format(jmlOver);
+        confirmMessage += `Jml Over: Rp ${formattedJmlOver}\n`;
+        
+        if (jmlOver < 0) {
+            confirmMessage += `\n⚠️ Perhatian: Jml Over bernilai negatif!\n`;
+        }
+    }
+    
+    confirmMessage += `\nLanjutkan pengajuan?`;
     
     const confirmed = confirm(confirmMessage);
     

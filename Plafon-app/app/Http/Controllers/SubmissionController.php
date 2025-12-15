@@ -134,20 +134,22 @@ class SubmissionController extends Controller
             'previous_submission_id' => 'nullable|exists:submissions,id',
             'komitmen_pembayaran' => 'required|string',
             'payment_type' => 'nullable|in:od,over',
-            'od_piutang_value' => 'nullable|numeric|min:0',
-            'od_jml_over_value' => 'nullable|numeric|min:0',
-            'od_30_value' => 'nullable|numeric|min:0',
-            'od_60_value' => 'nullable|numeric|min:0',
-            'od_90_value' => 'nullable|numeric|min:0',
-            'over_piutang_value' => 'nullable|numeric|min:0',
-            'over_jml_over_value' => 'nullable|numeric|min:0',
-            'over_od_30_value' => 'nullable|numeric|min:0',
-            'over_od_60_value' => 'nullable|numeric|min:0',
-            'over_od_90_value' => 'nullable|numeric|min:0',
+            // PERUBAHAN: Hilangkan min:0 untuk semua payment values, biarkan bisa minus
+            'od_piutang_value' => 'nullable|numeric',
+            'od_jml_over_value' => 'nullable|numeric',
+            'od_30_value' => 'nullable|numeric',
+            'od_60_value' => 'nullable|numeric',
+            'od_90_value' => 'nullable|numeric',
+            'over_piutang_value' => 'nullable|numeric',
+            'over_jml_over_value' => 'nullable|numeric',
+            'over_od_30_value' => 'nullable|numeric',
+            'over_od_60_value' => 'nullable|numeric',
+            'over_od_90_value' => 'nullable|numeric',
         ];
 
         // Tambahkan validasi spesifik berdasarkan plafon_type
         if ($request->plafon_type === 'open') {
+            // PERUBAHAN: Hilangkan batasan max plafon_aktif
             $rules['jumlah_buka_faktur'] = 'required|integer|min:1';
         } elseif ($request->plafon_type === 'rubah') {
             $rules['plafon_direction'] = 'required|in:naik,turun';
@@ -185,17 +187,17 @@ class SubmissionController extends Controller
             $paymentData = [];
             
             if ($request->payment_type === 'od') {
-                if ($request->od_piutang_value) $paymentData['piutang'] = $request->od_piutang_value;
-                if ($request->od_jml_over_value) $paymentData['jml_over'] = $request->od_jml_over_value;
-                if ($request->od_30_value) $paymentData['od_30'] = $request->od_30_value;
-                if ($request->od_60_value) $paymentData['od_60'] = $request->od_60_value;
-                if ($request->od_90_value) $paymentData['od_90'] = $request->od_90_value;
+                if ($request->filled('od_piutang_value')) $paymentData['piutang'] = $request->od_piutang_value;
+                if ($request->filled('od_jml_over_value')) $paymentData['jml_over'] = $request->od_jml_over_value;
+                if ($request->filled('od_30_value')) $paymentData['od_30'] = $request->od_30_value;
+                if ($request->filled('od_60_value')) $paymentData['od_60'] = $request->od_60_value;
+                if ($request->filled('od_90_value')) $paymentData['od_90'] = $request->od_90_value;
             } elseif ($request->payment_type === 'over') {
-                if ($request->over_piutang_value) $paymentData['piutang'] = $request->over_piutang_value;
-                if ($request->over_jml_over_value) $paymentData['jml_over'] = $request->over_jml_over_value;
-                if ($request->over_od_30_value) $paymentData['od_30'] = $request->over_od_30_value;
-                if ($request->over_od_60_value) $paymentData['od_60'] = $request->over_od_60_value;
-                if ($request->over_od_90_value) $paymentData['od_90'] = $request->over_od_90_value;
+                if ($request->filled('over_piutang_value')) $paymentData['piutang'] = $request->over_piutang_value;
+                if ($request->filled('over_jml_over_value')) $paymentData['jml_over'] = $request->over_jml_over_value;
+                if ($request->filled('over_od_30_value')) $paymentData['od_30'] = $request->over_od_30_value;
+                if ($request->filled('over_od_60_value')) $paymentData['od_60'] = $request->over_od_60_value;
+                if ($request->filled('over_od_90_value')) $paymentData['od_90'] = $request->over_od_90_value;
             }
         }
 

@@ -70,8 +70,7 @@
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider w-10"></th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Kode</th>
+                        <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider w-16">No</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Nama</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Nama Kios</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Sales</th>
@@ -79,22 +78,23 @@
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Plafon</th>
                         <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Jenis</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Tanggal</th>
+                        <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Riwayat</th>
                         <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
-                    @forelse($submissions as $submission)
+                    @forelse($submissions as $index => $submission)
                     <!-- Main Row -->
                     <tr class="hover:bg-gray-50 transition">
                         <td class="px-4 py-3 text-center">
-                            <button type="button" onclick="toggleDetail({{ $submission->id }})" class="text-gray-500 hover:text-green-600 focus:outline-none transition" title="Lihat Detail">
-                                <svg id="icon-{{ $submission->id }}" class="w-5 h-5 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                                </svg>
-                            </button>
-                        </td>
-                        <td class="px-4 py-3 whitespace-nowrap">
-                            <span class="text-sm font-medium text-gray-900">{{ $submission->kode }}</span>
+                            <div class="flex flex-col items-center space-y-1">
+                                <span class="text-sm font-semibold text-gray-900">{{ $submissions->firstItem() + $index }}</span>
+                                <button type="button" onclick="toggleDetail({{ $submission->id }})" class="text-gray-500 hover:text-green-600 focus:outline-none transition" title="Lihat Detail">
+                                    <svg id="icon-{{ $submission->id }}" class="w-4 h-4 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                    </svg>
+                                </button>
+                            </div>
                         </td>
                         <td class="px-4 py-3">
                             <div class="text-sm font-medium text-gray-900">{{ $submission->nama }}</div>
@@ -103,12 +103,7 @@
                             <span class="text-sm text-gray-900">{{ $submission->nama_kios }}</span>
                         </td>
                         <td class="px-4 py-3 whitespace-nowrap">
-                            <div class="flex items-center">
-                                <div class="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center mr-2">
-                                    <span class="text-xs font-bold text-indigo-600">{{ substr($submission->sales->name, 0, 2) }}</span>
-                                </div>
-                                <span class="text-sm text-gray-900">{{ $submission->sales->name }}</span>
-                            </div>
+                            <span class="text-sm text-gray-900">{{ $submission->sales->name }}</span>
                         </td>
                         <td class="px-4 py-3 whitespace-nowrap">
                             @if($submission->plafon_type === 'open')
@@ -140,6 +135,25 @@
                         </td>
                         <td class="px-4 py-3 whitespace-nowrap">
                             <span class="text-sm text-gray-600">{{ $submission->updated_at->format('d M Y') }}</span>
+                        </td>
+                        <td class="px-4 py-3">
+                            <div class="flex items-center justify-center space-x-1">
+                                @php
+                                    $maxLevel = $submission->approvals->max('level') ?? 0;
+                                @endphp
+                                @for($i = 1; $i <= $maxLevel; $i++)
+                                    @php
+                                        $approval = $submission->approvals->where('level', $i)->first();
+                                    @endphp
+                                    <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold
+                                        @if($approval && $approval->status == 'approved') bg-green-500 text-white
+                                        @elseif($approval && $approval->status == 'rejected') bg-red-500 text-white
+                                        @else bg-gray-200 text-gray-500
+                                        @endif">
+                                        {{ $i }}
+                                    </div>
+                                @endfor
+                            </div>
                         </td>
                         <td class="px-4 py-3 text-center whitespace-nowrap">
                             <div class="flex items-center justify-center space-x-2">
@@ -315,65 +329,65 @@
                                 </div>
                                 @endif
                                 <!-- Riwayat Approval -->
-@if($submission->approvals->count() > 0)
-<div class="col-span-1 md:col-span-2">
-    <h4 class="font-semibold text-gray-700 mb-3 text-sm uppercase tracking-wide">
-        Riwayat Approval
-    </h4>
+                                @if($submission->approvals->count() > 0)
+                                <div class="col-span-1 md:col-span-2">
+                                    <h4 class="font-semibold text-gray-700 mb-3 text-sm uppercase tracking-wide">
+                                        Riwayat Approval
+                                    </h4>
 
-    <div class="space-y-3">
-        @foreach($submission->approvals->sortBy('level') as $approval)
-        @php
-            $isApproved = $approval->status === 'approved';
-            $isRejected = $approval->status === 'rejected';
-        @endphp
+                                    <div class="space-y-3">
+                                        @foreach($submission->approvals->sortBy('level') as $approval)
+                                        @php
+                                            $isApproved = $approval->status === 'approved';
+                                            $isRejected = $approval->status === 'rejected';
+                                        @endphp
 
-        <div class="flex items-start justify-between p-4 rounded-lg border
-            {{ $isApproved ? 'bg-green-50 border-green-200' : '' }}
-            {{ $isRejected ? 'bg-red-50 border-red-200' : '' }}
-        ">
-            <!-- KIRI -->
-            <div class="flex items-start space-x-3">
-                <div class="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm text-white
-                    {{ $isApproved ? 'bg-green-500' : '' }}
-                    {{ $isRejected ? 'bg-red-500' : '' }}
-                ">
-                    {{ $approval->level }}
-                </div>
+                                        <div class="flex items-start justify-between p-4 rounded-lg border
+                                            {{ $isApproved ? 'bg-green-50 border-green-200' : '' }}
+                                            {{ $isRejected ? 'bg-red-50 border-red-200' : '' }}
+                                        ">
+                                            <!-- KIRI -->
+                                            <div class="flex items-start space-x-3">
+                                                <div class="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm text-white
+                                                    {{ $isApproved ? 'bg-green-500' : '' }}
+                                                    {{ $isRejected ? 'bg-red-500' : '' }}
+                                                ">
+                                                    {{ $approval->level }}
+                                                </div>
 
-                <div>
-                    <p class="font-semibold text-gray-900 text-sm">
-                        {{ $approval->approver->name }}
-                    </p>
-                    <p class="text-xs text-gray-500">
-                        {{ $approval->created_at->format('d M Y H:i') }}
-                    </p>
+                                                <div>
+                                                    <p class="font-semibold text-gray-900 text-sm">
+                                                        {{ $approval->approver->name }}
+                                                    </p>
+                                                    <p class="text-xs text-gray-500">
+                                                        {{ $approval->created_at->format('d M Y H:i') }}
+                                                    </p>
 
-                    @if($approval->note)
-                        <div class="mt-2 p-2 bg-white border border-gray-200 rounded">
-                            <p class="text-xs font-semibold text-gray-500 mb-1">
-                                {{ $isRejected ? 'Alasan Penolakan:' : 'Catatan:' }}
-                            </p>
-                            <p class="text-xs text-gray-700 italic">
-                                "{{ $approval->note }}"
-                            </p>
-                        </div>
-                    @endif
-                </div>
-            </div>
+                                                    @if($approval->note)
+                                                        <div class="mt-2 p-2 bg-white border border-gray-200 rounded">
+                                                            <p class="text-xs font-semibold text-gray-500 mb-1">
+                                                                {{ $isRejected ? 'Alasan Penolakan:' : 'Catatan:' }}
+                                                            </p>
+                                                            <p class="text-xs text-gray-700 italic">
+                                                                "{{ $approval->note }}"
+                                                            </p>
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                            </div>
 
-            <!-- KANAN (STATUS) -->
-            <span class="text-xs px-2 py-1 rounded-full font-semibold h-fit
-                {{ $isApproved ? 'bg-green-100 text-green-700' : '' }}
-                {{ $isRejected ? 'bg-red-100 text-red-700' : '' }}
-            ">
-                {{ $isApproved ? '✓ Disetujui' : '✕ Ditolak' }}
-            </span>
-        </div>
-        @endforeach
-    </div>
-</div>
-@endif
+                                            <!-- KANAN (STATUS) -->
+                                            <span class="text-xs px-2 py-1 rounded-full font-semibold h-fit
+                                                {{ $isApproved ? 'bg-green-100 text-green-700' : '' }}
+                                                {{ $isRejected ? 'bg-red-100 text-red-700' : '' }}
+                                            ">
+                                                {{ $isApproved ? '✓ Disetujui' : '✕ Ditolak' }}
+                                            </span>
+                                        </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                                @endif
 
                             </div>
                         </td>

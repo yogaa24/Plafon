@@ -331,7 +331,7 @@ class ApprovalController extends Controller
         if ($level == 2 && $action === 'approved' && $submission->plafon_type === 'open') {
             $request->validate([
                 'piutang' => 'required|numeric|min:0',
-                'jml_over' => 'required|numeric|min:0',
+                'jml_over' => 'required|numeric',
                 'jml_od_30' => 'required|numeric|min:0',
                 'jml_od_60' => 'required|numeric|min:0',
                 'jml_od_90' => 'required|numeric|min:0',
@@ -393,7 +393,7 @@ class ApprovalController extends Controller
             if ($level == 2 && $action === 'approved' && $submission->plafon_type === 'open') {
                 $request->validate([
                     'piutang' => 'required|numeric|min:0',
-                    'jml_over' => 'required|numeric|min:0',
+                    'jml_over' => 'required|numeric',
                     'jml_od_30' => 'required|numeric|min:0',
                     'jml_od_60' => 'required|numeric|min:0',
                     'jml_od_90' => 'required|numeric|min:0',
@@ -550,58 +550,7 @@ class ApprovalController extends Controller
             $submission->status = 'rejected_all_level3';
         }
     }
-
-    public function updateCommitment(Request $request, Submission $submission)
-    {
-        $user = Auth::user();
-        $level = $this->getApproverLevel($user->role);
-
-        // Hanya Level 1, 2, 3 yang bisa edit
-        if (!in_array($level, [1, 2, 3])) {
-            return redirect()->back()->with('error', 'Anda tidak berhak mengedit komitmen pembayaran');
-        }
-
-        // Validasi hanya bisa edit jika sedang di level tersebut
-        if ($submission->current_level != $level) {
-            return redirect()->back()->with('error', 'Komitmen hanya bisa diedit saat pengajuan di level Anda');
-        }
-
-        $request->validate([
-            'komitmen_pembayaran' => 'required|string|max:255'
-        ]);
-
-        DB::beginTransaction();
-        try {
-            $oldCommitment = $submission->komitmen_pembayaran;
-            $newCommitment = $request->komitmen_pembayaran;
-
-            // Update komitmen
-            $submission->komitmen_pembayaran = $newCommitment;
-            
-            // Simpan log edit
-            $commitmentLog = json_decode($submission->commitment_edit_log, true) ?? [];
-            $commitmentLog[] = [
-                'editor_id' => $user->id,
-                'editor_name' => $user->name,
-                'editor_level' => $level,
-                'old_value' => $oldCommitment,
-                'new_value' => $newCommitment,
-                'edited_at' => now()->toDateTimeString(),
-            ];
-            
-            $submission->commitment_edit_log = json_encode($commitmentLog);
-            $submission->save();
-
-            DB::commit();
-
-            return redirect()->back()->with('success', 'Komitmen pembayaran berhasil diperbarui');
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return redirect()->back()->with('error', 'Gagal mengupdate komitmen: ' . $e->getMessage());
-        }
-    }
-
+    
     private function getApproverLevel($role)
     {
          return match($role) {

@@ -165,17 +165,6 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                                     </svg>
                                 </button>
-
-                                <!-- Edit Komitmen Button (hanya Level 1, 2, 3) -->
-                                @if(in_array($level, [1, 2, 3]))
-                                <button onclick="openEditCommitmentModal({{ $submission->id }}, '{{ addslashes($submission->komitmen_pembayaran) }}')" 
-                                        class="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 transition" 
-                                        title="Edit Komitmen">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                                    </svg>
-                                </button>
-                                @endif
                             </div>
                         </td>
                     </tr>
@@ -519,39 +508,6 @@
     </div>
 </div>
 
-<!-- Edit Komitmen Modal -->
-<div id="editCommitmentModal" class="hidden fixed inset-0 bg-black/40 backdrop-blur-[2px] overflow-y-auto h-full w-full z-50">
-    <div class="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-lg bg-white">
-        <div class="mt-3">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">Edit Komitmen Pembayaran</h3>
-            
-            <form id="editCommitmentForm" method="POST">
-                @csrf
-                
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        Komitmen Pembayaran <span class="text-red-500">*</span>
-                    </label>
-                    <input type="text" id="komitmenInput" name="komitmen_pembayaran" required
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                           placeholder="Contoh: 30 hari">
-                </div>
-
-                <div class="flex gap-3">
-                    <button type="button" onclick="closeEditCommitmentModal()" 
-                            class="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
-                        Batal
-                    </button>
-                    <button type="submit" 
-                            class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition">
-                        Simpan Perubahan
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
 @if(session('success'))
 <div id="success-alert" class="fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
     {{ session('success') }}
@@ -823,6 +779,7 @@ function setupOverAutoCalculation(submissionId) {
 
 
 // Optional: Show warning jika Jml Over negatif
+// UBAH fungsi ini (ubah warna dari red menjadi amber/kuning untuk warning saja)
 function showOverWarning(jmlOver) {
     let warningDiv = document.getElementById('overWarningModal');
     
@@ -835,7 +792,8 @@ function showOverWarning(jmlOver) {
     }
     
     if (jmlOver < 0) {
-        warningDiv.className = 'mt-2 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-700';
+        // UBAH: dari bg-red menjadi bg-amber (warning saja, tidak error)
+        warningDiv.className = 'mt-2 p-2 bg-amber-50 border border-amber-200 rounded text-xs text-amber-700';
         warningDiv.innerHTML = `
             <strong>⚠️ Perhatian:</strong> Jml Over negatif (${new Intl.NumberFormat('id-ID').format(jmlOver)}). 
             Customer melebihi plafon sebesar Rp ${new Intl.NumberFormat('id-ID').format(Math.abs(jmlOver))}
@@ -843,7 +801,7 @@ function showOverWarning(jmlOver) {
     } else {
         warningDiv.className = 'mt-2 p-2 bg-green-50 border border-green-200 rounded text-xs text-green-700';
         warningDiv.innerHTML = `
-            Sisa plafon tersedia Rp ${new Intl.NumberFormat('id-ID').format(jmlOver)}
+            ✓ Sisa plafon tersedia Rp ${new Intl.NumberFormat('id-ID').format(jmlOver)}
         `;
     }
 }
@@ -904,32 +862,10 @@ function closeApprovalModal() {
     }
 }
 
-function openEditCommitmentModal(submissionId, currentCommitment) {
-    const modal = document.getElementById('editCommitmentModal');
-    const form = document.getElementById('editCommitmentForm');
-    const input = document.getElementById('komitmenInput');
-    
-    form.action = `/approvals/${submissionId}/update-commitment`;
-    input.value = currentCommitment;
-    
-    modal.classList.remove('hidden');
-}
-
-function closeEditCommitmentModal() {
-    const modal = document.getElementById('editCommitmentModal');
-    modal.classList.add('hidden');
-}
-
 // Close modal when clicking outside
 document.getElementById('approvalModal')?.addEventListener('click', function(e) {
     if (e.target === this) {
         closeApprovalModal();
-    }
-});
-
-document.getElementById('editCommitmentModal')?.addEventListener('click', function(e) {
-    if (e.target === this) {
-        closeEditCommitmentModal();
     }
 });
 
@@ -947,29 +883,5 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
-
-document.getElementById('approvalForm').addEventListener('submit', function (e) {
-    const jmlOverInput = document.getElementById('jmlOverInput');
-
-    // Jika field Jml Over ada (khusus Level 2 Open Plafon)
-    if (jmlOverInput && !jmlOverInput.closest('.hidden')) {
-        const jmlOver = parseFloat(jmlOverInput.value) || 0;
-
-        if (jmlOver < 0) {
-            e.preventDefault(); // 🚫 STOP submit
-
-            alert(
-                '❌ Tidak bisa disimpan!\n\n' +
-                'Jml Over bernilai minus.\n' +
-                'Customer melebihi plafon.\n\n' +
-                'Silakan perbaiki nilai Piutang atau data terkait.'
-            );
-
-            jmlOverInput.focus();
-            return false;
-        }
-    }
-});
-
 </script>
 @endsection

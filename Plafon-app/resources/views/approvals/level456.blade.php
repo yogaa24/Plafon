@@ -310,28 +310,6 @@
                                 </div>
                                 @endif
 
-                                <!-- Log Edit Komitmen -->
-                                @if($commitmentLog && count($commitmentLog) > 0)
-                                <div class="col-span-1 md:col-span-2">
-                                    <h4 class="font-semibold text-gray-700 mb-3 text-sm uppercase tracking-wide">Riwayat Edit Komitmen</h4>
-                                    <div class="space-y-2 max-h-40 overflow-y-auto">
-                                        @foreach($commitmentLog as $log)
-                                        <div class="bg-blue-50 p-3 rounded border-l-4 border-blue-500">
-                                            <div class="flex justify-between items-start mb-1">
-                                                <span class="text-sm font-semibold text-gray-900">{{ $log['editor_name'] }} (Level {{ $log['editor_level'] }})</span>
-                                                <span class="text-xs text-gray-500">{{ \Carbon\Carbon::parse($log['edited_at'])->format('d M Y H:i') }}</span>
-                                            </div>
-                                            <div class="text-xs text-gray-700">
-                                                <span class="line-through text-red-600">{{ $log['old_value'] }}</span>
-                                                <span class="mx-2">→</span>
-                                                <span class="text-green-600 font-semibold">{{ $log['new_value'] }}</span>
-                                            </div>
-                                        </div>
-                                        @endforeach
-                                    </div>
-                                </div>
-                                @endif
-
                                 <!-- Riwayat Approval -->
                                 @if($submission->approvals->count() > 0)
                                 <div class="col-span-1 md:col-span-2">

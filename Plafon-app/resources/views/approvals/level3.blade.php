@@ -170,15 +170,6 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                                     </svg>
                                 </button>
-                                
-                                <!-- Edit Komitmen Button -->
-                                <button onclick="openEditCommitmentModal({{ $submission->id }}, '{{ addslashes($submission->komitmen_pembayaran) }}')" 
-                                        class="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 transition" 
-                                        title="Edit Komitmen">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                                    </svg>
-                                </button>
                             </div>
                         </td>
                     </tr>
@@ -332,28 +323,6 @@
                                 </div>
                                 @endif
 
-                                <!-- Log Edit Komitmen -->
-                                @if($commitmentLog && count($commitmentLog) > 0)
-                                <div class="col-span-1 md:col-span-2">
-                                    <h4 class="font-semibold text-gray-700 mb-3 text-sm uppercase tracking-wide">Riwayat Edit Komitmen</h4>
-                                    <div class="space-y-2 max-h-40 overflow-y-auto">
-                                        @foreach($commitmentLog as $log)
-                                        <div class="bg-blue-50 p-3 rounded border-l-4 border-blue-500">
-                                            <div class="flex justify-between items-start mb-1">
-                                                <span class="text-sm font-semibold text-gray-900">{{ $log['editor_name'] }} (Level {{ $log['editor_level'] }})</span>
-                                                <span class="text-xs text-gray-500">{{ \Carbon\Carbon::parse($log['edited_at'])->format('d M Y H:i') }}</span>
-                                            </div>
-                                            <div class="text-xs text-gray-700">
-                                                <span class="line-through text-red-600">{{ $log['old_value'] }}</span>
-                                                <span class="mx-2">→</span>
-                                                <span class="text-green-600 font-semibold">{{ $log['new_value'] }}</span>
-                                            </div>
-                                        </div>
-                                        @endforeach
-                                    </div>
-                                </div>
-                                @endif
-
                                 <!-- Riwayat Approval -->
                                 @if($submission->approvals->count() > 0)
                                 <div class="col-span-1 md:col-span-2">
@@ -449,39 +418,6 @@
                     <button type="submit" id="submitButton" 
                             class="flex-1 px-4 py-2 text-white rounded-lg transition">
                         Konfirmasi
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Edit Komitmen Modal -->
-<div id="editCommitmentModal" class="hidden fixed inset-0 bg-black/40 backdrop-blur-[2px] overflow-y-auto h-full w-full z-50">
-    <div class="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-lg bg-white">
-        <div class="mt-3">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">Edit Komitmen Pembayaran</h3>
-            
-            <form id="editCommitmentForm" method="POST">
-                @csrf
-                
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        Komitmen Pembayaran <span class="text-red-500">*</span>
-                    </label>
-                    <input type="text" id="komitmenInput" name="komitmen_pembayaran" required
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                           placeholder="Contoh: 30 hari">
-                </div>
-
-                <div class="flex gap-3">
-                    <button type="button" onclick="closeEditCommitmentModal()" 
-                            class="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
-                        Batal
-                    </button>
-                    <button type="submit" 
-                            class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition">
-                        Simpan Perubahan
                     </button>
                 </div>
             </form>
@@ -597,32 +533,10 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
-function openEditCommitmentModal(submissionId, currentCommitment) {
-    const modal = document.getElementById('editCommitmentModal');
-    const form = document.getElementById('editCommitmentForm');
-    const input = document.getElementById('komitmenInput');
-    
-    form.action = `/approvals/${submissionId}/update-commitment`;
-    input.value = currentCommitment;
-    
-    modal.classList.remove('hidden');
-}
-
-function closeEditCommitmentModal() {
-    const modal = document.getElementById('editCommitmentModal');
-    modal.classList.add('hidden');
-}
-
 // Close modal when clicking outside
 document.getElementById('approvalModal')?.addEventListener('click', function(e) {
     if (e.target === this) {
         closeApprovalModal();
-    }
-});
-
-document.getElementById('editCommitmentModal')?.addEventListener('click', function(e) {
-    if (e.target === this) {
-        closeEditCommitmentModal();
     }
 });
 
