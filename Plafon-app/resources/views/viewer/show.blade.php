@@ -88,36 +88,68 @@
 
         <div class="space-y-4">
             @foreach($submission->approvals->sortBy('level') as $approval)
-            <div class="flex items-start space-x-4 p-4 bg-green-50 rounded-lg border border-green-200">
+            @php
+                $isApproved = $approval->status === 'approved';
+                $isRejected = $approval->status === 'rejected';
+            @endphp
+
+            <div class="flex items-start space-x-4 p-4 rounded-lg border
+                {{ $isApproved ? 'bg-green-50 border-green-200' : '' }}
+                {{ $isRejected ? 'bg-red-50 border-red-200' : '' }}
+            ">
                 <div class="flex-shrink-0">
-                    <div class="w-12 h-12 rounded-full flex items-center justify-center font-bold bg-green-500 text-white">
+                    <div class="w-12 h-12 rounded-full flex items-center justify-center font-bold text-white
+                        {{ $isApproved ? 'bg-green-500' : '' }}
+                        {{ $isRejected ? 'bg-red-500' : '' }}
+                    ">
                         {{ $approval->level }}
                     </div>
                 </div>
+
                 <div class="flex-1">
                     <div class="flex items-center justify-between mb-2">
                         <div class="flex items-center space-x-3">
                             <h3 class="font-semibold text-gray-900">{{ $approval->approver->name }}</h3>
-                            <span class="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded">Level {{ $approval->level }}</span>
+                            <span class="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded">
+                                Level {{ $approval->level }}
+                            </span>
                         </div>
-                        <span class="text-sm text-gray-500">{{ $approval->created_at->format('d M Y H:i') }}</span>
-                    </div>
-                    <div class="flex items-center space-x-2 mb-2">
-                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
-                            <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-                            </svg>
-                            Disetujui
+                        <span class="text-sm text-gray-500">
+                            {{ $approval->created_at->format('d M Y H:i') }}
                         </span>
                     </div>
+
+                    <!-- STATUS BADGE -->
+                    <div class="flex items-center space-x-2 mb-2">
+                        @if($isApproved)
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+                                ✓ Disetujui
+                            </span>
+                        @elseif($isRejected)
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800">
+                                ✕ Ditolak
+                            </span>
+                        @else
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-800">
+                                Menunggu
+                            </span>
+                        @endif
+                    </div>
+
+                    <!-- CATATAN -->
                     @if($approval->note)
                     <div class="mt-3 p-3 bg-white rounded border border-gray-200">
-                        <p class="text-xs text-gray-500 mb-1 font-semibold">Catatan:</p>
-                        <p class="text-sm text-gray-700 italic">"{{ $approval->note }}"</p>
+                        <p class="text-xs text-gray-500 mb-1 font-semibold">
+                            {{ $isRejected ? 'Alasan Penolakan:' : 'Catatan:' }}
+                        </p>
+                        <p class="text-sm text-gray-700 italic">
+                            "{{ $approval->note }}"
+                        </p>
                     </div>
                     @endif
                 </div>
             </div>
+
             @endforeach
         </div>
     </div>

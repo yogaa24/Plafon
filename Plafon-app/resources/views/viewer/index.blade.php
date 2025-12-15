@@ -7,8 +7,8 @@
     <!-- Header -->
     <div class="flex justify-between items-center">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">Dashboard Pengajuan Selesai</h1>
-            <p class="text-sm text-gray-600">Lihat semua pengajuan yang telah disetujui</p>
+            <h1 class="text-2xl font-bold text-gray-900">Dashboard Viewer</h1>
+            <p class="text-sm text-gray-600">Pengajuan menunggu pengecekan & yang telah diselesaikan</p>
         </div>
         <div class="flex items-center space-x-2">
             <button onclick="openImportModal()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold text-sm hover:bg-indigo-700 transition">
@@ -154,7 +154,7 @@
                                     Lihat
                                 </a>
                                 <!-- Tombol Done -->
-                                @if($submission->status === 'approved_3')
+                                @if($submission->status === 'pending_viewer')
                                 <form action="{{ route('viewer.done', $submission) }}" method="POST"
                                     onsubmit="return confirm('Apakah Anda yakin ingin menandai sebagai Selesai?')">
                                     @csrf
@@ -314,6 +314,67 @@
                                     </div>
                                 </div>
                                 @endif
+                                <!-- Riwayat Approval -->
+@if($submission->approvals->count() > 0)
+<div class="col-span-1 md:col-span-2">
+    <h4 class="font-semibold text-gray-700 mb-3 text-sm uppercase tracking-wide">
+        Riwayat Approval
+    </h4>
+
+    <div class="space-y-3">
+        @foreach($submission->approvals->sortBy('level') as $approval)
+        @php
+            $isApproved = $approval->status === 'approved';
+            $isRejected = $approval->status === 'rejected';
+        @endphp
+
+        <div class="flex items-start justify-between p-4 rounded-lg border
+            {{ $isApproved ? 'bg-green-50 border-green-200' : '' }}
+            {{ $isRejected ? 'bg-red-50 border-red-200' : '' }}
+        ">
+            <!-- KIRI -->
+            <div class="flex items-start space-x-3">
+                <div class="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm text-white
+                    {{ $isApproved ? 'bg-green-500' : '' }}
+                    {{ $isRejected ? 'bg-red-500' : '' }}
+                ">
+                    {{ $approval->level }}
+                </div>
+
+                <div>
+                    <p class="font-semibold text-gray-900 text-sm">
+                        {{ $approval->approver->name }}
+                    </p>
+                    <p class="text-xs text-gray-500">
+                        {{ $approval->created_at->format('d M Y H:i') }}
+                    </p>
+
+                    @if($approval->note)
+                        <div class="mt-2 p-2 bg-white border border-gray-200 rounded">
+                            <p class="text-xs font-semibold text-gray-500 mb-1">
+                                {{ $isRejected ? 'Alasan Penolakan:' : 'Catatan:' }}
+                            </p>
+                            <p class="text-xs text-gray-700 italic">
+                                "{{ $approval->note }}"
+                            </p>
+                        </div>
+                    @endif
+                </div>
+            </div>
+
+            <!-- KANAN (STATUS) -->
+            <span class="text-xs px-2 py-1 rounded-full font-semibold h-fit
+                {{ $isApproved ? 'bg-green-100 text-green-700' : '' }}
+                {{ $isRejected ? 'bg-red-100 text-red-700' : '' }}
+            ">
+                {{ $isApproved ? '✓ Disetujui' : '✕ Ditolak' }}
+            </span>
+        </div>
+        @endforeach
+    </div>
+</div>
+@endif
+
                             </div>
                         </td>
                     </tr>

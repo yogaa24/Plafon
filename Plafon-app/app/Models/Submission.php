@@ -97,13 +97,13 @@ class Submission extends Model
     public function getStatusBadgeAttribute()
     {
         $badges = [
-            'pending'               => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Menunggu Approval 1</span>',
-            'approved_1'            => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Menunggu Approval 2</span>',
-            'approved_2'            => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-800">Menunggu Approval 3</span>',
-            'approved_3'            => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">Menunggu Approval 4</span>',
-            'approver_4'            => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">Menunggu Approval 4</span>',
-            'approver_5'            => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">Menunggu Approval 5</span>',
-            'approver_6'            => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">Menunggu Approval 6</span>',
+            'pending'               => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Menunggu Koor SC</span>',
+            'approved_1'            => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Menunggu TC</span>',
+            'approved_2'            => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-800">Menunggu Kabag KEU</span>',
+            'approved_3'            => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">Menunggu Kadep KEU</span>',
+            'approver_4'            => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">Menunggu Kadep KEU&HRD</span>',
+            'approver_5'            => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">Menunggu DIreksi</span>',
+            'approver_6'            => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">Proses Input</span>',
             'pending_viewer'        => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-cyan-100 text-cyan-800">Proses Input</span>',
             'done'                  => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Selesai</span>',
             'rejected'              => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Ditolak</span>',

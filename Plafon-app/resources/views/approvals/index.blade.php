@@ -435,7 +435,7 @@
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Jml Over <span class="text-red-500">*</span></label>
                                 <input type="number" name="jml_over" id="jmlOverInput"
-                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg"
                                         placeholder="0" step="0.01">
                             </div>
                             <div>
@@ -607,6 +607,29 @@ function openApprovalModal(submissionId, action) {
     const jenisPembayaran = submission ? submission.payment_type : '';
     const paymentData = submission ? submission.payment_data : {};
     const plafonType = submission ? submission.plafon_type : '';
+    const jmlOverInput = document.getElementById('jmlOverInput');
+
+    /* RESET STATE SETIAP MODAL DIBUKA */
+    jmlOverInput.readOnly = false;
+    jmlOverInput.disabled = false;
+    jmlOverInput.classList.remove('bg-gray-100');
+
+    /* RULE BERDASARKAN JENIS PEMBAYARAN */
+    if (jenisPembayaran === 'over') {
+        // OVER → AUTO & KUNCI
+        jmlOverInput.readOnly = true;
+        jmlOverInput.classList.add('bg-gray-100');
+
+        setupOverAutoCalculation(submissionId);
+    } else {
+        // OD → MANUAL
+        jmlOverInput.readOnly = false;
+        jmlOverInput.disabled = false;
+        jmlOverInput.classList.remove('bg-gray-100');
+
+        jmlOverInput.value = paymentData.jml_over || '';
+    }
+
     
     // Set form action
     form.action = `/approvals/${submissionId}/process`;
@@ -614,7 +637,6 @@ function openApprovalModal(submissionId, action) {
     
     // Set jenis pembayaran hidden input
     document.getElementById('jenisPembayaranInput').value = jenisPembayaran;
-    document.getElementById('jmlOverInput').readOnly = true;
     
     // Show Level 2 fields only for approved action, level 2, AND Open Plafon
     if (action === 'approved' && currentLevel === 2 && plafonType === 'open') {
@@ -637,9 +659,20 @@ function openApprovalModal(submissionId, action) {
         document.getElementById('jmlOd60Input').value = paymentData.jml_od_60 || paymentData.od_60 || '';
         document.getElementById('jmlOd90Input').value = paymentData.jml_od_90 || paymentData.od_90 || '';
 
-        // TAMBAHKAN INI - Setup auto-calculation untuk Over
+        // ===== RULE JML OVER =====
         if (jenisPembayaran === 'over') {
+            // OVER → auto hitung & tidak bisa diedit
+            jmlOverInput.readOnly = true;
+            jmlOverInput.classList.add('bg-gray-100');
+
             setupOverAutoCalculation(submissionId);
+        } else {
+            // OD → input manual
+            jmlOverInput.readOnly = false;
+            jmlOverInput.classList.remove('bg-gray-100');
+
+            // ❗ hentikan auto calculation jika sebelumnya OVER
+            jmlOverInput.value = paymentData.jml_over || '';
         }
         // Info sumber data
         const dataSourceInfo = document.getElementById('dataSourceInfo');
@@ -759,38 +792,35 @@ function closeApprovalModal() {
 function setupOverAutoCalculation(submissionId) {
     const piutangInput = document.getElementById('piutangInput');
     const jmlOverInput = document.getElementById('jmlOverInput');
-    
+
     if (!piutangInput || !jmlOverInput) return;
-    
-    // Get data submission
+
+    // ❗ Reset event listener lama
+    piutangInput.oninput = null;
+    piutangInput.onchange = null;
+
     const details = submissionDetails[submissionId];
     if (!details) return;
-    
+
     const plafonAktif = details.plafonAktif;
     const valueFaktur = details.valueFaktur;
-    
-    // Function untuk kalkulasi
+
     function calculateJmlOver() {
         const piutang = parseFloat(piutangInput.value) || 0;
-        
-        // Rumus: Plafon Aktif - (Value Faktur + Piutang)
         const jmlOver = plafonAktif - (valueFaktur + piutang);
-        
-        jmlOverInput.value = jmlOver.toFixed(0);
-        
-        // Optional: Tambahkan warning jika minus
+
+        jmlOverInput.value = Math.round(jmlOver);
         showOverWarning(jmlOver);
     }
-    
-    // Trigger calculation on input
+
     piutangInput.addEventListener('input', calculateJmlOver);
     piutangInput.addEventListener('change', calculateJmlOver);
-    
-    // Calculate immediately if piutang sudah ada value
+
     if (piutangInput.value) {
         calculateJmlOver();
     }
 }
+
 
 // Optional: Show warning jika Jml Over negatif
 function showOverWarning(jmlOver) {

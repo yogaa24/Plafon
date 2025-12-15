@@ -42,7 +42,7 @@ class DatabaseSeeder extends Seeder
         User::updateOrCreate(
             ['email' => 'approver3@demo.com'],
             [
-                'name' => 'Kabag',
+                'name' => 'Kabag KEU',
                 'password' => Hash::make('karisma'),
                 'role' => 'approver3',
                 'is_level3_approver' => false,
@@ -54,7 +54,7 @@ class DatabaseSeeder extends Seeder
         User::updateOrCreate(
             ['email' => 'approver4@demo.com'],
             [
-                'name' => 'Kadep',
+                'name' => 'Kadep KEU',
                 'password' => Hash::make('karisma'),
                 'role' => 'approver4',
                 'is_level3_approver' => false,
@@ -66,7 +66,7 @@ class DatabaseSeeder extends Seeder
         User::updateOrCreate(
             ['email' => 'approver5@demo.com'],
             [
-                'name' => 'Approver Level 5',
+                'name' => 'Kadep KEU & HRD',
                 'password' => Hash::make('karisma'),
                 'role' => 'approver5',
                 'is_level3_approver' => false,

@@ -15,7 +15,7 @@ class ViewerController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Submission::whereIn('status', ['approved_3', 'done'])
+        $query = Submission::whereIn('status', ['pending_viewer', 'done'])
             ->with(['sales', 'approvals.approver', 'previousSubmission']); // ← Tambah previousSubmission
 
         // Search
@@ -53,7 +53,7 @@ class ViewerController extends Controller
         $submissions = $query->paginate(15)->appends($request->query());
 
         // Hitung pengajuan yang belum Done (status = approved_3)
-        $pendingCount = Submission::where('status', 'approved_3')->count();
+        $pendingCount = Submission::where('status', 'pending_viewer')->count();
 
         // Get all sales for filter dropdown
         $salesList = \App\Models\User::where('role', 'sales')->get();
@@ -64,8 +64,8 @@ class ViewerController extends Controller
     public function show(Submission $submission)
     {
         // Only show if approved or done
-        if (!in_array($submission->status, ['approved_3', 'done'])) {
-            abort(403, 'Anda hanya dapat melihat pengajuan yang sudah disetujui.');
+        if (!in_array($submission->status, ['pending_viewer', 'done'])) {
+            abort(403, 'Anda hanya dapat melihat pengajuan yang sudah masuk tahap Viewer.');
         }
 
         $submission->load(['sales', 'approvals.approver', 'previousSubmission']);
@@ -75,8 +75,7 @@ class ViewerController extends Controller
 
     public function markDone(Submission $submission)
     {
-        // Hanya ubah dari approved_3 → done
-        if ($submission->status !== 'approved_3') {
+        if ($submission->status !== 'pending_viewer') {
             return back()->with('error', 'Status tidak dapat diubah.');
         }
 
@@ -84,8 +83,9 @@ class ViewerController extends Controller
             'status' => 'done'
         ]);
 
-        return back()->with('success', 'Status berhasil diubah menjadi Done.');
+        return back()->with('success', 'Pengajuan berhasil diselesaikan.');
     }
+
 
     /**
      * Import customers from CSV file
