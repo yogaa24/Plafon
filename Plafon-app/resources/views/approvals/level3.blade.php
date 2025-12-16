@@ -253,11 +253,11 @@
                                         @if($submission->lampiran_path)
                                         <div class="py-1">
                                             <span class="text-sm text-gray-600 block mb-2">Lampiran:</span>
-                                            <a href="{{ Storage::url($submission->lampiran_path) }}" target="_blank" class="inline-block">
-                                                <img src="{{ Storage::url($submission->lampiran_path) }}" 
-                                                     alt="Lampiran" 
-                                                     class="w-32 h-32 object-cover rounded-lg border-2 border-gray-300 hover:border-blue-500 transition cursor-pointer">
-                                            </a>
+                                            <img src="{{ Storage::url($submission->lampiran_path) }}"
+                                                alt="Lampiran"
+                                                onclick="openImageModal('{{ Storage::url($submission->lampiran_path) }}')"
+                                                class="w-32 h-32 object-cover rounded-lg border-2 border-gray-300 
+                                                        hover:border-blue-500 transition cursor-pointer">
                                         </div>
                                         @endif
                                     </div>
@@ -420,6 +420,28 @@
     </div>
 </div>
 
+<!-- Image Preview Modal -->
+<div id="imageModal"
+     class="hidden fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
+
+    <div class="relative max-w-4xl w-full">
+        <!-- Close Button -->
+        <button onclick="closeImageModal()"
+                class="absolute -top-3 -right-3 bg-red-600 ring-2 ring-black hover:bg-red-700 text-white rounded-full p-2 shadow-lg transition focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2">
+            <svg xmlns="http://www.w3.org/2000/svg" 
+                class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+
+        <!-- Image -->
+        <img id="imageModalContent"
+             src=""
+             alt="Preview Lampiran"
+             class="w-full max-h-[85vh] object-contain rounded-lg shadow-lg bg-white">
+    </div>
+</div>
+
 @if(session('success'))
 <div id="success-alert" class="fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
     {{ session('success') }}
@@ -548,6 +570,38 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 3000);
         }
     });
+});
+
+function openImageModal(src) {
+    const modal = document.getElementById('imageModal');
+    const img = document.getElementById('imageModalContent');
+
+    img.src = src;
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeImageModal() {
+    const modal = document.getElementById('imageModal');
+    const img = document.getElementById('imageModalContent');
+
+    modal.classList.add('hidden');
+    img.src = '';
+    document.body.style.overflow = '';
+}
+
+// Close when clicking outside image
+document.getElementById('imageModal')?.addEventListener('click', function (e) {
+    if (e.target === this) {
+        closeImageModal();
+    }
+});
+
+// Close with ESC
+document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+        closeImageModal();
+    }
 });
 </script>
 @endsection
