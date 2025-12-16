@@ -329,31 +329,32 @@
                                     </div>
                                 </div>
 
-                                <!-- Previous Approvals -->
+                                <!-- Riwayat Approval -->
                                 @if($submission->approvals->count() > 0)
                                 <div class="col-span-1 md:col-span-2">
-                                    <h4 class="font-semibold text-gray-700 mb-3 text-sm uppercase tracking-wide">Riwayat Approval Sebelumnya</h4>
+                                    <h4 class="font-semibold text-gray-700 mb-3 text-sm uppercase tracking-wide">Riwayat Approval</h4>
                                     <div class="space-y-2">
                                         @foreach($submission->approvals as $approval)
-                                        <div class="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
+                                        <div class="flex items-start justify-between p-3 rounded-lg border 
+                                            {{ $approval->status === 'approved' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200' }}">
                                             <div class="flex items-center space-x-3">
-                                                <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm bg-green-500 text-white">
+                                                <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm 
+                                                    {{ $approval->status === 'approved' ? 'bg-green-500 text-white' : 'bg-red-500 text-white' }}">
                                                     {{ $approval->level }}
                                                 </div>
                                                 <div>
                                                     <p class="font-semibold text-gray-900 text-sm">{{ $approval->approver->name }}</p>
                                                     <p class="text-xs text-gray-500">{{ $approval->created_at->format('d M Y H:i') }}</p>
+                                                    @if($approval->note)
+                                                        <p class="text-xs text-gray-700 mt-1 italic">"{{ $approval->note }}"</p>
+                                                    @endif
                                                 </div>
                                             </div>
-                                            <span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                                                ✓ Disetujui
+                                            <span class="text-xs px-2 py-1 rounded-full font-semibold
+                                                {{ $approval->status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
+                                                {{ $approval->status === 'approved' ? '✓ Disetujui' : '✖ Ditolak' }}
                                             </span>
                                         </div>
-                                        @if($approval->note)
-                                        <div class="ml-11 text-xs text-gray-600 bg-gray-50 px-3 py-2 rounded">
-                                            <span class="font-semibold">Catatan:</span> {{ $approval->note }}
-                                        </div>
-                                        @endif
                                         @endforeach
                                     </div>
                                 </div>

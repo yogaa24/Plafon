@@ -21,8 +21,6 @@ class DatabaseSeeder extends Seeder
                 'name' => 'Koor SC',
                 'password' => Hash::make('karisma'),
                 'role' => 'approver1',
-                'is_level3_approver' => false,
-                'approver_name' => null,
             ]
         );
 
@@ -33,8 +31,6 @@ class DatabaseSeeder extends Seeder
                 'name' => 'TC',
                 'password' => Hash::make('karisma'),
                 'role' => 'approver2',
-                'is_level3_approver' => false,
-                'approver_name' => null,
             ]
         );
 
@@ -45,8 +41,6 @@ class DatabaseSeeder extends Seeder
                 'name' => 'Kabag KEU',
                 'password' => Hash::make('karisma'),
                 'role' => 'approver3',
-                'is_level3_approver' => false,
-                'approver_name' => null,
             ]
         );
 
@@ -57,8 +51,6 @@ class DatabaseSeeder extends Seeder
                 'name' => 'Kadep KEU',
                 'password' => Hash::make('karisma'),
                 'role' => 'approver4',
-                'is_level3_approver' => false,
-                'approver_name' => null,
             ]
         );
 
@@ -69,8 +61,6 @@ class DatabaseSeeder extends Seeder
                 'name' => 'Kadep KEU & HRD',
                 'password' => Hash::make('karisma'),
                 'role' => 'approver5',
-                'is_level3_approver' => false,
-                'approver_name' => null,
             ]
         );
 
@@ -81,8 +71,6 @@ class DatabaseSeeder extends Seeder
                 'name' => 'Direksi',
                 'password' => Hash::make('karisma'),
                 'role' => 'approver6',
-                'is_level3_approver' => false,
-                'approver_name' => null,
             ]
         );
 
@@ -90,13 +78,11 @@ class DatabaseSeeder extends Seeder
         // VIEWER
         // ==========================================
         User::updateOrCreate(
-            ['email' => 'nila@gmail.com'],
+            ['email' => 'sukma@gmail.com'],
             [
-                'name' => 'Nila',
+                'name' => 'Sukma',
                 'password' => Hash::make('karisma'),
                 'role' => 'viewer',
-                'is_level3_approver' => false,
-                'approver_name' => null,
             ]
         );
 
@@ -124,8 +110,6 @@ class DatabaseSeeder extends Seeder
                     'name' => $name,
                     'role' => 'sales',
                     'password' => Hash::make('karisma'),
-                    'is_level3_approver' => false,
-                    'approver_name' => null,
                 ]
             );
         }

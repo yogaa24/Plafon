@@ -231,15 +231,10 @@
                                         <div class="py-1 border-b border-gray-100">
                                             <span class="text-sm text-gray-600 block mb-1">Komitmen Pembayaran:</span>
                                             <span class="text-sm text-gray-900 font-medium">{{ $submission->komitmen_pembayaran }}</span>
-                                            @php
-                                                $commitmentLog = json_decode($submission->commitment_edit_log, true);
-                                            @endphp
-                                            @if($commitmentLog && count($commitmentLog) > 0)
-                                                <div class="mt-2 text-xs text-gray-500">
-                                                    Terakhir diedit: {{ $commitmentLog[count($commitmentLog)-1]['editor_name'] }} 
-                                                    (Level {{ $commitmentLog[count($commitmentLog)-1]['editor_level'] }})
-                                                </div>
-                                            @endif
+                                        </div>
+                                        <div class="flex justify-between py-1">
+                                            <span class="text-sm text-gray-600">Dibuat:</span>
+                                            <span class="text-sm text-gray-500">{{ $submission->created_at->format('d M Y, H:i') }}</span>
                                         </div>
                                         
                                         @if($submission->lampiran_path)

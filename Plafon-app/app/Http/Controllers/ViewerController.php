@@ -61,18 +61,6 @@ class ViewerController extends Controller
         return view('viewer.index', compact('submissions', 'salesList', 'pendingCount'));
     }
 
-    public function show(Submission $submission)
-    {
-        // Only show if approved or done
-        if (!in_array($submission->status, ['pending_viewer', 'done'])) {
-            abort(403, 'Anda hanya dapat melihat pengajuan yang sudah masuk tahap Viewer.');
-        }
-
-        $submission->load(['sales', 'approvals.approver', 'previousSubmission']);
-
-        return view('viewer.show', compact('submission'));
-    }
-
     public function markDone(Submission $submission)
     {
         if ($submission->status !== 'pending_viewer') {
