@@ -77,7 +77,6 @@
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Jumlah Buka (Rp.)</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Plafon</th>
                         <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Jenis</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Tanggal</th>
                         <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Riwayat</th>
                         <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Aksi</th>
                     </tr>
@@ -132,9 +131,6 @@
                         </td>
                         <td class="px-4 py-3 text-center whitespace-nowrap">
                             {!! $submission->plafon_type_badge !!}
-                        </td>
-                        <td class="px-4 py-3 whitespace-nowrap">
-                            <span class="text-sm text-gray-600">{{ $submission->updated_at->format('d M Y') }}</span>
                         </td>
                         <td class="px-4 py-3">
                             <div class="flex items-center justify-center space-x-1">
@@ -252,6 +248,10 @@
                                         <div class="py-1">
                                             <span class="text-sm text-gray-600 block mb-1">Komitmen Pembayaran:</span>
                                             <span class="text-sm text-gray-900">{{ $submission->komitmen_pembayaran }}</span>
+                                        </div>
+                                         <div class="flex justify-between py-1">
+                                            <span class="text-sm text-gray-600">Dibuat:</span>
+                                            <span class="text-sm text-gray-500">{{ $submission->created_at->format('d M Y, H:i') }}</span>
                                         </div>
                                         <!-- Lampiran Gambar Section -->
                                         @if($submission->lampiran_path)
