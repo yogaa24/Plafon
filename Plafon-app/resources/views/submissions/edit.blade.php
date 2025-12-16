@@ -309,9 +309,14 @@
                             </div>
                             <div class="flex items-center justify-between">
                                 <label class="text-sm text-gray-700">Jml Over</label>
-                                <input type="number" name="over_jml_over_value" min="0"
+                                <input 
+                                    type="number" 
+                                    id="over_jml_over_value"
+                                    name="over_jml_over_value"
+                                    readonly
+                                    class="w-48 px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-blue-50"
                                     value="{{ old('over_jml_over_value', $paymentData['jml_over'] ?? '') }}"
-                                    class="w-48 px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                >
                             </div>
                             <div class="flex items-center justify-between">
                                 <label class="text-sm text-gray-700">Jml OD 30</label>
@@ -354,18 +359,55 @@
 
 @if($submission->plafon_type === 'open')
 <script>
+const plafonAktif = {{ $submission->plafon }};
+
+// Toggle OD / Over
 function togglePaymentType() {
     const od = document.getElementById('type_od').checked;
     const over = document.getElementById('type_over').checked;
 
     document.getElementById('odSection').classList.toggle('hidden', !od);
     document.getElementById('overSection').classList.toggle('hidden', !over);
+
+    if (over) {
+        calculateOverAutoFill();
+    }
 }
 
-// Initialize on page load
-document.addEventListener('DOMContentLoaded', function() {
+// Auto hitung Jml Over
+function calculateOverAutoFill() {
+    if (!document.getElementById('type_over').checked) return;
+
+    const faktur = parseFloat(document.getElementById('jumlah_buka_faktur')?.value) || 0;
+    const piutang = parseFloat(document.querySelector('[name="over_piutang_value"]')?.value) || 0;
+
+    const jmlOver = plafonAktif - (faktur + piutang);
+
+    const jmlOverField = document.getElementById('over_jml_over_value');
+    if (jmlOverField) {
+        jmlOverField.value = Math.round(jmlOver);
+    }
+}
+
+// Init
+document.addEventListener('DOMContentLoaded', function () {
     togglePaymentType();
+
+    const fakturInput = document.getElementById('jumlah_buka_faktur');
+    const piutangInput = document.querySelector('[name="over_piutang_value"]');
+
+    if (fakturInput) {
+        fakturInput.addEventListener('input', calculateOverAutoFill);
+    }
+
+    if (piutangInput) {
+        piutangInput.addEventListener('input', calculateOverAutoFill);
+    }
+
+    // Hitung sekali saat load (penting!)
+    calculateOverAutoFill();
 });
 </script>
 @endif
+
 @endsection

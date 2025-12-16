@@ -328,42 +328,49 @@ class ApprovalController extends Controller
         }
 
         // Validasi khusus untuk Level 2 saat approve
-        if ($level == 2 && $action === 'approved' && $submission->plafon_type === 'open') {
+        if ($level == 2 && $action === 'approved') {
+            
             $request->validate([
-                'piutang' => 'required|numeric|min:0',
-                'jml_over' => 'required|numeric',
-                'jml_od_30' => 'required|numeric|min:0',
-                'jml_od_60' => 'required|numeric|min:0',
-                'jml_od_90' => 'required|numeric|min:0',
                 'lampiran' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
             ], [
-                'piutang.required' => 'Piutang wajib diisi',
-                'jml_over.required' => 'Jumlah Over wajib diisi',
-                'jml_od_30.required' => 'Jumlah OD 30 wajib diisi',
-                'jml_od_60.required' => 'Jumlah OD 60 wajib diisi',
-                'jml_od_90.required' => 'Jumlah OD 90 wajib diisi',
                 'lampiran.image' => 'File harus berupa gambar',
                 'lampiran.mimes' => 'Format gambar harus jpeg, jpg, atau png',
                 'lampiran.max' => 'Ukuran gambar maksimal 2MB',
             ]);
-
-            $paymentData = [
-                'piutang' => $request->piutang,
-                'jml_over' => $request->jml_over,
-                'od_30' => $request->jml_od_30,
-                'od_60' => $request->jml_od_60,
-                'od_90' => $request->jml_od_90,
-            ];
-
-            $submission->payment_data = json_encode($paymentData);
-            
-            // Handle upload gambar
+        
+            // Handle upload gambar untuk SEMUA jenis
             if ($request->hasFile('lampiran')) {
-                // Hapus gambar lama jika ada
                 if ($submission->lampiran_path) {
                     \Storage::disk('public')->delete($submission->lampiran_path);
                 }
                 $submission->lampiran_path = $request->file('lampiran')->store('lampiran-submissions', 'public');
+            }
+        
+            // Validasi payment data HANYA untuk Open Plafon
+            if ($submission->plafon_type === 'open') {
+                $request->validate([
+                    'piutang' => 'required|numeric|min:0',
+                    'jml_over' => 'required|numeric',
+                    'jml_od_30' => 'required|numeric|min:0',
+                    'jml_od_60' => 'required|numeric|min:0',
+                    'jml_od_90' => 'required|numeric|min:0',
+                ], [
+                    'piutang.required' => 'Piutang wajib diisi',
+                    'jml_over.required' => 'Jumlah Over wajib diisi',
+                    'jml_od_30.required' => 'Jumlah OD 30 wajib diisi',
+                    'jml_od_60.required' => 'Jumlah OD 60 wajib diisi',
+                    'jml_od_90.required' => 'Jumlah OD 90 wajib diisi',
+                ]);
+        
+                $paymentData = [
+                    'piutang' => $request->piutang,
+                    'jml_over' => $request->jml_over,
+                    'od_30' => $request->jml_od_30,
+                    'od_60' => $request->jml_od_60,
+                    'od_90' => $request->jml_od_90,
+                ];
+        
+                $submission->payment_data = json_encode($paymentData);
             }
         }
 

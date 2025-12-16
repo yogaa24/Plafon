@@ -137,35 +137,46 @@
                             </div>
                         </td>
                         <td class="px-4 py-3 text-center whitespace-nowrap">
-                            <div class="flex items-center justify-center gap-2">
-                                <!-- Approve Button - SEMUA LEVEL PAKAI MODAL -->
-                                @if($level == 2 && $submission->plafon_type === 'open')
-                                    <!-- Level 2 Open Plafon: Modal dengan payment data -->
-                                    <button onclick="openApprovalModal({{ $submission->id }}, 'approved')" 
-                                            class="px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-700 transition" 
-                                            title="Setujui">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                                        </svg>
-                                    </button>
-                                @else
-                                    <!-- Semua level lainnya: Modal dengan notes wajib -->
-                                    <button onclick="openApprovalModalSimple({{ $submission->id }}, 'approved')" 
-                                            class="px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-700 transition" 
-                                            title="Setujui">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                                        </svg>
-                                    </button>
-                                @endif
-                                
-                                <!-- Reject Button -->
-                                <button onclick="openApprovalModal({{ $submission->id }}, 'rejected')" class="px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded hover:bg-red-700 transition" title="Tolak">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                                    </svg>
-                                </button>
-                            </div>
+                        <div class="flex items-center justify-center gap-2">
+                        <!-- Approve Button -->
+                        @if($level == 2 && $submission->plafon_type === 'open')
+                            <!-- Level 2 Open Plafon: Modal dengan payment data -->
+                            <button onclick="openApprovalModal({{ $submission->id }}, 'approved')" 
+                                    class="px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-700 transition" 
+                                    title="Setujui">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                            </button>
+                        @elseif($level == 2 && $submission->plafon_type === 'rubah')
+                            <!-- Level 2 Rubah Plafon: Modal dengan lampiran -->
+                            <button onclick="openApprovalModal({{ $submission->id }}, 'approved')" 
+                                    class="px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-700 transition" 
+                                    title="Setujui">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                            </button>
+                        @else
+                            <!-- Level 1 dan level lainnya: Modal simple (hanya notes) -->
+                            <button onclick="openApprovalModalSimple({{ $submission->id }}, 'approved')" 
+                                    class="px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-700 transition" 
+                                    title="Setujui">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                            </button>
+                        @endif
+                        
+                        <!-- Reject Button - Semua level pakai openApprovalModal untuk reject -->
+                        <button onclick="openApprovalModal({{ $submission->id }}, 'rejected')" 
+                                class="px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded hover:bg-red-700 transition" 
+                                title="Tolak">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
                         </td>
                     </tr>
                     
@@ -441,59 +452,62 @@
                                 <input type="number" name="jml_od_90" id="jmlOd90Input" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="0" step="0.01">
                             </div>
                         </div>
-
-                        <!-- Upload Lampiran -->
-                        <div class="mt-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                Upload Lampiran <span class="text-gray-400">(Opsional)</span>
-                            </label>
-                            <input type="file" 
-                                name="lampiran" 
-                                id="lampiranInput" 
-                                accept="image/jpeg,image/jpg,image/png" 
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                onchange="previewLampiranImage(event)">
-                            <p class="text-xs text-gray-500 mt-1">
-                                Format: JPG, JPEG, PNG. Maksimal 2MB
-                            </p>
-                            <!-- TAMBAHKAN IMAGE PREVIEW DI SINI -->
-                            <div id="lampiranPreview" class="mt-3 hidden">
-                                <div class="relative inline-block">
-                                    <img id="lampiranPreviewImg" 
-                                        class="max-w-xs max-h-64 rounded-lg border-2 border-gray-300 shadow-sm" 
-                                        alt="Preview Lampiran">
-                                    <button type="button" 
-                                            onclick="removeLampiranPreview()" 
-                                            class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 transition shadow-lg"
-                                            title="Hapus gambar">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                                        </svg>
-                                    </button>
-                                </div>
-                                <p class="text-xs text-gray-500 mt-2">
-                                    <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                                    </svg>
-                                    Preview gambar yang akan diupload
-                                </p>
-                            </div>
-                        </div>
                         
                         <div class="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
                             <strong>💡 Info:</strong> Data di atas adalah data yang diisi oleh sales. Anda dapat memverifikasi dan mengubahnya jika diperlukan.
                         </div>
                     </div>
                 </div>
-                
+
+                <!-- TAMBAHKAN bagian upload lampiran DI SINI (di luar level2Fields) -->
+                <div id="lampiranSection" class="hidden mb-4">
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Upload Lampiran <span class="text-gray-400">(Opsional)</span>
+                        </label>
+                        <input type="file" 
+                            name="lampiran" 
+                            id="lampiranInput" 
+                            accept="image/jpeg,image/jpg,image/png" 
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                            onchange="previewLampiranImage(event)">
+                        <p class="text-xs text-gray-500 mt-1">
+                            Format: JPG, JPEG, PNG. Maksimal 2MB
+                        </p>
+                        
+                        <!-- Preview Image -->
+                        <div id="lampiranPreview" class="mt-3 hidden">
+                            <div class="relative inline-block">
+                                <img id="lampiranPreviewImg" 
+                                    class="max-w-xs max-h-64 rounded-lg border-2 border-gray-300 shadow-sm" 
+                                    alt="Preview Lampiran">
+                                <button type="button" 
+                                        onclick="removeLampiranPreview()" 
+                                        class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 transition shadow-lg"
+                                        title="Hapus gambar">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-2">
+                                <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                </svg>
+                                Preview gambar yang akan diupload
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Catatan textarea tetap di bawah -->
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-2">
                         Catatan <span id="noteRequired" class="text-red-500">*</span>
                     </label>
                     <textarea id="approvalNote" name="note" rows="4" required
-                              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" 
-                              placeholder="Catatan wajib diisi untuk setiap tindakan..."></textarea>
-                    <p class="text-xs text-gray-500 mt-1">* Catatan wajib diisi untuk approve maupun reject</p>
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" 
+                            placeholder="Catatan wajib diisi untuk setiap tindakan..."></textarea>
                 </div>
 
                 <div class="flex gap-3">
@@ -558,6 +572,7 @@ function openApprovalModal(submissionId, action) {
     const form = document.getElementById('approvalForm');
     const actionInput = document.getElementById('actionInput');
     const level2Fields = document.getElementById('level2Fields');
+    const lampiranSection = document.getElementById('lampiranSection');
     
     // Get submission data
     const submission = submissionsData.find(s => s.id === submissionId);
@@ -566,28 +581,6 @@ function openApprovalModal(submissionId, action) {
     const plafonType = submission ? submission.plafon_type : '';
     const jmlOverInput = document.getElementById('jmlOverInput');
 
-    /* RESET STATE SETIAP MODAL DIBUKA */
-    jmlOverInput.readOnly = false;
-    jmlOverInput.disabled = false;
-    jmlOverInput.classList.remove('bg-gray-100');
-
-    /* RULE BERDASARKAN JENIS PEMBAYARAN */
-    if (jenisPembayaran === 'over') {
-        // OVER → AUTO & KUNCI
-        jmlOverInput.readOnly = true;
-        jmlOverInput.classList.add('bg-gray-100');
-
-        setupOverAutoCalculation(submissionId);
-    } else {
-        // OD → MANUAL
-        jmlOverInput.readOnly = false;
-        jmlOverInput.disabled = false;
-        jmlOverInput.classList.remove('bg-gray-100');
-
-        jmlOverInput.value = paymentData.jml_over || '';
-    }
-
-    
     // Set form action
     form.action = `/approvals/${submissionId}/process`;
     actionInput.value = action;
@@ -595,94 +588,118 @@ function openApprovalModal(submissionId, action) {
     // Set jenis pembayaran hidden input
     document.getElementById('jenisPembayaranInput').value = jenisPembayaran;
     
-    // Show Level 2 fields only for approved action, level 2, AND Open Plafon
+    // RESET semua field dan section
+    level2Fields.classList.add('hidden');
+    lampiranSection.classList.add('hidden');
+    
+    // Remove required dari payment fields
+    ['piutangInput', 'jmlOverInput', 'jmlOd30Input', 'jmlOd60Input', 'jmlOd90Input'].forEach(id => {
+        const elem = document.getElementById(id);
+        if (elem) elem.required = false;
+    });
+    
+    // LOGIKA BERDASARKAN ACTION DAN PLAFON TYPE
     if (action === 'approved' && currentLevel === 2 && plafonType === 'open') {
-        level2Fields.classList.remove('hidden');
-        
-        // Display jenis pembayaran
-        const jenisPembayaranDisplay = document.getElementById('jenisPembayaranDisplay');
-        if (jenisPembayaran === 'over') {
-            jenisPembayaranDisplay.innerHTML =
-                '<span class="px-3 py-1 bg-purple-100 text-purple-700 rounded">OVER</span>';
-        } else {
-            jenisPembayaranDisplay.innerHTML =
-                '<span class="px-3 py-1 bg-orange-100 text-orange-700 rounded">OD</span>';
-        }
-        
-        // PRE-FILL data dari sales
-        document.getElementById('piutangInput').value = paymentData.piutang || '';
-        document.getElementById('jmlOverInput').value = paymentData.jml_over || '';
-        document.getElementById('jmlOd30Input').value = paymentData.jml_od_30 || paymentData.od_30 || '';
-        document.getElementById('jmlOd60Input').value = paymentData.jml_od_60 || paymentData.od_60 || '';
-        document.getElementById('jmlOd90Input').value = paymentData.jml_od_90 || paymentData.od_90 || '';
+    // ===== LEVEL 2 OPEN PLAFON =====
+    level2Fields.classList.remove('hidden');
+    lampiranSection.classList.remove('hidden');
+    
+    /* PRE-FILL DATA DULU sebelum logic OVER/OD */
+    document.getElementById('piutangInput').value = paymentData.piutang || '';
+    document.getElementById('jmlOverInput').value = paymentData.jml_over || ''; // ✅ ISI DULU
+    document.getElementById('jmlOd30Input').value = paymentData.jml_od_30 || paymentData.od_30 || '';
+    document.getElementById('jmlOd60Input').value = paymentData.jml_od_60 || paymentData.od_60 || '';
+    document.getElementById('jmlOd90Input').value = paymentData.jml_od_90 || paymentData.od_90 || '';
+    
+    /* RESET STATE SETIAP MODAL DIBUKA */
+    jmlOverInput.readOnly = false;
+    jmlOverInput.disabled = false;
+    jmlOverInput.classList.remove('bg-gray-100');
 
-        // ===== RULE JML OVER =====
-        if (jenisPembayaran === 'over') {
-            // OVER → auto hitung & tidak bisa diedit
-            jmlOverInput.readOnly = true;
-            jmlOverInput.classList.add('bg-gray-100');
+    /* RULE BERDASARKAN JENIS PEMBAYARAN */
+    if (jenisPembayaran === 'over') {
+        // OVER → auto hitung & kunci
+        jmlOverInput.readOnly = true;
+        jmlOverInput.classList.add('bg-gray-100');
+        setupOverAutoCalculation(submissionId);
+    } else {
+        // OD → manual, value sudah terisi di atas
+        jmlOverInput.readOnly = false;
+        jmlOverInput.disabled = false;
+        jmlOverInput.classList.remove('bg-gray-100');
+    }
+    
+    // Display jenis pembayaran
+    const jenisPembayaranDisplay = document.getElementById('jenisPembayaranDisplay');
+    if (jenisPembayaran === 'over') {
+        jenisPembayaranDisplay.innerHTML = '<span class="px-3 py-1 bg-purple-100 text-purple-700 rounded">OVER</span>';
+    } else {
+        jenisPembayaranDisplay.innerHTML = '<span class="px-3 py-1 bg-orange-100 text-orange-700 rounded">OD</span>';
+    }
 
-            setupOverAutoCalculation(submissionId);
-        } else {
-            // OD → input manual
-            jmlOverInput.readOnly = false;
-            jmlOverInput.classList.remove('bg-gray-100');
+    // Info sumber data
+    const dataSourceInfo = document.getElementById('dataSourceInfo');
+    if (paymentData && (paymentData.piutang || paymentData.jml_over || paymentData.od_30 || paymentData.jml_od_30)) {
+        dataSourceInfo.textContent = '✓ Data dari Sales';
+        dataSourceInfo.className = 'text-xs px-2 py-1 rounded bg-green-50 text-green-700';
+    } else {
+        dataSourceInfo.textContent = 'Data Belum Diisi Sales';
+        dataSourceInfo.className = 'text-xs px-2 py-1 rounded bg-orange-50 text-orange-700';
+    }
 
-            // ❗ hentikan auto calculation jika sebelumnya OVER
-            jmlOverInput.value = paymentData.jml_over || '';
-        }
-        // Info sumber data
-        const dataSourceInfo = document.getElementById('dataSourceInfo');
-        if (paymentData && (paymentData.piutang || paymentData.jml_over || paymentData.od_30 || paymentData.jml_od_30)) {
-            dataSourceInfo.textContent = '✓ Data dari Sales';
-            dataSourceInfo.className = 'text-xs px-2 py-1 rounded bg-green-50 text-green-700';
-        } else {
-            dataSourceInfo.textContent = 'Data Belum Diisi Sales';
-            dataSourceInfo.className = 'text-xs px-2 py-1 rounded bg-orange-50 text-orange-700';
-        }
+    // Set Required untuk payment fields
+    ['piutangInput', 'jmlOverInput', 'jmlOd30Input', 'jmlOd60Input', 'jmlOd90Input'].forEach(id => {
+        document.getElementById(id).required = true;
+    });
+    
+    modalTitle.textContent = 'Setujui Pengajuan - Verifikasi Data (Open Plafon)';
+    approvalNote.placeholder = 'Catatan tambahan (wajib diisi)...';
+    approvalNote.required = true;
+    noteRequired.classList.remove('hidden');
+    submitButton.className = 'flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition';
+    submitButton.textContent = 'Setujui';
 
-        // Required Level 2
-        ['piutangInput', 'jmlOverInput', 'jmlOd30Input', 'jmlOd60Input', 'jmlOd90Input'].forEach(id => {
-            document.getElementById(id).required = true;
-        });
+    } else if (action === 'approved' && currentLevel === 2 && plafonType === 'rubah') {
+        // ===== LEVEL 2 RUBAH PLAFON =====
+        level2Fields.classList.add('hidden');
+        lampiranSection.classList.remove('hidden');
         
-        const lampiranInput = document.getElementById('lampiranInput');
-        
-        modalTitle.textContent = 'Setujui Pengajuan - Verifikasi Data (Open Plafon)';
+        modalTitle.textContent = 'Setujui Pengajuan - Rubah Plafon';
         approvalNote.placeholder = 'Catatan tambahan (wajib diisi)...';
         approvalNote.required = true;
         noteRequired.classList.remove('hidden');
-        submitButton.className =
-            'flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition';
+        submitButton.className = 'flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition';
         submitButton.textContent = 'Setujui';
 
-    } else {
+    } else if (action === 'rejected') {
+        // ===== REJECT (SEMUA LEVEL) =====
         level2Fields.classList.add('hidden');
+        lampiranSection.classList.add('hidden');
         
-        // Remove required
-        ['piutangInput', 'jmlOverInput', 'jmlOd30Input', 'jmlOd60Input', 'jmlOd90Input'].forEach(id => {
-            const elem = document.getElementById(id);
-            if (elem) elem.required = false;
-        });
+        modalTitle.textContent = 'Tolak Pengajuan';
+        approvalNote.placeholder = 'Jelaskan alasan penolakan...';
+        approvalNote.required = true;
+        noteRequired.classList.remove('hidden');
+        submitButton.className = 'flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition';
+        submitButton.textContent = 'Tolak';
         
-        const lampiranInput = document.getElementById('lampiranInput');
-        if (lampiranInput) lampiranInput.required = false;
+    } else {
+        // ===== FALLBACK (LEVEL LAIN) =====
+        level2Fields.classList.add('hidden');
+        lampiranSection.classList.add('hidden');
         
-        // Reject only
-        if (action === 'rejected') {
-            modalTitle.textContent = 'Tolak Pengajuan';
-            approvalNote.placeholder = 'Jelaskan alasan penolakan...';
-            approvalNote.required = true;
-            noteRequired.classList.remove('hidden');
-            submitButton.className =
-                'flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition';
-            submitButton.textContent = 'Tolak';
-        }
+        modalTitle.textContent = 'Konfirmasi Approval';
+        approvalNote.placeholder = 'Catatan (wajib diisi)...';
+        approvalNote.required = true;
+        noteRequired.classList.remove('hidden');
+        submitButton.className = 'flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition';
+        submitButton.textContent = 'Konfirmasi';
     }
     
     // Clear note
     approvalNote.value = '';
     
+    // Show modal
     modal.classList.remove('hidden');
 }
 
@@ -767,7 +784,6 @@ function setupOverAutoCalculation(submissionId) {
         const jmlOver = plafonAktif - (valueFaktur + piutang);
 
         jmlOverInput.value = Math.round(jmlOver);
-        showOverWarning(jmlOver);
     }
 
     piutangInput.addEventListener('input', calculateJmlOver);
@@ -775,35 +791,6 @@ function setupOverAutoCalculation(submissionId) {
 
     if (piutangInput.value) {
         calculateJmlOver();
-    }
-}
-
-
-// Optional: Show warning jika Jml Over negatif
-// UBAH fungsi ini (ubah warna dari red menjadi amber/kuning untuk warning saja)
-function showOverWarning(jmlOver) {
-    let warningDiv = document.getElementById('overWarningModal');
-    
-    if (!warningDiv) {
-        // Create warning div jika belum ada
-        warningDiv = document.createElement('div');
-        warningDiv.id = 'overWarningModal';
-        warningDiv.className = 'mt-2 p-2 rounded text-xs';
-        document.getElementById('jmlOverInput').parentNode.appendChild(warningDiv);
-    }
-    
-    if (jmlOver < 0) {
-        // UBAH: dari bg-red menjadi bg-amber (warning saja, tidak error)
-        warningDiv.className = 'mt-2 p-2 bg-amber-50 border border-amber-200 rounded text-xs text-amber-700';
-        warningDiv.innerHTML = `
-            <strong>⚠️ Perhatian:</strong> Jml Over negatif (${new Intl.NumberFormat('id-ID').format(jmlOver)}). 
-            Customer melebihi plafon sebesar Rp ${new Intl.NumberFormat('id-ID').format(Math.abs(jmlOver))}
-        `;
-    } else {
-        warningDiv.className = 'mt-2 p-2 bg-green-50 border border-green-200 rounded text-xs text-green-700';
-        warningDiv.innerHTML = `
-            ✓ Sisa plafon tersedia Rp ${new Intl.NumberFormat('id-ID').format(jmlOver)}
-        `;
     }
 }
 
@@ -817,9 +804,11 @@ function openApprovalModalSimple(submissionId, action) {
     const form = document.getElementById('approvalForm');
     const actionInput = document.getElementById('actionInput');
     const level2Fields = document.getElementById('level2Fields');
+    const lampiranSection = document.getElementById('lampiranSection');
     
     // Hide level 2 fields
     level2Fields.classList.add('hidden');
+    lampiranSection.classList.add('hidden'); 
     
     // Set form action
     form.action = `/approvals/${submissionId}/process`;
@@ -855,6 +844,12 @@ function closeApprovalModal() {
     
     // Reset preview lampiran
     removeLampiranPreview();
+
+     // TAMBAHKAN INI
+    const lampiranSection = document.getElementById('lampiranSection');
+    if (lampiranSection) {
+        lampiranSection.classList.add('hidden');
+    }
     
     // TAMBAHKAN INI - Remove warning
     const warningDiv = document.getElementById('overWarningModal');
