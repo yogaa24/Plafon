@@ -4,6 +4,7 @@ use App\Http\Controllers\SubmissionController;
 use App\Http\Controllers\ApprovalController;
 use App\Http\Controllers\ViewerController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
 // ------------------------
@@ -15,6 +16,12 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 Route::middleware(['auth'])->group(function () {
 
+    // ------------------------
+    // PROFILE MANAGEMENT
+    // ------------------------
+    Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::post('/profile/update', [ProfileController::class, 'update'])->name('profile.update');
+    
     // ------------------------
     // HOME REDIRECT BASED ON ROLE
     // ------------------------
