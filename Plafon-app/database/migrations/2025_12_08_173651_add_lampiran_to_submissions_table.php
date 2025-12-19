@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('submissions', function (Blueprint $table) {
-            $table->string('lampiran_path')->nullable()->after('komitmen_pembayaran');
+            $table->json('lampiran_path')->nullable()->after('komitmen_pembayaran');
         });
     }
 

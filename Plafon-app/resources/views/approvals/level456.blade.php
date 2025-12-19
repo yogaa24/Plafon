@@ -252,15 +252,33 @@
                                             <span class="text-sm text-gray-500">{{ $submission->created_at->format('d M Y, H:i') }}</span>
                                         </div>
                                         
+                                        <!-- Tambahkan di bagian detail information, setelah informasi keuangan -->
                                         @if($submission->lampiran_path)
-                                        <div class="py-1">
-                                            <span class="text-sm text-gray-600 block mb-2">Lampiran:</span>
-                                            <a href="{{ Storage::url($submission->lampiran_path) }}" target="_blank" class="inline-block">
-                                                <img src="{{ Storage::url($submission->lampiran_path) }}" 
-                                                     alt="Lampiran" 
-                                                     class="w-32 h-32 object-cover rounded-lg border-2 border-gray-300 hover:border-blue-500 transition cursor-pointer">
-                                            </a>
-                                        </div>
+                                            @php
+                                                $lampiranPaths = is_array($submission->lampiran_path)
+                                                    ? $submission->lampiran_path
+                                                    : json_decode($submission->lampiran_path, true);
+                                            @endphp
+
+                                            @if($lampiranPaths && count($lampiranPaths) > 0)
+                                                <div class="col-span-1 md:col-span-2 mt-4">
+                                                    <h4 class="font-semibold text-gray-700 mb-3 text-sm uppercase tracking-wide">
+                                                        Lampiran ({{ count($lampiranPaths) }} gambar)
+                                                    </h4>
+
+                                                    <div class="grid grid-cols-3 gap-2">
+                                                        @foreach($lampiranPaths as $path)
+                                                            <img
+                                                                src="{{ Storage::url($path) }}"
+                                                                alt="Lampiran"
+                                                                onclick="openImageModal('{{ Storage::url($path) }}')"
+                                                                class="w-full h-32 object-cover rounded-lg border-2 border-gray-300
+                                                                    hover:border-indigo-500 transition cursor-pointer"
+                                                            >
+                                                        @endforeach
+                                                    </div>
+                                                </div>
+                                            @endif
                                         @endif
                                     </div>
                                 </div>
@@ -445,6 +463,15 @@ function toggleDetail(id) {
         detailRow.classList.add('hidden');
         icon.classList.remove('rotate-180');
     }
+}
+
+function openImageModal(src) {
+    const modal = document.getElementById('imageModal');
+    const img = document.getElementById('imageModalContent');
+
+    img.src = src;
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
 }
 
 function openApprovalModal(submissionId, action) {

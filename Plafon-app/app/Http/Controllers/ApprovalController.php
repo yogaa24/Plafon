@@ -436,6 +436,60 @@ class ApprovalController extends Controller
         );
     }
 
+     /**
+     * Compress image to max 500KB
+     */
+    private function compressImage($file)
+    {
+        // Load image based on type
+        $image = imagecreatefromstring(file_get_contents($file->path()));
+        
+        if (!$image) {
+            throw new \Exception('Failed to load image');
+        }
+
+        // Get original dimensions
+        $width = imagesx($image);
+        $height = imagesy($image);
+        
+        // Calculate new dimensions (max 1920px width)
+        $maxWidth = 1920;
+        $maxHeight = 1080;
+        
+        if ($width > $maxWidth || $height > $maxHeight) {
+            $ratio = min($maxWidth / $width, $maxHeight / $height);
+            $newWidth = round($width * $ratio);
+            $newHeight = round($height * $ratio);
+            
+            // Create new image with calculated dimensions
+            $resized = imagecreatetruecolor($newWidth, $newHeight);
+            imagecopyresampled($resized, $image, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
+            imagedestroy($image);
+            $image = $resized;
+        }
+        
+        // Compress until size <= 500KB
+        $quality = 85;
+        $targetSize = 500 * 1024; // 500KB in bytes
+        
+        do {
+            ob_start();
+            imagejpeg($image, null, $quality);
+            $imageData = ob_get_clean();
+            $fileSize = strlen($imageData);
+            
+            if ($fileSize <= $targetSize) {
+                break;
+            }
+            
+            $quality -= 5;
+        } while ($quality > 10);
+        
+        imagedestroy($image);
+        
+        return $imageData;
+    }
+
     public function process(Request $request, Submission $submission)
     {
         $user = Auth::user();
@@ -449,21 +503,45 @@ class ApprovalController extends Controller
 
         // Validasi khusus untuk Level 2 saat approve
         if ($level == 2 && $action === 'approved') {
-            
+    
             $request->validate([
-                'lampiran' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
+                'lampiran' => 'nullable|array|max:3',
+                'lampiran.*' => 'image|mimes:jpeg,jpg,png|max:10240', // Max 10MB sebelum compress
             ], [
-                'lampiran.image' => 'File harus berupa gambar',
-                'lampiran.mimes' => 'Format gambar harus jpeg, jpg, atau png',
-                'lampiran.max' => 'Ukuran gambar maksimal 2MB',
+                'lampiran.array' => 'Lampiran harus berupa array',
+                'lampiran.max' => 'Maksimal 3 gambar',
+                'lampiran.*.image' => 'File harus berupa gambar',
+                'lampiran.*.mimes' => 'Format gambar harus jpeg, jpg, atau png',
+                'lampiran.*.max' => 'Ukuran gambar maksimal 10MB',
             ]);
         
-            // Handle upload gambar untuk SEMUA jenis
+            // Handle upload multiple gambar dengan compress
             if ($request->hasFile('lampiran')) {
+                // Hapus lampiran lama jika ada
                 if ($submission->lampiran_path) {
-                    \Storage::disk('public')->delete($submission->lampiran_path);
+                    $oldPaths = json_decode($submission->lampiran_path, true);
+                    if (is_array($oldPaths)) {
+                        foreach ($oldPaths as $oldPath) {
+                            \Storage::disk('public')->delete($oldPath);
+                        }
+                    }
                 }
-                $submission->lampiran_path = $request->file('lampiran')->store('lampiran-submissions', 'public');
+        
+                $uploadedPaths = [];
+                foreach ($request->file('lampiran') as $file) {
+                    // Compress gambar
+                    $compressedImage = $this->compressImage($file);
+                    
+                    // Generate unique filename
+                    $filename = 'lampiran-' . time() . '-' . uniqid() . '.jpg';
+                    $path = 'lampiran-submissions/' . $filename;
+                    
+                    // Save compressed image
+                    \Storage::disk('public')->put($path, $compressedImage);
+                    $uploadedPaths[] = $path;
+                }
+                
+                $submission->lampiran_path = json_encode($uploadedPaths);
             }
         
             // Validasi payment data HANYA untuk Open Plafon
