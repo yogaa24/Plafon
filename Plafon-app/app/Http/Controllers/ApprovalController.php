@@ -47,6 +47,11 @@ class ApprovalController extends Controller
             });
         }
 
+        // Filter by sales
+        if ($request->filled('sales_id')) {
+            $query->where('sales_id', $request->sales_id);
+        }
+
         // Filter by date range
         if ($request->filled('date_from')) {
             $query->whereDate('created_at', '>=', $request->date_from);
@@ -61,7 +66,7 @@ class ApprovalController extends Controller
         $sortOrder = $request->get('sort_order', 'desc');
         $query->orderBy($sortBy, $sortOrder);
 
-        $submissions = $query->paginate(15);
+        $submissions = $query->paginate(15)->appends($request->query());
 
         $submissionsArray = $submissions->map(function($submission) {
             // Decode payment_data jika masih string
@@ -91,8 +96,11 @@ class ApprovalController extends Controller
                 ] : null,
             ];
         })->toArray();
+
+        // Get all sales for filter dropdown
+        $salesList = User::where('role', 'sales')->orderBy('name')->get();
         
-        return view('approvals.index', compact('level', 'submissions', 'submissionsArray'));
+        return view('approvals.index', compact('level', 'submissions', 'submissionsArray', 'salesList'));
     }
 
     // Dashboard khusus Level 3
@@ -121,6 +129,11 @@ class ApprovalController extends Controller
             });
         }
 
+        // Filter by sales
+        if ($request->filled('sales_id')) {
+            $query->where('sales_id', $request->sales_id);
+        }
+
         if ($request->filled('date_from')) {
             $query->whereDate('created_at', '>=', $request->date_from);
         }
@@ -130,7 +143,7 @@ class ApprovalController extends Controller
         }
 
         $query->orderBy('created_at', 'desc');
-        $submissions = $query->paginate(15);
+        $submissions = $query->paginate(15)->appends($request->query());
 
         $submissionsArray = $submissions->map(function($s) {
             return [
@@ -141,10 +154,14 @@ class ApprovalController extends Controller
             ];
         })->toArray();
 
+        // Get all sales for filter dropdown
+        $salesList = User::where('role', 'sales')->orderBy('name')->get();
+
         return view('approvals.level3', [
             'submissions' => $submissions,
             'submissionsArray' => $submissionsArray,
             'level' => 3,
+            'salesList' => $salesList,
         ]);
     }
 
@@ -160,14 +177,22 @@ class ApprovalController extends Controller
             ->whereIn('status', ['approved_3'])
             ->with(['sales', 'approvals.approver', 'customer']);
 
-        // Search & Filter (sama seperti index)
+        // Search & Filter
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
                 $q->where('kode', 'like', "%{$search}%")
                 ->orWhere('nama', 'like', "%{$search}%")
-                ->orWhere('nama_kios', 'like', "%{$search}%");
+                ->orWhere('nama_kios', 'like', "%{$search}%")
+                ->orWhereHas('sales', function($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%");
+                });
             });
+        }
+
+        // Filter by sales
+        if ($request->filled('sales_id')) {
+            $query->where('sales_id', $request->sales_id);
         }
 
         if ($request->filled('date_from')) {
@@ -178,11 +203,15 @@ class ApprovalController extends Controller
             $query->whereDate('created_at', '<=', $request->date_to);
         }
 
-        $submissions = $query->orderBy('created_at', 'desc')->paginate(15);
+        $submissions = $query->orderBy('created_at', 'desc')->paginate(15)->appends($request->query());
+
+        // Get all sales for filter dropdown
+        $salesList = User::where('role', 'sales')->orderBy('name')->get();
 
         return view('approvals.level456', [
             'submissions' => $submissions,
             'level' => 4,
+            'salesList' => $salesList,
         ]);
     }
 
@@ -204,8 +233,16 @@ class ApprovalController extends Controller
             $query->where(function($q) use ($search) {
                 $q->where('kode', 'like', "%{$search}%")
                 ->orWhere('nama', 'like', "%{$search}%")
-                ->orWhere('nama_kios', 'like', "%{$search}%");
+                ->orWhere('nama_kios', 'like', "%{$search}%")
+                ->orWhereHas('sales', function($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%");
+                });
             });
+        }
+
+        // Filter by sales
+        if ($request->filled('sales_id')) {
+            $query->where('sales_id', $request->sales_id);
         }
 
         if ($request->filled('date_from')) {
@@ -216,11 +253,15 @@ class ApprovalController extends Controller
             $query->whereDate('created_at', '<=', $request->date_to);
         }
 
-        $submissions = $query->orderBy('created_at', 'desc')->paginate(15);
+        $submissions = $query->orderBy('created_at', 'desc')->paginate(15)->appends($request->query());
+
+        // Get all sales for filter dropdown
+        $salesList = User::where('role', 'sales')->orderBy('name')->get();
 
         return view('approvals.level456', [
             'submissions' => $submissions,
             'level' => 5,
+            'salesList' => $salesList,
         ]);
     }
 
@@ -242,8 +283,16 @@ class ApprovalController extends Controller
             $query->where(function($q) use ($search) {
                 $q->where('kode', 'like', "%{$search}%")
                 ->orWhere('nama', 'like', "%{$search}%")
-                ->orWhere('nama_kios', 'like', "%{$search}%");
+                ->orWhere('nama_kios', 'like', "%{$search}%")
+                ->orWhereHas('sales', function($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%");
+                });
             });
+        }
+
+        // Filter by sales
+        if ($request->filled('sales_id')) {
+            $query->where('sales_id', $request->sales_id);
         }
 
         if ($request->filled('date_from')) {
@@ -254,11 +303,15 @@ class ApprovalController extends Controller
             $query->whereDate('created_at', '<=', $request->date_to);
         }
 
-        $submissions = $query->orderBy('created_at', 'desc')->paginate(15);
+        $submissions = $query->orderBy('created_at', 'desc')->paginate(15)->appends($request->query());
+
+        // Get all sales for filter dropdown
+        $salesList = User::where('role', 'sales')->orderBy('name')->get();
 
         return view('approvals.level456', [
             'submissions' => $submissions,
             'level' => 6,
+            'salesList' => $salesList,
         ]);
     }
 
@@ -287,7 +340,7 @@ class ApprovalController extends Controller
                 $q->whereIn('level', [3, 4, 5, 6])->with('approver');
             }]);
     
-        // Apply filter search, date jika ada
+        // Apply filter search, date, sales jika ada
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
@@ -295,6 +348,11 @@ class ApprovalController extends Controller
                   ->orWhere('nama', 'like', "%{$search}%")
                   ->orWhere('nama_kios', 'like', "%{$search}%");
             });
+        }
+
+        // Filter by sales
+        if ($request->filled('sales_id')) {
+            $query->where('sales_id', $request->sales_id);
         }
     
         if ($request->filled('date_from')) {

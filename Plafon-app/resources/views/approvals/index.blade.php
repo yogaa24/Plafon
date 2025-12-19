@@ -12,22 +12,42 @@
 
     <!-- Filter & Search -->
     <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
-        <form method="GET" action="{{ route('approvals.index') }}" class="space-y-4">
+        <form method="GET" action="{{ route('approvals.index') }}" id="filterForm" class="space-y-4">
             <!-- Row 1: Search & Date Range -->
             <div class="flex flex-wrap gap-3">
                 <!-- Search -->
                 <div class="flex-1 min-w-[250px]">
-                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari kode, nama, kios, atau sales..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    <input type="text" name="search" value="{{ request('search') }}" 
+                        placeholder="Cari kode, nama, kios, atau sales..." 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+
+                <!-- Sales Filter dengan Auto Submit -->
+                <div class="w-52">
+                    <select name="sales_id" 
+                        onchange="document.getElementById('filterForm').submit()" 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-green-500 cursor-pointer">
+                        <option value="">Semua Sales</option>
+                        @foreach($salesList as $sales)
+                        <option value="{{ $sales->id }}" {{ request('sales_id') == $sales->id ? 'selected' : '' }}>
+                            {{ $sales->name }}
+                        </option>
+                        @endforeach
+                    </select>
                 </div>
 
                 <!-- Date From -->
                 <div class="w-44">
-                    <input type="date" name="date_from" value="{{ request('date_from') }}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Dari Tanggal">
+                    <input type="date" name="date_from" value="{{ request('date_from') }}" 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" 
+                        placeholder="Dari Tanggal">
                 </div>
 
                 <!-- Date To -->
                 <div class="w-44">
-                    <input type="date" name="date_to" value="{{ request('date_to') }}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Sampai Tanggal">
+                    <input type="date" name="date_to" value="{{ request('date_to') }}" 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" 
+                        placeholder="Sampai Tanggal">
                 </div>
 
                 <!-- Buttons -->
@@ -547,6 +567,21 @@ submissionsData.forEach(s => {
         plafonAktif: s.plafon || 0,
         valueFaktur: s.jumlah_buka_faktur || 0
     };
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    const salesSelect = document.querySelector('select[name="sales_id"]');
+    const form = document.getElementById('filterForm');
+    
+    salesSelect.addEventListener('change', function() {
+        // Optional: Tampilkan loading indicator
+        const selectElement = this;
+        selectElement.style.opacity = '0.6';
+        selectElement.style.pointerEvents = 'none';
+        
+        // Submit form
+        form.submit();
+    });
 });
 
 function toggleDetail(id) {
