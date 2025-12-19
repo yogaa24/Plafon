@@ -24,15 +24,27 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        // Approver 2
-        User::updateOrCreate(
-            ['email' => 'approver2@demo.com'],
-            [
-                'name' => 'TC',
-                'password' => Hash::make('karisma'),
-                'role' => 'approver2',
-            ]
-        );
+        // ==========================================
+        // APPROVER 2 - TC (5 Users)
+        // ==========================================
+        $tcUsers = [
+            ['email' => 'tc1@demo.com', 'name' => 'TC - Zahro'],
+            ['email' => 'tc2@demo.com', 'name' => 'TC - Farida'],
+            ['email' => 'tc3@demo.com', 'name' => 'TC - Tiya'],
+            ['email' => 'tc4@demo.com', 'name' => 'TC - Tashya'],
+            ['email' => 'tc5@demo.com', 'name' => 'TC - Natasya'],
+        ];
+
+        foreach ($tcUsers as $tc) {
+            User::updateOrCreate(
+                ['email' => $tc['email']],
+                [
+                    'name' => $tc['name'],
+                    'password' => Hash::make('karisma'),
+                    'role' => 'approver2',
+                ]
+            );
+        }
 
         // Approver 3
         User::updateOrCreate(
@@ -114,6 +126,11 @@ class DatabaseSeeder extends Seeder
             );
         }
 
-        $this->command->info('✅ Seeder selesai! Approver 1-6, Viewer, dan Sales berhasil dibuat.');
+        $this->command->info('✅ Seeder selesai!');
+        $this->command->info('   - Approver 1: 1 user (Koor SC)');
+        $this->command->info('   - Approver 2: 5 users (TC)');
+        $this->command->info('   - Approver 3-6: masing-masing 1 user');
+        $this->command->info('   - Viewer: 1 user');
+        $this->command->info('   - Sales: ' . count($salesList) . ' users');
     }
 }

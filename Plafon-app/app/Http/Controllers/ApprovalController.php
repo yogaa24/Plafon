@@ -103,6 +103,68 @@ class ApprovalController extends Controller
         return view('approvals.index', compact('level', 'submissions', 'submissionsArray', 'salesList'));
     }
 
+    public function history(Request $request)
+    {
+        $user = Auth::user();
+        $level = $this->getApproverLevel($user->role);
+
+        // Hanya Level 1 dan 2 yang bisa akses history
+        if (!in_array($level, [1, 2])) {
+            abort(403, 'Unauthorized access');
+        }
+
+        // Query pengajuan yang sudah diproses oleh approver ini
+        $query = Approval::where('approver_id', $user->id)
+            ->where('level', $level)
+            ->with(['submission.sales', 'submission.customer', 'submission.approvals.approver'])
+            ->orderBy('created_at', 'desc');
+
+        // Search
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->whereHas('submission', function($q) use ($search) {
+                $q->where('kode', 'like', "%{$search}%")
+                ->orWhere('nama', 'like', "%{$search}%")
+                ->orWhere('nama_kios', 'like', "%{$search}%")
+                ->orWhereHas('sales', function($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%");
+                });
+            });
+        }
+
+        // Filter by status (approved/rejected)
+        if ($request->filled('status_filter')) {
+            $query->where('status', $request->status_filter);
+        }
+
+        // Filter by sales
+        if ($request->filled('sales_id')) {
+            $query->whereHas('submission', function($q) use ($request) {
+                $q->where('sales_id', $request->sales_id);
+            });
+        }
+
+        // Filter by date range
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date_to);
+        }
+
+        $approvals = $query->paginate(15)->appends($request->query());
+
+        // Get all sales for filter dropdown
+        $salesList = User::where('role', 'sales')->orderBy('name')->get();
+
+        return view('approvals.history', [
+            'approvals' => $approvals,
+            'level' => $level,
+            'salesList' => $salesList,
+        ]);
+    }
+
     // Dashboard khusus Level 3
     public function level3(Request $request)
     {

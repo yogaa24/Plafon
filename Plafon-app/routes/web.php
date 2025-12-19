@@ -81,6 +81,10 @@ Route::middleware(['auth'])->group(function () {
             ->name('approvals.level3.export')
             ->middleware('role:approver3');
         
+        // Route untuk history approval (Level 1 & 2)
+        Route::get('/approvals/history', [ApprovalController::class, 'history'])
+            ->name('approvals.history');
+        
         // Level 4 Dashboard
         Route::get('/approvals/level4', [ApprovalController::class, 'level4'])
             ->name('approvals.level4')
