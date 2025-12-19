@@ -34,6 +34,7 @@ class Submission extends Model
 
     protected $casts = [
         'payment_data' => 'array',
+        'lampiran_path' => 'array',
         'current_level' => 'integer',
         'created_at'   => 'datetime',
         'updated_at'   => 'datetime',
@@ -101,9 +102,9 @@ class Submission extends Model
             'approved_1'            => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Menunggu TC</span>',
             'approved_2'            => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-800">Menunggu Kabag KEU</span>',
             'approved_3'            => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">Menunggu Kadep KEU</span>',
-            'approver_4'            => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">Menunggu Kadep KEU&HRD</span>',
-            'approver_5'            => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">Menunggu DIreksi</span>',
-            'approver_6'            => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">Proses Input</span>',
+            'approved_4'            => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">Menunggu Kadep KEU&HRD</span>',
+            'approved_5'            => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">Menunggu DIreksi</span>',
+            'approved_6'            => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">Proses Input</span>',
             'pending_viewer'        => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-cyan-100 text-cyan-800">Proses Input</span>',
             'done'                  => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Selesai</span>',
             'rejected'              => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Ditolak</span>',

@@ -28,13 +28,13 @@
                 <div id="statusFilterWrapper" class="w-52 {{ request('view') != 'submissions' ? 'hidden' : '' }}">
                     <select name="status" id="statusFilter" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" onchange="document.getElementById('filterForm').submit()">
                         <option value="">Semua Status</option>
-                        <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Menunggu Approval 1</option>
-                        <option value="approved_1" {{ request('status') == 'approved_1' ? 'selected' : '' }}>Menunggu Approval 2</option>
-                        <option value="approved_2" {{ request('status') == 'approved_2' ? 'selected' : '' }}>Menunggu Approval 3</option>
-                        <option value="approved_3" {{ request('status') == 'approved_3' ? 'selected' : '' }}>Menunggu Approval 4</option>
-                        <option value="approver_4" {{ request('status') == 'pending_approver4' ? 'selected' : '' }}>Menunggu Approval 4</option>
-                        <option value="approver_5" {{ request('status') == 'pending_approver5' ? 'selected' : '' }}>Menunggu Approval 5</option>
-                        <option value="approver_6" {{ request('status') == 'pending_approver6' ? 'selected' : '' }}>Menunggu Approval 6</option>
+                        <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Menunggu Koor SC</option>
+                        <option value="approved_1" {{ request('status') == 'approved_1' ? 'selected' : '' }}>Menunggu TC</option>
+                        <option value="approved_2" {{ request('status') == 'approved_2' ? 'selected' : '' }}>Menunggu Kabag KEU</option>
+                        <option value="approved_3" {{ request('status') == 'approved_3' ? 'selected' : '' }}>Menunggu Kadep KEU</option>
+                        <option value="approved_4" {{ request('status') == 'approved_4' ? 'selected' : '' }}>Menunggu Kadep KEU&HRD</option>
+                        <option value="approved_5" {{ request('status') == 'approved_5' ? 'selected' : '' }}>Menunggu Direksi</option>
+                        <!-- <option value="approved_6" {{ request('status') == 'approved_6' ? 'selected' : '' }}>Menunggu Approval 6</option> -->
                         <option value="pending_viewer" {{ request('status') == 'pending_viewer' ? 'selected' : '' }}>Proses Input</option>
                         <option value="done" {{ request('status') == 'done' ? 'selected' : '' }}>✓ Selesai</option>
                         <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Ditolak</option>
@@ -86,7 +86,6 @@
                 <thead class="bg-white">
                     <tr>
                         <th class="px-4 py-3 text-center text-xs font-semibold text-black uppercase tracking-wider w-16">No</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-black uppercase tracking-wider">Kode</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-black uppercase tracking-wider">Nama</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-black uppercase tracking-wider">Nama Kios</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-black uppercase tracking-wider">Alamat</th>
@@ -99,7 +98,6 @@
                     @foreach($customers as $index => $customer)
                     <tr class="hover:bg-blue-50 transition">
                         <td class="px-4 py-3 text-center text-sm text-gray-900">{{ $customers->firstItem() + $index }}</td>
-                        <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ $customer->kode_customer }}</td>
                         <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ $customer->nama }}</td>
                         <td class="px-4 py-3 text-sm text-gray-900">{{ $customer->nama_kios }}</td>
                         <td class="px-4 py-3 text-sm text-gray-900">{{ $customer->alamat }}</td>
@@ -176,9 +174,9 @@
                         @case('approved_1') Menunggu Approval 2 @break
                         @case('approved_2') Menunggu Approval 3 @break
                         @case('approved_3') Menunggu Approval 4 @break
-                        @case('approver_4') Menunggu Approval 4 @break
-                        @case('approver_5') Menunggu Approval 5 @break
-                        @case('approver_6') Menunggu Approval 6 @break
+                        @case('approved_4') Menunggu Approval 4 @break
+                        @case('approved_5') Menunggu Approval 5 @break
+                        @case('approved_6') Menunggu Approval 6 @break
                         @case('pending_viewer') Proses Input @break
                         @case('done') Selesai @break
                         @case('rejected') Ditolak @break

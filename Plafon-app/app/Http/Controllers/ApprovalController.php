@@ -105,7 +105,7 @@ class ApprovalController extends Controller
         }
 
         $query = Submission::where('current_level', 3)
-            ->whereIn('status', ['approved_2', 'approved_3', 'pending_approver3'])
+            ->whereIn('status', ['approved_2', 'approved_3'])
             ->with(['sales', 'approvals.approver', 'customer', 'previousSubmission']);
 
         // Search
@@ -157,7 +157,7 @@ class ApprovalController extends Controller
         }
 
         $query = Submission::where('current_level', 4)
-            ->whereIn('status', ['approved_3', 'approver_4'])
+            ->whereIn('status', ['approved_3'])
             ->with(['sales', 'approvals.approver', 'customer']);
 
         // Search & Filter (sama seperti index)
@@ -195,7 +195,7 @@ class ApprovalController extends Controller
         }
 
         $query = Submission::where('current_level', 5)
-            ->whereIn('status', ['approver_5'])
+            ->whereIn('status', ['approved_4'])
             ->with(['sales', 'approvals.approver', 'customer']);
 
         // Search & Filter
@@ -233,7 +233,7 @@ class ApprovalController extends Controller
         }
 
         $query = Submission::where('current_level', 6)
-            ->whereIn('status', ['approver_6'])
+            ->whereIn('status', ['approved_5'])
             ->with(['sales', 'approvals.approver', 'customer']);
 
         // Search & Filter
@@ -275,9 +275,9 @@ class ApprovalController extends Controller
         // Query pengajuan yang SUDAH MELEWATI Level 3 ke atas
         $query = Submission::whereIn('status', [
                 'approved_3',           // Di Level 4
-                'pending_approver4',    // Di Level 4
-                'pending_approver5',    // Di Level 5
-                'pending_approver6',    // Di Level 6
+                'approved_4',    // Di Level 4
+                'approved_5',    // Di Level 5
+                'approved_6',    // Di Level 6
                 'pending_viewer',       // Di Viewer (Proses Input)
                 'done'                  // Selesai
             ])
@@ -455,38 +455,38 @@ class ApprovalController extends Controller
                 }
             }
             elseif ($level == 3) {
-                // Level 3: APPROVE/REJECT tetap lanjut ke Level 4 // PENTING: Status berubah ke approver4,
+                // Level 3: APPROVE/REJECT tetap lanjut ke Level 4 
                 $this->handleLevel3Approval($submission, $action);
-                $submission->status = 'approver_4';
+                $submission->status = 'approved_3';
                 $submission->current_level = 4;
             }
             elseif ($level == 4) {
-            // Cek apakah Level 3 ada yang reject
-            $level3Rejected = $submission->approvals
-                ->where('level', 3)
-                ->where('status', 'rejected')
-                ->count() > 0;
-            
-            // Cek apakah Level 4 reject
-            $level4Rejected = ($action === 'rejected');
-            
-            if ($action === 'approved') {
-                // Level 4 APPROVE
-                if ($level3Rejected) {
-                    // Jika Level 3 ada yang reject → Lanjut ke Level 5
-                    $submission->status = 'approver_5';
-                    $submission->current_level = 5;
+                // Cek apakah Level 3 ada yang reject
+                $level3Rejected = $submission->approvals
+                    ->where('level', 3)
+                    ->where('status', 'rejected')
+                    ->count() > 0;
+                
+                // Cek apakah Level 4 reject
+                $level4Rejected = ($action === 'rejected');
+                
+                if ($action === 'approved') {
+                    // Level 4 APPROVE
+                    if ($level3Rejected) {
+                        // Jika Level 3 ada yang reject → Lanjut ke Level 5
+                        $submission->status = 'approved_4';
+                        $submission->current_level = 5;
+                    } else {
+                        // Jika Level 3 SEMUA approve DAN Level 4 approve → Langsung ke Viewer
+                        $submission->status = 'pending_viewer';
+                        $submission->current_level = null;
+                    }
                 } else {
-                    // Jika Level 3 SEMUA approve DAN Level 4 approve → Langsung ke Viewer
-                    $submission->status = 'pending_viewer';
-                    $submission->current_level = null;
+                    // Level 4 REJECT → Lanjut ke Level 5
+                    $submission->status = 'approved_4';
+                    $submission->current_level = 5;
                 }
-            } else {
-                // Level 4 REJECT → Lanjut ke Level 5
-                $submission->status = 'approver_5';
-                $submission->current_level = 5;
             }
-        }
             elseif ($level == 5) {
                 if ($action === 'approved') {
                     // Approve → langsung ke Viewer
@@ -494,14 +494,14 @@ class ApprovalController extends Controller
                     $submission->current_level = null; // Set NULL
                 } else {
                     // Reject → lanjut ke Level 6
-                    $submission->status = 'approver_6';
+                    $submission->status = 'approved_5';
                     $submission->current_level = 6;
                 }
             }
             elseif ($level == 6) {
                 if ($action === 'approved') {
                     // Approve → Selesai
-                    $submission->status = 'done';
+                    $submission->status = 'pending_viewer';
                     $submission->current_level = null; // Set NULL
                 } else {
                     // Reject → Kembali ke Sales
@@ -537,24 +537,6 @@ class ApprovalController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
-        }
-    }
-
-    private function handleLevel3Approval(Submission $submission, string $action)
-    {
-        // Level 3 logic tetap sama untuk tracking votes
-        $level3Approvals = Approval::where('submission_id', $submission->id)
-            ->where('level', 3)
-            ->get();
-
-        $approvedCount = $level3Approvals->where('status', 'approved')->count();
-        $rejectedCount = $level3Approvals->where('status', 'rejected')->count();
-
-        // Hanya untuk tracking, status akan di-set di method process()
-        if ($approvedCount >= 1) {
-            $submission->status = 'approved_3';
-        } elseif ($rejectedCount >= 4) {
-            $submission->status = 'rejected_all_level3';
         }
     }
     

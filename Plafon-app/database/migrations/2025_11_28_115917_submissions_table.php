@@ -38,7 +38,7 @@ return new class extends Migration
                 'pending',      // Menunggu approval level 1
                 'approved_1',   // Disetujui level 1, menunggu level 2
                 'approved_2',   // Disetujui level 2, menunggu level 3
-                'approved_3',   // Disetujui level 3, proses input
+                'approved_3',   // Disetujui level 3, menunggu level 4
                 'rejected',     // Ditola
                 'done'          // Selesai/Aktif
             ])->default('pending');

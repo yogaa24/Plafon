@@ -15,9 +15,9 @@ return new class extends Migration
             'approved_1',
             'approved_2',
             'approved_3',
-            'approver_4',
-            'approver_5',
-            'approver_6',
+            'approved_4',
+            'approved_5',
+            'approved_6',
             'pending_viewer',
             'rejected',
             'done'
