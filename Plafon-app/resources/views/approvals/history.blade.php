@@ -262,29 +262,86 @@
                                 <div class="col-span-1 md:col-span-2">
                                     <h4 class="font-semibold text-gray-700 mb-3 text-sm uppercase tracking-wide">Riwayat Approval Lengkap</h4>
                                     <div class="space-y-2">
+                                        @php
+                                            $previousTime = $approval->submission->created_at;
+                                        @endphp
                                         @foreach($approval->submission->approvals->sortBy('level') as $appr)
+                                        @php
+                                            // Hitung durasi dari waktu sebelumnya ke waktu approval ini
+                                            $seconds = $previousTime->diffInSeconds($appr->created_at);
+
+                                            // Format durasi
+                                            if ($seconds < 60) {
+                                                $durationText = $seconds . ' detik';
+                                                $durationClass = 'bg-green-100 text-green-700';
+                                            } elseif ($seconds < 3600) {
+                                                $minutes = ceil($seconds / 60);
+                                                $durationText = $minutes . ' menit';
+                                                $durationClass = $minutes < 30 ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700';
+                                            } else {
+                                                $hours = floor($seconds / 3600);
+                                                $minutes = ceil(($seconds % 3600) / 60);
+                                                $durationText = $hours . ' jam ' . $minutes . ' menit';
+                                                $durationClass = $hours < 2 ? 'bg-yellow-100 text-yellow-700' : 'bg-orange-100 text-orange-700';
+                                            }
+
+                                            // Update waktu sebelumnya untuk iterasi berikutnya
+                                            $previousTime = $appr->created_at;
+                                        @endphp
+                                        
                                         <div class="flex items-start justify-between p-3 rounded-lg border 
                                             {{ $appr->status === 'approved' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200' }}">
-                                            <div class="flex items-center space-x-3">
+                                            <div class="flex items-center space-x-3 flex-1">
                                                 <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm 
                                                     {{ $appr->status === 'approved' ? 'bg-green-500 text-white' : 'bg-red-500 text-white' }}">
                                                     {{ $appr->level }}
                                                 </div>
-                                                <div>
-                                                    <!-- NAMA LENGKAP OTOMATIS TAMPIL (TC - NAMA) -->
-                                                    <p class="font-semibold text-gray-900 text-sm">{{ $appr->approver->name }}</p>
-                                                    <p class="text-xs text-gray-500">{{ $appr->created_at->format('d M Y H:i') }}</p>
+                                                <div class="flex-1">
+                                                    <div class="flex items-center gap-2 flex-wrap">
+                                                        <p class="font-semibold text-gray-900 text-sm">{{ $appr->approver->name }}</p>
+                                                        <!-- Badge Durasi -->
+                                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $durationClass }}">
+                                                            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                            </svg>
+                                                            {{ $durationText }}
+                                                        </span>
+                                                    </div>
+                                                    <p class="text-xs text-gray-500">{{ $appr->created_at->format('d M Y H:i:s') }}</p>
                                                     @if($appr->note)
                                                         <p class="text-xs text-gray-700 mt-1 italic">"{{ $appr->note }}"</p>
                                                     @endif
                                                 </div>
                                             </div>
-                                            <span class="text-xs px-2 py-1 rounded-full font-semibold
+                                            <span class="text-xs px-2 py-1 rounded-full font-semibold whitespace-nowrap
                                                 {{ $appr->status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
                                                 {{ $appr->status === 'approved' ? '✓ Disetujui' : '✖ Ditolak' }}
                                             </span>
                                         </div>
                                         @endforeach
+                                    </div>
+                                    
+                                    <!-- Total Waktu Proses -->
+                                    @php
+                                        $lastApproval = $approval->submission->approvals->sortBy('level')->last();
+                                        $totalSeconds = $approval->submission->created_at->diffInSeconds($lastApproval->created_at);
+
+                                        if ($totalSeconds < 60) {
+                                            $totalDurationText = $totalSeconds . ' detik';
+                                        } elseif ($totalSeconds < 3600) {
+                                            $totalDurationText = ceil($totalSeconds / 60) . ' menit';
+                                        } else {
+                                            $totalHours = floor($totalSeconds / 3600);
+                                            $totalMinutes = ceil(($totalSeconds % 3600) / 60);
+                                            $totalDurationText = $totalHours . ' jam ' . $totalMinutes . ' menit';
+                                        }
+                                    @endphp
+                                    
+                                    <div class="mt-3 p-3 bg-indigo-50 border border-indigo-200 rounded-lg">
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-sm font-semibold text-indigo-900">Total Waktu Proses:</span>
+                                            <span class="text-sm font-bold text-indigo-700">{{ $totalDurationText }}</span>
+                                        </div>
                                     </div>
                                 </div>
                                 @endif
