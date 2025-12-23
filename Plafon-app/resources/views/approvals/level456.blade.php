@@ -10,13 +10,28 @@
             <h1 class="text-2xl font-bold text-gray-900">Dashboard Approval Level {{ $level }}</h1>
             <p class="text-sm text-gray-600">Review dan proses pengajuan yang menunggu approval Anda</p>
         </div>
-        <!-- TAMBAHKAN TOMBOL INI -->
-        <a href="{{ route('approvals.history') }}" class="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-800 transition flex items-center gap-2">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-            Lihat Riwayat
-        </a>
+
+        <div class="flex items-center gap-3">
+            <!-- TAMBAHKAN TOMBOL INI -->
+            <a href="{{ route('approvals.history') }}" class="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-800 transition flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                Lihat Riwayat
+            </a>
+
+            <!-- Export Excel (Approver Level 3 & 4) -->
+            @if(in_array(auth()->user()->role, ['approver3', 'approver4']))
+                <a href="{{ route('approvals.level3.export', request()->query()) }}"
+                class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                    Export Excel
+                </a>
+            @endif
+        </div> 
     </div>
    
     <!-- Filter & Search -->
@@ -446,6 +461,28 @@
     </div>
 </div>
 
+<!-- Image Preview Modal -->
+<div id="imageModal"
+     class="hidden fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
+
+    <div class="relative max-w-4xl w-full">
+        <!-- Close Button -->
+        <button onclick="closeImageModal()"
+                class="absolute -top-3 -right-3 bg-red-600 ring-2 ring-black hover:bg-red-700 text-white rounded-full p-2 shadow-lg transition focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2">
+            <svg xmlns="http://www.w3.org/2000/svg" 
+                class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+
+        <!-- Image -->
+        <img id="imageModalContent"
+             src=""
+             alt="Preview Lampiran"
+             class="w-full max-h-[85vh] object-contain rounded-lg shadow-lg bg-white">
+    </div>
+</div>
+
 @if(session('success'))
 <div id="success-alert" class="fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
     {{ session('success') }}
@@ -481,6 +518,15 @@ function openImageModal(src) {
     img.src = src;
     modal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
+}
+
+function closeImageModal() {
+    const modal = document.getElementById('imageModal');
+    const img = document.getElementById('imageModalContent');
+
+    modal.classList.add('hidden');
+    img.src = '';
+    document.body.style.overflow = '';
 }
 
 function openApprovalModal(submissionId, action) {

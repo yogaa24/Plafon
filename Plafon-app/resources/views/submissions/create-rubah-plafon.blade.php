@@ -17,7 +17,7 @@
 
     <!-- Form -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <form action="{{ route('submissions.store') }}" method="POST" id="rubahPlafonForm">
+    <form action="{{ route('submissions.store') }}" method="POST" id="rubahPlafonForm" enctype="multipart/form-data">
             @csrf
             
             <!-- Hidden fields -->
@@ -170,6 +170,37 @@
                     @error('komitmen_pembayaran')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
+                </div>
+
+                <!-- TAMBAHKAN INI - Upload Lampiran -->
+                <div class="mt-6">
+                    <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Upload Lampiran <span class="text-gray-400">(Opsional, Maksimal 3 gambar)</span>
+                        </label>
+                        <input type="file" 
+                            name="lampiran[]" 
+                            id="lampiranInput" 
+                            accept="image/jpeg,image/jpg,image/png" 
+                            multiple
+                            max="3"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            onchange="previewMultipleLampiran(event)">
+                        <p class="text-xs text-gray-500 mt-1">
+                            Format: JPG, JPEG, PNG. Gambar akan otomatis dikompres menjadi ±500KB
+                        </p>
+                        
+                        <!-- Preview Multiple Images -->
+                        <div id="lampiranPreviewContainer" class="mt-3 hidden">
+                            <div id="lampiranPreviewList" class="grid grid-cols-3 gap-2"></div>
+                            <p class="text-xs text-gray-500 mt-2">
+                                <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                </svg>
+                                <span id="imageCountText">0 gambar dipilih</span> - Gambar akan dikompres otomatis saat diupload
+                            </p>
+                        </div>
+                    </div>
                 </div>
 
             <!-- Submit Buttons -->
@@ -343,5 +374,100 @@ document.addEventListener('DOMContentLoaded', function() {
         updatePlafonDirection(selectedDirection.value);
     }
 });
+
+function previewMultipleLampiran(event) {
+    const files = Array.from(event.target.files);
+    const previewContainer = document.getElementById('lampiranPreviewContainer');
+    const previewList = document.getElementById('lampiranPreviewList');
+    const imageCountText = document.getElementById('imageCountText');
+    const inputElement = event.target;
+    
+    // Validasi jumlah file
+    if (files.length > 3) {
+        alert('Maksimal 3 gambar yang dapat diupload');
+        inputElement.value = '';
+        previewContainer.classList.add('hidden');
+        return;
+    }
+    
+    if (files.length === 0) {
+        previewContainer.classList.add('hidden');
+        return;
+    }
+    
+    // Clear previous previews
+    previewList.innerHTML = '';
+    
+    let validFiles = [];
+    
+    files.forEach((file, index) => {
+        // Validasi tipe file
+        const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+        if (!validTypes.includes(file.type)) {
+            alert(`File "${file.name}" bukan format gambar yang valid (JPG/PNG)`);
+            return;
+        }
+        
+        // Validasi ukuran file (max 10MB sebelum compress)
+        if (file.size > 10 * 1024 * 1024) {
+            alert(`File "${file.name}" terlalu besar (max 10MB)`);
+            return;
+        }
+        
+        validFiles.push(file);
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const previewItem = document.createElement('div');
+            previewItem.className = 'relative';
+            previewItem.innerHTML = `
+                <img src="${e.target.result}" 
+                     class="w-full h-32 object-cover rounded-lg border-2 border-gray-300 shadow-sm" 
+                     alt="Preview ${index + 1}">
+                <button type="button" 
+                        onclick="removePreviewImage(${index})" 
+                        class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 transition shadow-lg"
+                        title="Hapus gambar">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+                <div class="text-center mt-1">
+                    <span class="text-xs text-gray-500">${(file.size / 1024).toFixed(0)} KB</span>
+                </div>
+            `;
+            previewList.appendChild(previewItem);
+        }
+        reader.readAsDataURL(file);
+    });
+    
+    // Update counter
+    imageCountText.textContent = `${validFiles.length} gambar dipilih`;
+    
+    if (validFiles.length > 0) {
+        previewContainer.classList.remove('hidden');
+    } else {
+        inputElement.value = '';
+        previewContainer.classList.add('hidden');
+    }
+}
+
+// Fungsi untuk menghapus preview individual
+function removePreviewImage(index) {
+    const inputElement = document.getElementById('lampiranInput');
+    const dt = new DataTransfer();
+    const files = Array.from(inputElement.files);
+    
+    files.forEach((file, i) => {
+        if (i !== index) {
+            dt.items.add(file);
+        }
+    });
+    
+    inputElement.files = dt.files;
+    
+    // Trigger preview update
+    previewMultipleLampiran({ target: inputElement });
+}
 </script>
 @endsection

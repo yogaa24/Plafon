@@ -123,6 +123,57 @@ class SubmissionController extends Controller
         return view('submissions.create-open-plafon', compact('customer', 'kode'));
     }
 
+    private function compressImage($file)
+    {
+        // Load image based on type
+        $image = imagecreatefromstring(file_get_contents($file->path()));
+        
+        if (!$image) {
+            throw new \Exception('Failed to load image');
+        }
+
+        // Get original dimensions
+        $width = imagesx($image);
+        $height = imagesy($image);
+        
+        // Calculate new dimensions (max 1920px width)
+        $maxWidth = 1920;
+        $maxHeight = 1080;
+        
+        if ($width > $maxWidth || $height > $maxHeight) {
+            $ratio = min($maxWidth / $width, $maxHeight / $height);
+            $newWidth = round($width * $ratio);
+            $newHeight = round($height * $ratio);
+            
+            // Create new image with calculated dimensions
+            $resized = imagecreatetruecolor($newWidth, $newHeight);
+            imagecopyresampled($resized, $image, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
+            imagedestroy($image);
+            $image = $resized;
+        }
+        
+        // Compress until size <= 500KB
+        $quality = 85;
+        $targetSize = 500 * 1024; // 500KB in bytes
+        
+        do {
+            ob_start();
+            imagejpeg($image, null, $quality);
+            $imageData = ob_get_clean();
+            $fileSize = strlen($imageData);
+            
+            if ($fileSize <= $targetSize) {
+                break;
+            }
+            
+            $quality -= 5;
+        } while ($quality > 10);
+        
+        imagedestroy($image);
+        
+        return $imageData;
+    }
+
     public function store(Request $request)
     {
         // Validasi dasar
@@ -134,7 +185,6 @@ class SubmissionController extends Controller
             'previous_submission_id' => 'nullable|exists:submissions,id',
             'komitmen_pembayaran' => 'required|string',
             'payment_type' => 'nullable|in:od,over',
-            // PERUBAHAN: Hilangkan min:0 untuk semua payment values, biarkan bisa minus
             'od_piutang_value' => 'nullable|numeric',
             'od_jml_over_value' => 'nullable|numeric',
             'od_30_value' => 'nullable|numeric',
@@ -145,6 +195,9 @@ class SubmissionController extends Controller
             'over_od_30_value' => 'nullable|numeric',
             'over_od_60_value' => 'nullable|numeric',
             'over_od_90_value' => 'nullable|numeric',
+            // TAMBAHKAN INI
+            'lampiran' => 'nullable|array|max:3',
+            'lampiran.*' => 'image|mimes:jpeg,jpg,png|max:10240',
         ];
 
         // Tambahkan validasi spesifik berdasarkan plafon_type
@@ -179,7 +232,7 @@ class SubmissionController extends Controller
         }
 
         // Generate kode
-        $kode = $this->generateKode($validated['plafon_type']);
+        $kode = $this->generateKode();
 
         // Prepare payment data
         $paymentData = null;
@@ -222,6 +275,25 @@ class SubmissionController extends Controller
             }
         }
 
+        $lampiranPaths = null;
+        if ($request->hasFile('lampiran')) {
+            $uploadedPaths = [];
+            foreach ($request->file('lampiran') as $file) {
+                // Compress gambar
+                $compressedImage = $this->compressImage($file);
+                
+                // Generate unique filename
+                $filename = 'lampiran-' . time() . uniqid() . '.jpg';
+                $path = 'lampiran-submissions/' . $filename;
+                
+                // Save compressed image
+                \Storage::disk('public')->put($path, $compressedImage);
+                $uploadedPaths[] = $path;
+            }
+            
+            $lampiranPaths = json_encode($uploadedPaths);
+        }
+
         // Create submission
         $submission = Submission::create([
             'kode' => $kode,
@@ -240,6 +312,7 @@ class SubmissionController extends Controller
             'sales_id' => auth()->id(),
             'status' => 'pending',
             'current_level' => 1,
+            'lampiran_path' => $lampiranPaths, // TAMBAHKAN INI
         ]);
 
         $message = $validated['plafon_type'] === 'open' 

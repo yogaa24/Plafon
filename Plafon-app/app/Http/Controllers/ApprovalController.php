@@ -74,6 +74,14 @@ class ApprovalController extends Controller
             if (is_string($paymentData)) {
                 $paymentData = json_decode($paymentData, true);
             }
+
+            //  Decode  //preview jika sc sdh upload
+            $lampiranPaths = null;
+            $lampiranCount = 0;
+            if ($submission->lampiran_path) {
+                $lampiranPaths = json_decode($submission->lampiran_path, true);
+                $lampiranCount = is_array($lampiranPaths) ? count($lampiranPaths) : 0;
+            }
             
             return [
                 'id' => $submission->id,
@@ -88,6 +96,8 @@ class ApprovalController extends Controller
                 
                 'payment_type' => $submission->payment_type,
                 'payment_data' => $paymentData,
+                'lampiran_path' => $lampiranPaths, //dr sc
+                'lampiran_count' => $lampiranCount,  //dr sc
                 
                 // Data customer jika ada
                 'customer' => $submission->customer ? [
@@ -382,9 +392,9 @@ class ApprovalController extends Controller
     {
         $user = Auth::user();
         
-        // HANYA Approver Level 3 yang bisa export
-        if ($user->role !== 'approver3') {
-            abort(403, 'Unauthorized: Hanya Approver Level 3 yang dapat mengekspor data.');
+       // Approver Level 3 & 4 boleh export
+        if (!in_array($user->role, ['approver3', 'approver4'])) {
+            abort(403, 'Unauthorized: Hanya Approver Level 3 dan 4 yang dapat mengekspor data.');
         }
     
         // Query pengajuan yang SUDAH MELEWATI Level 3 ke atas
@@ -503,10 +513,10 @@ class ApprovalController extends Controller
 
         // Validasi khusus untuk Level 2 saat approve
         if ($level == 2 && $action === 'approved') {
-    
+
             $request->validate([
                 'lampiran' => 'nullable|array|max:3',
-                'lampiran.*' => 'image|mimes:jpeg,jpg,png|max:10240', // Max 10MB sebelum compress
+                'lampiran.*' => 'image|mimes:jpeg,jpg,png|max:10240',
             ], [
                 'lampiran.array' => 'Lampiran harus berupa array',
                 'lampiran.max' => 'Maksimal 3 gambar',
@@ -517,17 +527,13 @@ class ApprovalController extends Controller
         
             // Handle upload multiple gambar dengan compress
             if ($request->hasFile('lampiran')) {
-                // Hapus lampiran lama jika ada
+                // UBAH LOGIKA: Jangan hapus lampiran lama, GABUNGKAN dengan yang baru
+                $existingPaths = [];
                 if ($submission->lampiran_path) {
-                    $oldPaths = json_decode($submission->lampiran_path, true);
-                    if (is_array($oldPaths)) {
-                        foreach ($oldPaths as $oldPath) {
-                            \Storage::disk('public')->delete($oldPath);
-                        }
-                    }
+                    $existingPaths = json_decode($submission->lampiran_path, true) ?: [];
                 }
-        
-                $uploadedPaths = [];
+                
+                $newPaths = [];
                 foreach ($request->file('lampiran') as $file) {
                     // Compress gambar
                     $compressedImage = $this->compressImage($file);
@@ -538,10 +544,14 @@ class ApprovalController extends Controller
                     
                     // Save compressed image
                     \Storage::disk('public')->put($path, $compressedImage);
-                    $uploadedPaths[] = $path;
+                    $newPaths[] = $path;
                 }
                 
-                $submission->lampiran_path = json_encode($uploadedPaths);
+                // Gabungkan lampiran lama + baru (max tetap 3 yang terbaru)
+                $allPaths = array_merge($existingPaths, $newPaths);
+                $allPaths = array_slice($allPaths, -3); // Ambil 3 terakhir jika lebih
+                
+                $submission->lampiran_path = json_encode($allPaths);
             }
         
             // Validasi payment data HANYA untuk Open Plafon

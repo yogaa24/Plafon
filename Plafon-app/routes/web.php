@@ -66,11 +66,6 @@ Route::middleware(['auth'])->group(function () {
         // Process approval (semua level)
         Route::post('/approvals/{submission}/process', [ApprovalController::class, 'process'])->name('approvals.process');
         
-        // Update commitment (Level 1-3 saja)
-        Route::post('/approvals/{submission}/update-commitment', [ApprovalController::class, 'updateCommitment'])
-            ->name('approvals.updateCommitment')
-            ->middleware('role:approver1,approver2,approver3');
-        
         // Level 3 Dashboard
         Route::get('/approvals/level3', [ApprovalController::class, 'level3'])
             ->name('approvals.level3')
@@ -79,7 +74,7 @@ Route::middleware(['auth'])->group(function () {
         // Level 3 Export
         Route::get('/approvals/level3/export', [ApprovalController::class, 'exportLevel3'])
             ->name('approvals.level3.export')
-            ->middleware('role:approver3');
+            ->middleware('role:approver3,approver4');
         
         // Route untuk history approval (Level 1 & 2)
         Route::get('/approvals/history', [ApprovalController::class, 'history'])

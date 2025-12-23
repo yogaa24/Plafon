@@ -377,6 +377,7 @@
     </div>
 </div>
 
+
 <script>
 function toggleDetail(id) {
     const detailRow = document.getElementById('detail-' + id);
