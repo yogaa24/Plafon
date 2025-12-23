@@ -654,7 +654,6 @@ class ApprovalController extends Controller
             }
             elseif ($level == 3) {
                 // Level 3: APPROVE/REJECT tetap lanjut ke Level 4 
-                $this->handleLevel3Approval($submission, $action);
                 $submission->status = 'approved_3';
                 $submission->current_level = 4;
             }

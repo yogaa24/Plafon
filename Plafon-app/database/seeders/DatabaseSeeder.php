@@ -16,7 +16,7 @@ class DatabaseSeeder extends Seeder
         
         // Approver 1
         User::updateOrCreate(
-            ['email' => 'approver1@demo.com'],
+            ['email' => 'approver1@kiu.com'],
             [
                 'name' => 'Koor SC',
                 'password' => Hash::make('karisma'),
@@ -28,11 +28,12 @@ class DatabaseSeeder extends Seeder
         // APPROVER 2 - TC (5 Users)
         // ==========================================
         $tcUsers = [
-            ['email' => 'tc1@demo.com', 'name' => 'TC - Zahro'],
-            ['email' => 'tc2@demo.com', 'name' => 'TC - Farida'],
-            ['email' => 'tc3@demo.com', 'name' => 'TC - Tiya'],
-            ['email' => 'tc4@demo.com', 'name' => 'TC - Tashya'],
-            ['email' => 'tc5@demo.com', 'name' => 'TC - Natasya'],
+            ['email' => 'tc1@kiu.com', 'name' => 'TC - Zahra'],
+            ['email' => 'tc2@kiu.com', 'name' => 'TC - Farida'],
+            ['email' => 'tc3@kiu.com', 'name' => 'TC - Tiya'],
+            ['email' => 'tc4@kiu.com', 'name' => 'TC - Novita'],
+            ['email' => 'tc5@kiu.com', 'name' => 'TC - Natasya'],
+            ['email' => 'tc6@kiu.com', 'name' => 'TC - Hendra'],
         ];
 
         foreach ($tcUsers as $tc) {
@@ -48,7 +49,7 @@ class DatabaseSeeder extends Seeder
 
         // Approver 3
         User::updateOrCreate(
-            ['email' => 'approver3@demo.com'],
+            ['email' => 'approver3@kiu.com'],
             [
                 'name' => 'Kabag KEU',
                 'password' => Hash::make('karisma'),
@@ -58,7 +59,7 @@ class DatabaseSeeder extends Seeder
 
         // Approver 4
         User::updateOrCreate(
-            ['email' => 'approver4@demo.com'],
+            ['email' => 'approver4@kiu.com'],
             [
                 'name' => 'Kadep KEU',
                 'password' => Hash::make('karisma'),
@@ -68,7 +69,7 @@ class DatabaseSeeder extends Seeder
 
         // Approver 5
         User::updateOrCreate(
-            ['email' => 'approver5@demo.com'],
+            ['email' => 'approver5@kiu.com'],
             [
                 'name' => 'Kadep KEU & HRD',
                 'password' => Hash::make('karisma'),
@@ -78,7 +79,7 @@ class DatabaseSeeder extends Seeder
 
         // Approver 6
         User::updateOrCreate(
-            ['email' => 'approver6@demo.com'],
+            ['email' => 'approver6@kiu.com'],
             [
                 'name' => 'Direksi',
                 'password' => Hash::make('karisma'),
@@ -90,7 +91,7 @@ class DatabaseSeeder extends Seeder
         // VIEWER
         // ==========================================
         User::updateOrCreate(
-            ['email' => 'sukma@gmail.com'],
+            ['email' => 'sukma@kiu.com'],
             [
                 'name' => 'Sukma',
                 'password' => Hash::make('karisma'),
@@ -114,7 +115,7 @@ class DatabaseSeeder extends Seeder
         ];
 
         foreach ($salesList as $name) {
-            $email = strtolower(str_replace(' ', '', $name)) . '@gmail.com';
+            $email = strtolower(str_replace(' ', '', $name)) . '@kiu.com';
 
             User::updateOrCreate(
                 ['email' => $email],
