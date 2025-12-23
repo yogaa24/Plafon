@@ -108,8 +108,8 @@ class ApprovalController extends Controller
         $user = Auth::user();
         $level = $this->getApproverLevel($user->role);
 
-        // Hanya Level 1 dan 2 yang bisa akses history
-        if (!in_array($level, [1, 2])) {
+        // Semua level approver bisa akses history
+        if (!in_array($level, [1, 2, 3, 4, 5, 6])) {
             abort(403, 'Unauthorized access');
         }
 
@@ -533,7 +533,7 @@ class ApprovalController extends Controller
                     $compressedImage = $this->compressImage($file);
                     
                     // Generate unique filename
-                    $filename = 'lampiran-' . time() . '-' . uniqid() . '.jpg';
+                    $filename = 'lampiran-' . time() . uniqid() . '.jpg';
                     $path = 'lampiran-submissions/' . $filename;
                     
                     // Save compressed image

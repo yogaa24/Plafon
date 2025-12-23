@@ -5,24 +5,40 @@
 @section('content')
 <div class="space-y-4">
     <!-- Header -->
-    <div class="flex justify-between items-center">
-        <div>
-            <h1 class="text-2xl font-bold text-gray-900">Dashboard Approval Kabag</h1>
-            <p class="text-sm text-gray-600">Review dan proses pengajuan yang menunggu approval Anda</p>
-        </div>
-        
-        <!-- Export Button (hanya untuk Approver Level 3) -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <!-- Judul -->
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">Dashboard Approval Kabag</h1>
+        <p class="text-sm text-gray-600">
+            Review dan proses pengajuan yang menunggu approval Anda
+        </p>
+    </div>
+
+    <!-- Aksi -->
+    <div class="flex items-center gap-3">
+        <!-- Riwayat -->
+        <a href="{{ route('approvals.history') }}"
+           class="inline-flex items-center gap-2 px-4 py-2 bg-gray-700 text-white text-sm rounded-lg hover:bg-gray-800 transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            Riwayat
+        </a>
+
+        <!-- Export Excel (Approver Level 3) -->
         @if(auth()->user()->role === 'approver3')
             <a href="{{ route('approvals.level3.export', request()->query()) }}"
-            class="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+               class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                          d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                 </svg>
                 Export Excel
             </a>
         @endif
     </div>
+</div>
 
     <!-- Filter & Search -->
     <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-200">

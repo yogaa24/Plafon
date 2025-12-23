@@ -5,11 +5,20 @@
 @section('content')
 <div class="space-y-4">
     <!-- Header -->
-    <div>
-        <h1 class="text-2xl font-bold text-gray-900">Dashboard Approval Level {{ $level }}</h1>
-        <p class="text-sm text-gray-600">Review dan proses pengajuan yang menunggu approval Anda</p>
+    <div class="flex justify-between items-center">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Dashboard Approval Level {{ $level }}</h1>
+            <p class="text-sm text-gray-600">Review dan proses pengajuan yang menunggu approval Anda</p>
+        </div>
+        <!-- TAMBAHKAN TOMBOL INI -->
+        <a href="{{ route('approvals.history') }}" class="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-800 transition flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            Lihat Riwayat
+        </a>
     </div>
-
+   
     <!-- Filter & Search -->
     <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
         <form method="GET" action="{{ route('approvals.level' . $level) }}" id="filterForm" class="space-y-4">
