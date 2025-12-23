@@ -298,9 +298,9 @@
                                                     <div class="grid grid-cols-3 gap-2">
                                                         @foreach($lampiranPaths as $path)
                                                             <img
-                                                                src="{{ Storage::url($path) }}"
+                                                                src="{{ asset($path) }}"
                                                                 alt="Lampiran"
-                                                                onclick="openImageModal('{{ Storage::url($path) }}')"
+                                                                onclick="openImageModal('{{ asset($path) }}')"
                                                                 class="w-full h-32 object-cover rounded-lg border-2 border-gray-300
                                                                     hover:border-indigo-500 transition cursor-pointer"
                                                             >

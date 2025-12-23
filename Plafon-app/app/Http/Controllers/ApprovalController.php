@@ -513,7 +513,6 @@ class ApprovalController extends Controller
 
         // Validasi khusus untuk Level 2 saat approve
         if ($level == 2 && $action === 'approved') {
-
             $request->validate([
                 'lampiran' => 'nullable|array|max:3',
                 'lampiran.*' => 'image|mimes:jpeg,jpg,png|max:10240',
@@ -527,24 +526,32 @@ class ApprovalController extends Controller
         
             // Handle upload multiple gambar dengan compress
             if ($request->hasFile('lampiran')) {
-                // UBAH LOGIKA: Jangan hapus lampiran lama, GABUNGKAN dengan yang baru
+                // UBAH: Ambil lampiran lama
                 $existingPaths = [];
                 if ($submission->lampiran_path) {
                     $existingPaths = json_decode($submission->lampiran_path, true) ?: [];
                 }
                 
                 $newPaths = [];
+                
+                // UBAH: Buat folder jika belum ada
+                $uploadPath = public_path('lampiran');
+                if (!file_exists($uploadPath)) {
+                    mkdir($uploadPath, 0755, true);
+                }
+                
                 foreach ($request->file('lampiran') as $file) {
                     // Compress gambar
                     $compressedImage = $this->compressImage($file);
                     
                     // Generate unique filename
                     $filename = 'lampiran-' . time() . uniqid() . '.jpg';
-                    $path = 'lampiran-submissions/' . $filename;
                     
-                    // Save compressed image
-                    \Storage::disk('public')->put($path, $compressedImage);
-                    $newPaths[] = $path;
+                    // UBAH: Simpan ke public/lampiran
+                    file_put_contents($uploadPath . '/' . $filename, $compressedImage);
+                    
+                    // UBAH: Simpan path relatif (tanpa public/)
+                    $newPaths[] = 'lampiran/' . $filename;
                 }
                 
                 // Gabungkan lampiran lama + baru (max tetap 3 yang terbaru)

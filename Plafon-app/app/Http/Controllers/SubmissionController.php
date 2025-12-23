@@ -277,6 +277,12 @@ class SubmissionController extends Controller
 
         $lampiranPaths = null;
         if ($request->hasFile('lampiran')) {
+            // Buat folder jika belum ada
+            $uploadPath = public_path('lampiran');
+            if (!file_exists($uploadPath)) {
+                mkdir($uploadPath, 0755, true);
+            }
+            
             $uploadedPaths = [];
             foreach ($request->file('lampiran') as $file) {
                 // Compress gambar
@@ -284,11 +290,8 @@ class SubmissionController extends Controller
                 
                 // Generate unique filename
                 $filename = 'lampiran-' . time() . uniqid() . '.jpg';
-                $path = 'lampiran-submissions/' . $filename;
-                
-                // Save compressed image
-                \Storage::disk('public')->put($path, $compressedImage);
-                $uploadedPaths[] = $path;
+                file_put_contents($uploadPath . '/' . $filename, $compressedImage);
+                $uploadedPaths[] = 'lampiran/' . $filename;
             }
             
             $lampiranPaths = json_encode($uploadedPaths);
