@@ -26,17 +26,6 @@
                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
                 </div>
 
-                <!-- Status Filter -->
-                <div class="w-44">
-                    <select name="status_filter" 
-                        onchange="document.getElementById('filterForm').submit()" 
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 cursor-pointer">
-                        <option value="">Semua Status</option>
-                        <option value="approved" {{ request('status_filter') == 'approved' ? 'selected' : '' }}>Disetujui</option>
-                        <option value="rejected" {{ request('status_filter') == 'rejected' ? 'selected' : '' }}>Ditolak</option>
-                    </select>
-                </div>
-
                 <!-- Sales Filter -->
                 <div class="w-52">
                     <select name="sales_id" 
