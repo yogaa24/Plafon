@@ -442,7 +442,6 @@
     </div>
 </div>
 
-@if($submission->plafon_type === 'open')
 <script>
 const plafonAktif = {{ $submission->plafon }};
 
@@ -493,7 +492,6 @@ document.addEventListener('DOMContentLoaded', function () {
     calculateOverAutoFill();
 });
 
-// Hitung jumlah lampiran yang ada
 let existingLampiranCount = {{ isset($lampiranPaths) ? count($lampiranPaths) : 0 }};
 
 // Delete lampiran
@@ -597,6 +595,4 @@ function updateFileInputLimit() {
     }
 }
 </script>
-@endif
-
 @endsection

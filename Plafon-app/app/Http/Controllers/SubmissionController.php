@@ -351,8 +351,8 @@ class SubmissionController extends Controller
         if ($submission->sales_id != Auth::id()) {
             abort(403);
         }
-    
-        // Base validation rules (hapus nama, nama_kios, alamat, plafon dari validasi)
+
+        // Base validation rules
         $baseRules = [
             'komitmen_pembayaran' => 'required|string',
             'payment_type' => 'nullable|in:od,over',
@@ -366,18 +366,17 @@ class SubmissionController extends Controller
             'over_od_30_value' => 'nullable|numeric|min:0',
             'over_od_60_value' => 'nullable|numeric|min:0',
             'over_od_90_value' => 'nullable|numeric|min:0',
+            // PERBAIKI: Lampiran baru opsional
             'lampiran' => 'nullable|array|max:3',
-            'lampiran.*' => 'image|mimes:jpeg,jpg,png|max:10240',
-            'delete_lampiran' => 'nullable|array',
-            'delete_lampiran.*' => 'string',
+            'lampiran.*' => 'nullable|image|mimes:jpeg,jpg,png|max:10240',
         ];
-    
+
         // Add specific rules based on plafon_type
         if ($submission->plafon_type === 'open') {
             $baseRules['jumlah_buka_faktur'] = 'required|integer|min:1';
         } elseif ($submission->plafon_type === 'rubah') {
             $baseRules['plafon_direction'] = 'required|in:naik,turun';
-            $baseRules['plafon'] = 'required|numeric|min:0'; // Plafon tetap bisa diubah untuk rubah plafon
+            $baseRules['plafon'] = 'required|numeric|min:0';
             
             // Validate plafon direction logic
             $request->validate([
@@ -400,18 +399,29 @@ class SubmissionController extends Controller
                 ],
             ]);
         }
-    
+
         $validated = $request->validate($baseRules);
-    
-        // TAMBAHKAN: Handle Delete Lampiran
-        $currentLampiran = json_decode($submission->lampiran_path, true) ?? [];
+
+        // PERBAIKI: Handle Lampiran dengan lebih robust
+        $currentLampiran = [];
         
+        // Parse existing lampiran
+        if ($submission->lampiran_path) {
+            $decoded = json_decode($submission->lampiran_path, true);
+            if (is_array($decoded)) {
+                $currentLampiran = $decoded;
+            }
+        }
+
+        // Handle Delete Lampiran
         if ($request->has('delete_lampiran')) {
-            foreach ($request->delete_lampiran as $pathToDelete) {
+            $toDelete = array_filter($request->delete_lampiran); // Remove empty values
+            
+            foreach ($toDelete as $pathToDelete) {
                 // Hapus file fisik
                 $fullPath = public_path($pathToDelete);
                 if (file_exists($fullPath)) {
-                    unlink($fullPath);
+                    @unlink($fullPath); // @ untuk suppress error jika gagal
                 }
                 
                 // Hapus dari array
@@ -419,35 +429,55 @@ class SubmissionController extends Controller
                     return $path !== $pathToDelete;
                 });
             }
-            $currentLampiran = array_values($currentLampiran); // Re-index array
+            $currentLampiran = array_values($currentLampiran); // Re-index
         }
 
-        // TAMBAHKAN: Handle Upload Lampiran Baru
+        // Handle Upload Lampiran Baru
         if ($request->hasFile('lampiran')) {
+            $files = $request->file('lampiran');
+            
+            // Validasi total tidak melebihi 3
+            $totalAfterUpload = count($currentLampiran) + count($files);
+            
+            if ($totalAfterUpload > 3) {
+                return back()
+                    ->withErrors(['lampiran' => 'Total lampiran tidak boleh lebih dari 3 gambar'])
+                    ->withInput();
+            }
+            
             $uploadPath = public_path('lampiran');
             if (!file_exists($uploadPath)) {
                 mkdir($uploadPath, 0755, true);
             }
             
-            foreach ($request->file('lampiran') as $file) {
-                // Cek apakah total lampiran tidak melebihi 3
-                if (count($currentLampiran) >= 3) {
-                    break;
+            foreach ($files as $file) {
+                // Skip jika null atau invalid
+                if (!$file || !$file->isValid()) {
+                    continue;
                 }
                 
-                // Compress gambar
-                $compressedImage = $this->compressImage($file);
-                
-                // Generate unique filename
-                $filename = 'lampiran-' . time() . uniqid() . '.jpg';
-                file_put_contents($uploadPath . '/' . $filename, $compressedImage);
-                $currentLampiran[] = 'lampiran/' . $filename;
+                try {
+                    // Compress gambar
+                    $compressedImage = $this->compressImage($file);
+                    
+                    // Generate unique filename
+                    $filename = 'lampiran-' . time() . '-' . uniqid() . '.jpg';
+                    $fullPath = $uploadPath . '/' . $filename;
+                    
+                    // Save file
+                    if (file_put_contents($fullPath, $compressedImage)) {
+                        $currentLampiran[] = 'lampiran/' . $filename;
+                    }
+                } catch (\Exception $e) {
+                    // Log error tapi lanjutkan proses
+                    \Log::error('Failed to upload lampiran: ' . $e->getMessage());
+                }
             }
         }
 
         // Update lampiran_path
         if (!empty($currentLampiran)) {
-            $validated['lampiran_path'] = json_encode($currentLampiran);
+            $validated['lampiran_path'] = json_encode(array_values($currentLampiran));
         } else {
             $validated['lampiran_path'] = null;
         }
