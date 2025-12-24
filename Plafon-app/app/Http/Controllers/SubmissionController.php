@@ -337,7 +337,13 @@ class SubmissionController extends Controller
                 ->with('error', 'Pengajuan tidak dapat diedit!');
         }
 
-        return view('submissions.edit', compact('submission'));
+        // TAMBAHKAN INI - Decode lampiran path
+        $lampiranPaths = null;
+        if ($submission->lampiran_path) {
+            $lampiranPaths = json_decode($submission->lampiran_path, true);
+        }
+
+        return view('submissions.edit', compact('submission', 'lampiranPaths'));
     }
 
     public function update(Request $request, Submission $submission)
@@ -360,6 +366,10 @@ class SubmissionController extends Controller
             'over_od_30_value' => 'nullable|numeric|min:0',
             'over_od_60_value' => 'nullable|numeric|min:0',
             'over_od_90_value' => 'nullable|numeric|min:0',
+            'lampiran' => 'nullable|array|max:3',
+            'lampiran.*' => 'image|mimes:jpeg,jpg,png|max:10240',
+            'delete_lampiran' => 'nullable|array',
+            'delete_lampiran.*' => 'string',
         ];
     
         // Add specific rules based on plafon_type
@@ -393,6 +403,55 @@ class SubmissionController extends Controller
     
         $validated = $request->validate($baseRules);
     
+        // TAMBAHKAN: Handle Delete Lampiran
+        $currentLampiran = json_decode($submission->lampiran_path, true) ?? [];
+        
+        if ($request->has('delete_lampiran')) {
+            foreach ($request->delete_lampiran as $pathToDelete) {
+                // Hapus file fisik
+                $fullPath = public_path($pathToDelete);
+                if (file_exists($fullPath)) {
+                    unlink($fullPath);
+                }
+                
+                // Hapus dari array
+                $currentLampiran = array_filter($currentLampiran, function($path) use ($pathToDelete) {
+                    return $path !== $pathToDelete;
+                });
+            }
+            $currentLampiran = array_values($currentLampiran); // Re-index array
+        }
+
+        // TAMBAHKAN: Handle Upload Lampiran Baru
+        if ($request->hasFile('lampiran')) {
+            $uploadPath = public_path('lampiran');
+            if (!file_exists($uploadPath)) {
+                mkdir($uploadPath, 0755, true);
+            }
+            
+            foreach ($request->file('lampiran') as $file) {
+                // Cek apakah total lampiran tidak melebihi 3
+                if (count($currentLampiran) >= 3) {
+                    break;
+                }
+                
+                // Compress gambar
+                $compressedImage = $this->compressImage($file);
+                
+                // Generate unique filename
+                $filename = 'lampiran-' . time() . uniqid() . '.jpg';
+                file_put_contents($uploadPath . '/' . $filename, $compressedImage);
+                $currentLampiran[] = 'lampiran/' . $filename;
+            }
+        }
+
+        // Update lampiran_path
+        if (!empty($currentLampiran)) {
+            $validated['lampiran_path'] = json_encode($currentLampiran);
+        } else {
+            $validated['lampiran_path'] = null;
+        }
+
         // Update payment data jika ada
         if ($request->payment_type) {
             $paymentData = [];
@@ -410,21 +469,21 @@ class SubmissionController extends Controller
                 if ($request->over_od_60_value) $paymentData['od_60'] = $request->over_od_60_value;
                 if ($request->over_od_90_value) $paymentData['od_90'] = $request->over_od_90_value;
             }
-    
+
             $validated['payment_type'] = $request->payment_type;
             $validated['payment_data'] = $paymentData;
         } else {
             $validated['payment_type'] = null;
             $validated['payment_data'] = null;
         }
-    
+
         // Update plafon_direction for rubah plafon
         if ($submission->plafon_type === 'rubah') {
             $validated['plafon_direction'] = $request->plafon_direction;
         }
-    
+
         $submission->update($validated);
-    
+
         return redirect()->route('submissions.index')
             ->with('success', 'Pengajuan berhasil diperbarui!');
     }

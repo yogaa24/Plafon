@@ -364,6 +364,35 @@
                                         </div>
                                     </div>
 
+                                    <!-- Tambahkan di bagian detail information, setelah informasi keuangan -->
+                                        @if($submission->lampiran_path)
+                                            @php
+                                                $lampiranPaths = is_array($submission->lampiran_path)
+                                                    ? $submission->lampiran_path
+                                                    : json_decode($submission->lampiran_path, true);
+                                            @endphp
+
+                                            @if($lampiranPaths && count($lampiranPaths) > 0)
+                                                <div class="col-span-1 md:col-span-2 mt-4">
+                                                    <h4 class="font-semibold text-gray-700 mb-3 text-sm uppercase tracking-wide">
+                                                        Lampiran ({{ count($lampiranPaths) }} gambar)
+                                                    </h4>
+
+                                                    <div class="grid grid-cols-3 gap-2">
+                                                        @foreach($lampiranPaths as $path)
+                                                            <img
+                                                                src="{{ asset($path) }}"
+                                                                alt="Lampiran"
+                                                                onclick="openImageModal('{{ asset($path) }}')"
+                                                                class="w-full h-32 object-cover rounded-lg border-2 border-gray-300
+                                                                    hover:border-indigo-500 transition cursor-pointer"
+                                                            >
+                                                        @endforeach
+                                                    </div>
+                                                </div>
+                                            @endif
+                                        @endif
+
                                     <!-- OD/Over Information Section -->
                                     @if($submission->payment_type)
                                     <div class="col-span-1 md:col-span-2">
@@ -459,6 +488,28 @@
     @endif
 </div>
 
+<!-- Image Preview Modal -->
+<div id="imageModal"
+     class="hidden fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
+
+    <div class="relative max-w-4xl w-full">
+        <!-- Close Button -->
+        <button onclick="closeImageModal()"
+                class="absolute -top-3 -right-3 bg-red-600 ring-2 ring-black hover:bg-red-700 text-white rounded-full p-2 shadow-lg transition focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2">
+            <svg xmlns="http://www.w3.org/2000/svg" 
+                class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+
+        <!-- Image -->
+        <img id="imageModalContent"
+             src=""
+             alt="Preview Lampiran"
+             class="w-full max-h-[85vh] object-contain rounded-lg shadow-lg bg-white">
+    </div>
+</div>
+
 @if(session('success'))
 <div id="success-alert" class="fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
     {{ session('success') }}
@@ -466,6 +517,24 @@
 @endif
 
 <script>
+function openImageModal(src) {
+    const modal = document.getElementById('imageModal');
+    const img = document.getElementById('imageModalContent');
+
+    img.src = src;
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeImageModal() {
+    const modal = document.getElementById('imageModal');
+    const img = document.getElementById('imageModalContent');
+
+    modal.classList.add('hidden');
+    img.src = '';
+    document.body.style.overflow = '';
+}
+
 /* Toggle Detail Row */
 function toggleDetail(id) {
     const detailRow = document.getElementById('detail-' + id);

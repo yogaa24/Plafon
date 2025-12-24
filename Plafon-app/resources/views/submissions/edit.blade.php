@@ -21,7 +21,7 @@
             <p class="text-blue-100 text-sm mt-1">Perbarui informasi pengajuan penjualan</p>
         </div>
 
-        <form action="{{ route('submissions.update', $submission) }}" method="POST" class="p-6" id="editForm">
+        <form action="{{ route('submissions.update', $submission) }}" method="POST" class="p-6" id="editForm" enctype="multipart/form-data">
             @csrf
             @method('PUT')
 
@@ -342,6 +342,91 @@
                 @endif
             </div>
 
+            <!-- Display & Manage Existing Lampiran -->
+            @if($submission->lampiran_path)
+                @php
+                    $lampiranPaths = is_array($submission->lampiran_path) 
+                        ? $submission->lampiran_path 
+                        : json_decode($submission->lampiran_path, true);
+                @endphp
+                
+                @if($lampiranPaths && count($lampiranPaths) > 0)
+                <div class="mt-6 border-t pt-6">
+                    <h4 class="text-sm font-semibold text-gray-700 mb-3">
+                        Lampiran yang Telah Diupload
+                        <span class="text-xs font-normal text-gray-500">({{ count($lampiranPaths) }}/3 gambar)</span>
+                    </h4>
+                    <div class="grid grid-cols-3 gap-3" id="existingLampiranContainer">
+                        @foreach($lampiranPaths as $index => $path)
+                        <div class="relative group" data-lampiran-item>
+                            <img 
+                                src="{{ asset($path) }}" 
+                                alt="Lampiran {{ $index + 1 }}"
+                                class="w-full h-32 object-cover rounded-lg border-2 border-gray-300 shadow-sm"
+                                onclick="window.open('{{ asset($path) }}', '_blank')">
+                            
+                            <!-- Delete Button -->
+                            <button 
+                                type="button"
+                                onclick="deleteLampiran('{{ $path }}', this)"
+                                class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 transition shadow-lg z-10"
+                                title="Hapus lampiran">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                </svg>
+                            </button>
+                            
+                            <!-- Hidden input untuk delete -->
+                            <input type="hidden" name="delete_lampiran[]" value="" class="delete-lampiran-input">
+                            
+                            <div class="text-center mt-1">
+                                <span class="text-xs text-gray-500">Lampiran {{ $index + 1 }}</span>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                    <p class="text-xs text-gray-500 mt-3">
+                        <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                        </svg>
+                        Klik tombol ❌ untuk menghapus lampiran.
+                </div>
+                @endif
+            @endif
+
+            <!-- Upload Lampiran Baru -->
+            <div class="mt-6">
+                <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Tambah Lampiran Baru 
+                        <span class="text-gray-400">(Opsional, Maksimal total 3 gambar)</span>
+                    </label>
+                    <input 
+                        type="file" 
+                        name="lampiran[]" 
+                        id="lampiranInput" 
+                        accept="image/jpeg,image/jpg,image/png" 
+                        multiple
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        onchange="previewNewLampiran(event)">
+                    <p class="text-xs text-gray-500 mt-1">
+                        Format: JPG, JPEG, PNG. Gambar akan otomatis dikompres menjadi ±500KB
+                    </p>
+                    
+                    <!-- Preview New Images -->
+                    <div id="newLampiranPreviewContainer" class="mt-3 hidden">
+                        <p class="text-xs font-semibold text-gray-700 mb-2">Preview Lampiran Baru:</p>
+                        <div id="newLampiranPreviewList" class="grid grid-cols-3 gap-2"></div>
+                        <p class="text-xs text-gray-500 mt-2">
+                            <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                            <span id="newImageCountText">0 gambar baru</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
             <!-- Action Buttons -->
             <div class="flex items-center justify-end space-x-4 mt-8 pt-6 border-t border-gray-200">
                 <a href="{{ route('submissions.index') }}" 
@@ -407,6 +492,110 @@ document.addEventListener('DOMContentLoaded', function () {
     // Hitung sekali saat load (penting!)
     calculateOverAutoFill();
 });
+
+// Hitung jumlah lampiran yang ada
+let existingLampiranCount = {{ isset($lampiranPaths) ? count($lampiranPaths) : 0 }};
+
+// Delete lampiran
+function deleteLampiran(path, button) {
+    if (!confirm('Apakah Anda yakin ingin menghapus lampiran ini?')) {
+        return;
+    }
+    
+    const item = button.closest('[data-lampiran-item]');
+    const deleteInput = item.querySelector('.delete-lampiran-input');
+    
+    // Set value untuk dikirim ke backend
+    deleteInput.value = path;
+    
+    // Hide item dengan animasi
+    item.style.opacity = '0.5';
+    item.style.pointerEvents = 'none';
+    
+    // Update counter
+    existingLampiranCount--;
+    
+    // Update max file input
+    updateFileInputLimit();
+}
+
+// Preview new lampiran
+function previewNewLampiran(event) {
+    const files = Array.from(event.target.files);
+    const previewContainer = document.getElementById('newLampiranPreviewContainer');
+    const previewList = document.getElementById('newLampiranPreviewList');
+    const newImageCountText = document.getElementById('newImageCountText');
+    const inputElement = event.target;
+    
+    // Hitung total yang akan ada
+    const totalWillBe = existingLampiranCount + files.length;
+    
+    // Validasi jumlah total
+    if (totalWillBe > 3) {
+        const maxAllowed = 3 - existingLampiranCount;
+        alert(`Maksimal total 3 gambar. Anda hanya bisa menambah ${maxAllowed} gambar lagi.`);
+        inputElement.value = '';
+        previewContainer.classList.add('hidden');
+        return;
+    }
+    
+    if (files.length === 0) {
+        previewContainer.classList.add('hidden');
+        return;
+    }
+    
+    // Clear previous previews
+    previewList.innerHTML = '';
+    
+    files.forEach((file, index) => {
+        // Validasi tipe file
+        const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+        if (!validTypes.includes(file.type)) {
+            alert(`File "${file.name}" bukan format gambar yang valid (JPG/PNG)`);
+            return;
+        }
+        
+        // Validasi ukuran file
+        if (file.size > 10 * 1024 * 1024) {
+            alert(`File "${file.name}" terlalu besar (max 10MB)`);
+            return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const previewItem = document.createElement('div');
+            previewItem.className = 'relative';
+            previewItem.innerHTML = `
+                <img src="${e.target.result}" 
+                     class="w-full h-32 object-cover rounded-lg border-2 border-blue-300 shadow-sm" 
+                     alt="Preview Baru ${index + 1}">
+                <div class="absolute top-1 right-1 bg-blue-500 text-white text-xs px-2 py-1 rounded">
+                    Baru
+                </div>
+                <div class="text-center mt-1">
+                    <span class="text-xs text-gray-500">${(file.size / 1024).toFixed(0)} KB</span>
+                </div>
+            `;
+            previewList.appendChild(previewItem);
+        }
+        reader.readAsDataURL(file);
+    });
+    
+    // Update counter
+    newImageCountText.textContent = `${files.length} gambar baru akan ditambahkan`;
+    previewContainer.classList.remove('hidden');
+}
+
+// Update file input limit
+function updateFileInputLimit() {
+    const maxAllowed = 3 - existingLampiranCount;
+    const inputElement = document.getElementById('lampiranInput');
+    
+    if (maxAllowed <= 0) {
+        inputElement.disabled = true;
+        inputElement.parentElement.innerHTML += '<p class="text-xs text-red-500 mt-1">Maksimal 3 lampiran sudah tercapai</p>';
+    }
+}
 </script>
 @endif
 
