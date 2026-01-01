@@ -13,7 +13,7 @@ return new class extends Migration
             $table->foreignId('submission_id')->constrained()->onDelete('cascade');
             $table->foreignId('approver_id')->constrained('users');
             $table->integer('level');
-            $table->enum('status', ['approved', 'rejected']);
+            $table->enum('status', ['approved', 'rejected','revision']);
             $table->text('note')->nullable();
             $table->decimal('piutang', 15, 2)->nullable();
             $table->decimal('jml_over', 15, 2)->nullable();

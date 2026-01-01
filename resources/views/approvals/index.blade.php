@@ -308,64 +308,9 @@
                                                 </div>
                                             @endif
                                         @endif
-
-                                        <!-- OD/Over Information Section -->
-                                        @if($submission->payment_type)
-                                        <div class="col-span-1 md:col-span-2">
-                                            <h4 class="font-semibold text-gray-700 mb-3 text-sm uppercase tracking-wide">Informasi Pembayaran</h4>
-
-                                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                                                <div class="flex items-start">
-
-                                                    <svg class="w-5 h-5 mr-2 text-blue-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                                                    </svg>
-
-                                                    <div class="flex-1">
-                                                        <p class="text-sm font-semibold text-blue-900 mb-2">
-                                                            Jenis: <span class="uppercase">{{ $submission->payment_type }}</span>
-                                                        </p>
-
-                                                        @php
-                                                            $paymentData = is_array($submission->payment_data)
-                                                                ? $submission->payment_data
-                                                                : json_decode($submission->payment_data, true);
-                                                        @endphp
-
-                                                        @if($paymentData && count($paymentData) > 0)
-
-                                                        {{-- GRID 2 KOLOM / TIDAK PANJANG KE BAWAH --}}
-                                                        <div class="grid grid-cols-2 gap-y-2 gap-x-6">
-
-                                                            @foreach($paymentData as $key => $value)
-                                                                @if($value)
-                                                                <div class="flex justify-between text-sm">
-                                                                    <span class="text-blue-700">
-                                                                        @if($key === 'piutang') Piutang
-                                                                        @elseif($key === 'jml_over') Jml Over
-                                                                        @elseif($key === 'od_30') Jml OD 30
-                                                                        @elseif($key === 'od_60') Jml OD 60
-                                                                        @elseif($key === 'od_90') Jml OD 90
-                                                                        @endif:
-                                                                    </span>
-                                                                    <span class="font-semibold text-blue-900">
-                                                                        Rp {{ number_format($value, 0, ',', '.') }}
-                                                                    </span>
-                                                                </div>
-                                                                @endif
-                                                            @endforeach
-
-                                                        </div>
-                                                        @endif
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        @endif
                                         
                                         <!-- Data OD/Over dari Approval Level 2 -->
-                                        @php
+                                        <!-- @php
                                             $approval2 = $submission->approvals->where('level', 2)->where('status', 'approved')->first();
                                         @endphp
                                         @if($approval2)
@@ -394,37 +339,117 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        @endif
+                                        @endif -->
                                     </div>
                                 </div>
+
+                                @if($submission->payment_type)
+                                    <div class="col-span-1 md:col-span-2">
+                                        <h4 class="font-semibold text-gray-700 mb-3 text-sm uppercase tracking-wide">Informasi Pembayaran</h4>
+
+                                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                            <div class="flex items-start">
+
+                                                <svg class="w-5 h-5 mr-2 text-blue-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                                </svg>
+
+                                                <div class="flex-1">
+                                                    <p class="text-sm font-semibold text-blue-900 mb-2">
+                                                        Jenis: <span class="uppercase">{{ $submission->payment_type }}</span>
+                                                    </p>
+
+                                                    @php
+                                                        $paymentData = is_array($submission->payment_data)
+                                                            ? $submission->payment_data
+                                                            : json_decode($submission->payment_data, true);
+                                                    @endphp
+
+                                                    @if($paymentData && count($paymentData) > 0)
+
+                                                    {{-- GRID 2 KOLOM / TIDAK PANJANG KE BAWAH --}}
+                                                    <div class="grid grid-cols-2 gap-y-2 gap-x-6">
+
+                                                        @foreach($paymentData as $key => $value)
+                                                            @if($value)
+                                                            <div class="flex justify-between text-sm">
+                                                                <span class="text-blue-700">
+                                                                    @if($key === 'piutang') Piutang
+                                                                    @elseif($key === 'jml_over') Jml Over
+                                                                    @elseif($key === 'od_30') Jml OD 30
+                                                                    @elseif($key === 'od_60') Jml OD 60
+                                                                    @elseif($key === 'od_90') Jml OD 90
+                                                                    @endif:
+                                                                </span>
+                                                                <span class="font-semibold text-blue-900">
+                                                                    Rp {{ number_format($value, 0, ',', '.') }}
+                                                                </span>
+                                                            </div>
+                                                            @endif
+                                                        @endforeach
+
+                                                    </div>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endif
 
                                 <!-- Riwayat Approval -->
                                 @if($submission->approvals->count() > 0)
                                 <div class="col-span-1 md:col-span-2">
-                                    <h4 class="font-semibold text-gray-700 mb-3 text-sm uppercase tracking-wide">Riwayat Approval</h4>
+                                    <h4 class="font-semibold text-gray-700 mb-3 text-sm uppercase tracking-wide">
+                                        Riwayat Approval
+                                    </h4>
+
                                     <div class="space-y-2">
                                         @foreach($submission->approvals as $approval)
-                                        <div class="flex items-start justify-between p-3 rounded-lg border 
-                                            {{ $approval->status === 'approved' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200' }}">
+
+                                        @php
+                                            $isApproved = $approval->status === 'approved';
+                                            $isRejected = $approval->status === 'rejected';
+                                            $isRevision = $approval->status === 'revision';
+                                        @endphp
+
+                                        <div class="flex items-start justify-between p-3 rounded-lg border
+                                            {{ $isApproved ? 'bg-green-50 border-green-200' : ($isRevision ? 'bg-yellow-50 border-yellow-200' : 'bg-red-50 border-red-200') }}">
+
                                             <div class="flex items-center space-x-3">
-                                                <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm 
-                                                    {{ $approval->status === 'approved' ? 'bg-green-500 text-white' : 'bg-red-500 text-white' }}">
+                                                <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm
+                                                    {{ $isApproved ? 'bg-green-500 text-white' : ($isRevision ? 'bg-yellow-500 text-white' : 'bg-red-500 text-white') }}">
                                                     {{ $approval->level }}
                                                 </div>
+
                                                 <div>
-                                                    <!-- TAMPILKAN NAMA LENGKAP TERMASUK TC - NAMA -->
-                                                    <p class="font-semibold text-gray-900 text-sm">{{ $approval->approver->name }}</p>
-                                                    <p class="text-xs text-gray-500">{{ $approval->created_at->format('d M Y H:i') }}</p>
+                                                    <p class="font-semibold text-gray-900 text-sm">
+                                                        {{ $approval->approver->name }}
+                                                    </p>
+                                                    <p class="text-xs text-gray-500">
+                                                        {{ $approval->created_at->format('d M Y H:i') }}
+                                                    </p>
+
                                                     @if($approval->note)
-                                                        <p class="text-xs text-gray-700 mt-1 italic">"{{ $approval->note }}"</p>
+                                                        <p class="text-xs text-gray-700 mt-1 italic">
+                                                            "{{ $approval->note }}"
+                                                        </p>
                                                     @endif
                                                 </div>
                                             </div>
+
                                             <span class="text-xs px-2 py-1 rounded-full font-semibold
-                                                {{ $approval->status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
-                                                {{ $approval->status === 'approved' ? '✓ Disetujui' : '✖ Ditolak' }}
+                                                {{ $isApproved ? 'bg-green-100 text-green-700' : ($isRevision ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700') }}">
+                                                @if($isApproved)
+                                                    ✓ Disetujui
+                                                @elseif($isRevision)
+                                                    ⟳ Perlu Revisi
+                                                @else
+                                                    ✖ Ditolak
+                                                @endif
                                             </span>
                                         </div>
+
                                         @endforeach
                                     </div>
                                 </div>

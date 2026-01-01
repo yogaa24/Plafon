@@ -7,7 +7,7 @@
     <!-- Header -->
     <div class="mb-8">
         <h1 class="text-3xl font-bold text-gray-900">Pengaturan Akun</h1>
-        <p class="text-gray-600 mt-2">Kelola email dan password akun Anda</p>
+        <p class="text-gray-600 mt-2">Kelola nama, email dan password akun Anda</p>
     </div>
 
     <!-- Success Message -->
@@ -24,32 +24,6 @@
 
     <!-- Main Card -->
     <div class="bg-white rounded-xl shadow-md border border-gray-200 p-8">
-        <!-- Info Section -->
-        <div class="mb-8 pb-6 border-b border-gray-200">
-            <div class="flex items-center mb-4">
-                <div class="bg-indigo-100 rounded-full p-3">
-                    <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                    </svg>
-                </div>
-                <div class="ml-4">
-                    <h2 class="text-xl font-bold text-gray-900">Informasi Akun</h2>
-                    <p class="text-sm text-gray-600">Data akun Anda saat ini</p>
-                </div>
-            </div>
-            
-            <div class="grid grid-cols-2 gap-4 mt-6 bg-gray-50 p-4 rounded-lg">
-                <div>
-                    <span class="text-xs font-semibold text-gray-500 uppercase">Nama</span>
-                    <p class="text-sm text-gray-900 font-medium mt-1">{{ $user->name }}</p>
-                </div>
-                <div>
-                    <span class="text-xs font-semibold text-gray-500 uppercase">Role</span>
-                    <p class="text-sm text-gray-900 font-medium mt-1 capitalize">{{ ucfirst($user->role) }}</p>
-                </div>
-            </div>
-        </div>
-
         <!-- Form Section -->
         <div>
             <div class="flex items-center mb-6">
@@ -59,13 +33,30 @@
                     </svg>
                 </div>
                 <div class="ml-4">
-                    <h2 class="text-xl font-bold text-gray-900">Edit Email & Password</h2>
-                    <p class="text-sm text-gray-600">Update informasi login Anda</p>
+                    <h2 class="text-xl font-bold text-gray-900">Edit Profil</h2>
+                    <p class="text-sm text-gray-600">Update informasi akun Anda</p>
                 </div>
             </div>
 
             <form method="POST" action="{{ route('profile.update') }}" class="space-y-6">
                 @csrf
+
+                <input type="hidden" name="redirect_to"
+                    value="{{ request('redirect_to', url()->previous()) }}">
+
+                <!-- TAMBAH: Input Nama -->
+                <div>
+                    <label for="name" class="block text-sm font-semibold text-gray-700 mb-2">
+                        Nama Lengkap
+                        <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" name="name" id="name" value="{{ old('name', $user->name) }}" required
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition @error('name') border-red-500 @enderror"
+                        placeholder="Masukkan nama lengkap">
+                    @error('name')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
 
                 <!-- Email -->
                 <div>
@@ -74,7 +65,8 @@
                         <span class="text-red-500">*</span>
                     </label>
                     <input type="email" name="email" id="email" value="{{ old('email', $user->email) }}" required
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition @error('email') border-red-500 @enderror">
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition @error('email') border-red-500 @enderror"
+                        placeholder="email@example.com">
                     @error('email')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
@@ -88,7 +80,8 @@
                     </label>
                     <div class="relative">
                         <input type="password" name="current_password" id="current_password" required
-                            class="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition @error('current_password') border-red-500 @enderror">
+                            class="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition @error('current_password') border-red-500 @enderror"
+                            placeholder="Masukkan password saat ini">
                         <button type="button" onclick="togglePassword('current_password', 'eye-1', 'eye-slash-1')" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none">
                             <svg id="eye-1" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -102,7 +95,7 @@
                     @error('current_password')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
-                    <p class="mt-1 text-xs text-gray-500">Wajib diisi untuk verifikasi</p>
+                    <p class="mt-1 text-xs text-gray-500">Wajib diisi untuk verifikasi perubahan</p>
                 </div>
 
                 <!-- Divider -->
@@ -123,7 +116,8 @@
                     </label>
                     <div class="relative">
                         <input type="password" name="password" id="password"
-                            class="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition @error('password') border-red-500 @enderror">
+                            class="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition @error('password') border-red-500 @enderror"
+                            placeholder="Minimal 8 karakter">
                         <button type="button" onclick="togglePassword('password', 'eye-2', 'eye-slash-2')" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none">
                             <svg id="eye-2" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -146,7 +140,8 @@
                     </label>
                     <div class="relative">
                         <input type="password" name="password_confirmation" id="password_confirmation"
-                            class="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                            class="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                            placeholder="Ulangi password baru">
                         <button type="button" onclick="togglePassword('password_confirmation', 'eye-3', 'eye-slash-3')" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none">
                             <svg id="eye-3" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -167,7 +162,7 @@
                         </svg>
                         <div class="ml-3">
                             <p class="text-sm text-blue-800">
-                                <strong>Tips:</strong> Jika hanya ingin mengubah email, cukup isi email dan password saat ini. Password baru boleh dikosongkan.
+                                <strong>Tips:</strong> Password saat ini wajib diisi untuk keamanan. Password baru boleh dikosongkan jika hanya ingin mengubah nama atau email.
                             </p>
                         </div>
                     </div>
@@ -177,6 +172,7 @@
                 <div class="flex gap-3 pt-4">
                     <button type="submit" class="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition">
                         Simpan Perubahan
+                    </button>
                     <button type="button" onclick="window.history.back()" class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition text-center">
                         Batal
                     </button>

@@ -25,6 +25,40 @@
             @csrf
             @method('PUT')
 
+            {{-- ALERT STATUS REJECTED / REVISION --}}
+            @if($submission->status === 'rejected')
+                <div class="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded">
+                    <div class="flex items-start">
+                        <svg class="w-5 h-5 text-red-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <div>
+                            <h3 class="text-red-800 font-semibold mb-1">Pengajuan Ditolak</h3>
+                            <p class="text-red-700 text-sm">
+                                {{ $submission->rejection_note ?? 'Tidak ada catatan penolakan.' }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+            @elseif($submission->status === 'revision')
+                <div class="mb-6 bg-amber-50 border-l-4 border-amber-500 p-4 rounded">
+                    <div class="flex items-start">
+                        <svg class="w-5 h-5 text-amber-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                        </svg>
+                        <div>
+                            <h3 class="text-amber-800 font-semibold mb-1">Pengajuan Perlu Revisi</h3>
+                            <p class="text-amber-700 text-sm">
+                                {{ $submission->rejection_note ?? 'Tidak ada catatan revisi.' }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
             <!-- Hidden Fields -->
             <input type="hidden" name="plafon_type" value="{{ $submission->plafon_type }}">
             @if($submission->plafon_type === 'rubah')

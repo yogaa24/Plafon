@@ -138,7 +138,7 @@
                                 </span>
                             @elseif($submissionStatus === 'pending_viewer')
                                 <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
-                                    Di Viewer
+                                    Proses Input
                                 </span>
                             @elseif(str_starts_with($submissionStatus, 'approved_'))
                                 @php
@@ -191,6 +191,10 @@
                                             <span class="text-sm text-gray-600 block mb-1">Komitmen Pembayaran:</span>
                                             <span class="text-sm text-gray-900">{{ $approval->submission->komitmen_pembayaran }}</span>
                                         </div>
+                                        <div class="flex justify-between py-1">
+                                            <span class="text-sm text-gray-600">Dibuat:</span>
+                                            <span class="text-sm text-gray-500">{{ $approval->submission->created_at->format('d M Y, H:i') }}</span>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -214,35 +218,6 @@
                                             </div>
                                             @endif
                                         </div>
-
-                                        <!-- Data Payment jika Level 2 Open Plafon -->
-                                        @if($level == 2 && $approval->submission->plafon_type === 'open' && $approval->status === 'approved')
-                                        <div class="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                                            <p class="text-xs font-semibold text-blue-900 mb-2">Data Verifikasi:</p>
-                                            <div class="space-y-1 text-xs">
-                                                <div class="flex justify-between">
-                                                    <span class="text-blue-700">Piutang:</span>
-                                                    <span class="font-semibold">Rp {{ number_format($approval->piutang ?? 0, 0, ',', '.') }}</span>
-                                                </div>
-                                                <div class="flex justify-between">
-                                                    <span class="text-blue-700">Jml Over:</span>
-                                                    <span class="font-semibold">Rp {{ number_format($approval->jml_over ?? 0, 0, ',', '.') }}</span>
-                                                </div>
-                                                <div class="flex justify-between">
-                                                    <span class="text-blue-700">Jml OD 30:</span>
-                                                    <span class="font-semibold">Rp {{ number_format($approval->jml_od_30 ?? 0, 0, ',', '.') }}</span>
-                                                </div>
-                                                <div class="flex justify-between">
-                                                    <span class="text-blue-700">Jml OD 60:</span>
-                                                    <span class="font-semibold">Rp {{ number_format($approval->jml_od_60 ?? 0, 0, ',', '.') }}</span>
-                                                </div>
-                                                <div class="flex justify-between">
-                                                    <span class="text-blue-700">Jml OD 90:</span>
-                                                    <span class="font-semibold">Rp {{ number_format($approval->jml_od_90 ?? 0, 0, ',', '.') }}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        @endif
                                     </div>
                                 </div>
 
@@ -254,7 +229,7 @@
                                         @php
                                             $previousTime = $approval->submission->created_at;
                                         @endphp
-                                        @foreach($approval->submission->approvals->sortBy('level') as $appr)
+                                        @foreach($approval->submission->approvals->sortBy('created_at') as $appr)
                                         @php
                                             // Hitung durasi dari waktu sebelumnya ke waktu approval ini
                                             $seconds = $previousTime->diffInSeconds($appr->created_at);
@@ -279,32 +254,56 @@
                                         @endphp
                                         
                                         <div class="flex items-start justify-between p-3 rounded-lg border 
-                                            {{ $appr->status === 'approved' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200' }}">
+                                            {{ $appr->status === 'approved' 
+                                                ? 'bg-green-50 border-green-200' 
+                                                : ($appr->status === 'revision' 
+                                                    ? 'bg-amber-50 border-amber-200' 
+                                                    : 'bg-red-50 border-red-200') }}">
+                                            
                                             <div class="flex items-center space-x-3 flex-1">
                                                 <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm 
-                                                    {{ $appr->status === 'approved' ? 'bg-green-500 text-white' : 'bg-red-500 text-white' }}">
+                                                    {{ $appr->status === 'approved' 
+                                                        ? 'bg-green-500 text-white' 
+                                                        : ($appr->status === 'revision' 
+                                                            ? 'bg-amber-500 text-white' 
+                                                            : 'bg-red-500 text-white') }}">
                                                     {{ $appr->level }}
                                                 </div>
+
                                                 <div class="flex-1">
                                                     <div class="flex items-center gap-2 flex-wrap">
                                                         <p class="font-semibold text-gray-900 text-sm">{{ $appr->approver->name }}</p>
+
                                                         <!-- Badge Durasi -->
                                                         <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $durationClass }}">
                                                             <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                                             </svg>
                                                             {{ $durationText }}
                                                         </span>
                                                     </div>
+
                                                     <p class="text-xs text-gray-500">{{ $appr->created_at->format('d M Y H:i:s') }}</p>
+
                                                     @if($appr->note)
                                                         <p class="text-xs text-gray-700 mt-1 italic">"{{ $appr->note }}"</p>
                                                     @endif
                                                 </div>
                                             </div>
+
                                             <span class="text-xs px-2 py-1 rounded-full font-semibold whitespace-nowrap
-                                                {{ $appr->status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
-                                                {{ $appr->status === 'approved' ? '✓ Disetujui' : '✖ Ditolak' }}
+                                                {{ $appr->status === 'approved' 
+                                                    ? 'bg-green-100 text-green-700' 
+                                                    : ($appr->status === 'revision' 
+                                                        ? 'bg-amber-100 text-amber-700' 
+                                                        : 'bg-red-100 text-red-700') }}">
+                                                
+                                                {{ $appr->status === 'approved' 
+                                                    ? '✓ Disetujui' 
+                                                    : ($appr->status === 'revision' 
+                                                        ? '⟳ Revisi' 
+                                                        : '✖ Ditolak') }}
                                             </span>
                                         </div>
                                         @endforeach
@@ -312,7 +311,7 @@
                                     
                                     <!-- Total Waktu Proses -->
                                     @php
-                                        $lastApproval = $approval->submission->approvals->sortBy('level')->last();
+                                        $lastApproval = $approval->submission->approvals->sortBy('created_at')->last();
                                         $totalSeconds = $approval->submission->created_at->diffInSeconds($lastApproval->created_at);
 
                                         if ($totalSeconds < 60) {

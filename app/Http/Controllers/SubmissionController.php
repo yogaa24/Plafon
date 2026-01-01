@@ -332,7 +332,7 @@ class SubmissionController extends Controller
             abort(403);
         }
 
-        if (!in_array($submission->status, ['pending'])) {
+        if (!in_array($submission->status, ['pending','rejected','revision'])) {
             return redirect()->route('submissions.index')
                 ->with('error', 'Pengajuan tidak dapat diedit!');
         }
@@ -350,6 +350,11 @@ class SubmissionController extends Controller
     {
         if ($submission->sales_id != Auth::id()) {
             abort(403);
+        }
+
+        if (!in_array($submission->status, ['pending', 'rejected', 'revision'])) {
+            return redirect()->route('submissions.index')
+                ->with('error', 'Pengajuan tidak dapat diupdate!');
         }
 
         // Base validation rules
@@ -513,6 +518,13 @@ class SubmissionController extends Controller
         }
 
         $submission->update($validated);
+
+        if (in_array($submission->status, ['rejected', 'revision'])) {
+            $submission->status = 'pending';
+            $submission->current_level = 1;
+            $submission->rejection_note = null; // Clear rejection note
+            $submission->save();
+        }
 
         return redirect()->route('submissions.index')
             ->with('success', 'Pengajuan berhasil diperbarui!');

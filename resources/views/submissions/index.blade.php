@@ -283,28 +283,35 @@
                                     </form>
                                 @endif
                                 
-                                @if(in_array($submission->status, ['pending']))
-                                <a href="{{ route('submissions.edit', $submission) }}" class="text-blue-600 hover:text-blue-900 font-medium text-sm" title="Edit">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                                    </svg>
-                                </a>
-                                <form action="{{ route('submissions.destroy', $submission) }}" method="POST" class="inline" onsubmit="return confirm('Yakin ingin menghapus?')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="text-red-600 hover:text-red-900 font-medium text-sm" title="Hapus">
+                                @if(in_array($submission->status, ['pending', 'rejected', 'revision']))
+                                    <a href="{{ route('submissions.edit', $submission) }}" 
+                                    class="text-blue-600 hover:text-blue-900 font-medium text-sm" 
+                                    title="Edit & Kirim Ulang">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                         </svg>
-                                    </button>
-                                </form>
+                                    </a>
+                                    
+                                    <form action="{{ route('submissions.destroy', $submission) }}" 
+                                        method="POST" class="inline" 
+                                        onsubmit="return confirm('Yakin ingin menghapus?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" 
+                                                class="text-red-600 hover:text-red-900 font-medium text-sm" 
+                                                title="Hapus">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                            </svg>
+                                        </button>
+                                    </form>
                                 @endif
                             </div>
                         </td>
                     </tr>
                     
                     <!-- Detail Row (Hidden by default) -->
-                    <tr id="detail-{{ $submission->id }}" class="hidden bg-gray-50">
+                    <tr id="detail-{{ $submission->id }}" class="hidden bg-gFray-50">
                         <td colspan="9" class="px-4 py-4">
                             <div class="p-4 bg-white rounded-lg border border-gray-200">
                                 <!-- Information Grid -->
@@ -442,7 +449,7 @@
                                     @endif
 
                                     <!-- Notes Section -->
-                                    @if($submission->rejection_note)
+                                    @if($submission->rejection_note && $submission->status === 'rejected')
                                     <div class="col-span-1 md:col-span-2">
                                         <div class="text-sm text-red-700 bg-red-50 px-4 py-3 rounded-lg border-l-4 border-red-500">
                                             <span class="font-semibold block mb-1">Alasan Penolakan:</span>
@@ -450,6 +457,16 @@
                                         </div>
                                     </div>
                                     @endif
+
+                                    @if($submission->rejection_note && $submission->status === 'revision')
+                                    <div class="col-span-1 md:col-span-2">
+                                        <div class="text-sm text-yellow-800 bg-yellow-50 px-4 py-3 rounded-lg border-l-4 border-yellow-500">
+                                            <span class="font-semibold block mb-1">Catatan Revisi:</span>
+                                            <p>{{ $submission->rejection_note }}</p>
+                                        </div>
+                                    </div>
+                                    @endif
+
                                 </div>
                             </div>
                         </td>

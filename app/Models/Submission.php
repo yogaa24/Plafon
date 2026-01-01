@@ -108,6 +108,7 @@ class Submission extends Model
             'pending_viewer'        => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-cyan-100 text-cyan-800">Proses Input</span>',
             'done'                  => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Selesai</span>',
             'rejected'              => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Ditolak</span>',
+            'revision'              => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-800">Perlu Revisi</span>',
         ];
 
         return $badges[$this->status] ?? '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">' . ucfirst($this->status) . '</span>';

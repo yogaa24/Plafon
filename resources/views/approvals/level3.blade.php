@@ -182,6 +182,7 @@
                                 </div>
                             </div>
                         </td>
+                        <!-- Button aksi approver -->
                         <td class="px-4 py-3 text-center whitespace-nowrap">
                             <div class="flex items-center justify-center gap-2">
                                 <!-- Approve Button -->
@@ -190,6 +191,15 @@
                                         title="Setujui">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                    </svg>
+                                </button>
+                                
+                                <!-- Revisi Button (BARU) -->
+                                <button onclick="openApprovalModal({{ $submission->id }}, 'revision')" 
+                                        class="px-3 py-1.5 bg-amber-600 text-white text-xs font-medium rounded hover:bg-amber-700 transition" 
+                                        title="Revisi">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                     </svg>
                                 </button>
                                 
@@ -536,6 +546,7 @@ function toggleDetail(id) {
     }
 }
 
+// Di script section blade, update function openApprovalModal
 function openApprovalModal(submissionId, action) {
     const modal = document.getElementById('approvalModal');
     const modalContent = document.getElementById('approvalModalContent');
@@ -553,6 +564,12 @@ function openApprovalModal(submissionId, action) {
         approvalNote.placeholder = 'Jelaskan alasan persetujuan Anda...';
         submitButton.className = 'flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition';
         submitButton.textContent = 'Setujui';
+    } else if (action === 'revision') {
+        // BARU: Handler untuk revisi
+        modalTitle.textContent = 'Minta Revisi Pengajuan';
+        approvalNote.placeholder = 'Jelaskan bagian yang perlu diperbaiki oleh Sales...';
+        submitButton.className = 'flex-1 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition';
+        submitButton.textContent = 'Kirim Revisi';
     } else {
         modalTitle.textContent = 'Tolak Pengajuan';
         approvalNote.placeholder = 'Jelaskan alasan penolakan Anda...';
@@ -562,21 +579,16 @@ function openApprovalModal(submissionId, action) {
     
     approvalNote.value = '';
     
-    // Show modal (remove hidden first)
     modal.classList.remove('hidden');
     
-    // Trigger animation with slight delay
     setTimeout(() => {
-        // Fade in overlay
         modal.classList.remove('opacity-0');
         modal.classList.add('opacity-100');
         
-        // Slide down + scale modal content
         modalContent.classList.remove('-translate-y-12', 'scale-95', 'opacity-0');
         modalContent.classList.add('translate-y-0', 'scale-100', 'opacity-100');
     }, 10);
     
-    // Prevent body scroll
     document.body.style.overflow = 'hidden';
 }
 

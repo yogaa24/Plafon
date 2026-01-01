@@ -126,6 +126,7 @@ class ApprovalController extends Controller
         // Query pengajuan yang sudah diproses oleh approver ini
         $query = Approval::where('approver_id', $user->id)
             ->where('level', $level)
+            ->whereIn('status', ['approved', 'rejected', 'revision'])
             ->with(['submission.sales', 'submission.customer', 'submission.approvals.approver'])
             ->orderBy('created_at', 'desc');
 
@@ -637,8 +638,9 @@ class ApprovalController extends Controller
             $approval->submission_id = $submission->id;
             $approval->approver_id = $user->id;
             $approval->level = $level;
-            $approval->status = $action;
-            $approval->note = $request->input('note'); // WAJIB ADA
+            $approval->status = $action; // bisa 'approved', 'rejected', atau 'revision'
+            $approval->note = $request->input('note');
+            $approval->save();
 
             if ($level == 2 && $action === 'approved' && $submission->plafon_type === 'open') {
                 $approval->piutang = $request->piutang;
@@ -651,87 +653,92 @@ class ApprovalController extends Controller
             $approval->save();
 
             // ===== LOGIKA BARU SESUAI REQUIREMENT =====
-            if ($level == 1) {
+            if ($level == 1 || $level == 2) {
+                // Level 1 & 2 tetap sama (tidak ada revisi)
                 if ($action === 'approved') {
-                    $submission->status = 'approved_1';
-                    $submission->current_level = 2;
+                    $submission->status = $level == 1 ? 'approved_1' : 'approved_2';
+                    $submission->current_level = $level + 1;
                 } elseif ($action === 'rejected') {
                     $submission->status = 'rejected';
                     $submission->rejection_note = $request->input('note');
                 }
             } 
-            elseif ($level == 2) {
-                if ($action === 'approved') {
-                    $submission->status = 'approved_2';
-                    $submission->current_level = 3;
-                } elseif ($action === 'rejected') {
-                    $submission->status = 'rejected';
+            elseif ($level == 3) {
+                if ($action === 'revision') {
+                    // BARU: Revisi → Kembali ke Sales
+                    $submission->status = 'revision';
+                    $submission->current_level = 1;
                     $submission->rejection_note = $request->input('note');
+                } else {
+                    // Approve/Reject tetap lanjut Level 4
+                    $submission->status = 'approved_3';
+                    $submission->current_level = 4;
                 }
             }
-            elseif ($level == 3) {
-                // Level 3: APPROVE/REJECT tetap lanjut ke Level 4 
-                $submission->status = 'approved_3';
-                $submission->current_level = 4;
-            }
             elseif ($level == 4) {
-                // Cek apakah Level 3 ada yang reject
-                $level3Rejected = $submission->approvals
-                    ->where('level', 3)
-                    ->where('status', 'rejected')
-                    ->count() > 0;
-                
-                // Cek apakah Level 4 reject
-                $level4Rejected = ($action === 'rejected');
-                
-                if ($action === 'approved') {
-                    // Level 4 APPROVE
-                    if ($level3Rejected) {
-                        // Jika Level 3 ada yang reject → Lanjut ke Level 5
+                if ($action === 'revision') {
+                    // BARU: Revisi → Kembali ke Sales
+                    $submission->status = 'revision';
+                    $submission->current_level = 1;
+                    $submission->rejection_note = $request->input('note');
+                } else {
+                    $level3Rejected = $submission->approvals
+                        ->where('level', 3)
+                        ->where('status', 'rejected')
+                        ->count() > 0;
+                    
+                    if ($action === 'approved') {
+                        if ($level3Rejected) {
+                            $submission->status = 'approved_4';
+                            $submission->current_level = 5;
+                        } else {
+                            $submission->status = 'pending_viewer';
+                            $submission->current_level = null;
+                        }
+                    } else { // rejected
                         $submission->status = 'approved_4';
                         $submission->current_level = 5;
-                    } else {
-                        // Jika Level 3 SEMUA approve DAN Level 4 approve → Langsung ke Viewer
-                        $submission->status = 'pending_viewer';
-                        $submission->current_level = null;
                     }
-                } else {
-                    // Level 4 REJECT → Lanjut ke Level 5
-                    $submission->status = 'approved_4';
-                    $submission->current_level = 5;
                 }
             }
             elseif ($level == 5) {
-                if ($action === 'approved') {
-                    // Approve → langsung ke Viewer
+                if ($action === 'revision') {
+                    // BARU: Revisi → Kembali ke Sales
+                    $submission->status = 'revision';
+                    $submission->current_level = 1;
+                    $submission->rejection_note = $request->input('note');
+                } elseif ($action === 'approved') {
                     $submission->status = 'pending_viewer';
-                    $submission->current_level = null; // Set NULL
-                } else {
-                    // Reject → lanjut ke Level 6
+                    $submission->current_level = null;
+                } else { // rejected
                     $submission->status = 'approved_5';
                     $submission->current_level = 6;
                 }
             }
             elseif ($level == 6) {
-                if ($action === 'approved') {
-                    // Approve → Selesai
+                if ($action === 'revision') {
+                    // BARU: Revisi → Kembali ke Sales
+                    $submission->status = 'revision';
+                    $submission->current_level = 1;
+                    $submission->rejection_note = $request->input('note');
+                } elseif ($action === 'approved') {
                     $submission->status = 'pending_viewer';
-                    $submission->current_level = null; // Set NULL
-                } else {
-                    // Reject → Kembali ke Sales
+                    $submission->current_level = null;
+                } else { // rejected
                     $submission->status = 'rejected';
                     $submission->current_level = 1;
                     $submission->rejection_note = $request->input('note');
                 }
             }
-
+    
             $submission->save();
-
+    
             DB::commit();
-
+    
             $message = match($action) {
                 'approved' => 'Pengajuan berhasil disetujui',
                 'rejected' => 'Pengajuan berhasil ditolak',
+                'revision' => 'Pengajuan dikembalikan ke Sales untuk revisi',
                 default => 'Proses approval berhasil'
             };
 

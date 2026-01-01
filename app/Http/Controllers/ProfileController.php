@@ -20,7 +20,7 @@ class ProfileController extends Controller
     }
 
     /**
-     * Update email dan/atau password dalam satu form
+     * Update nama, email dan/atau password dalam satu form
      */
     public function update(Request $request)
     {
@@ -28,13 +28,14 @@ class ProfileController extends Controller
 
         // Validasi
         $rules = [
+            'name' => 'required|string|max:255', // TAMBAH: Validasi nama
             'email' => 'required|email|unique:users,email,' . $user->id,
             'current_password' => 'required',
         ];
 
         // Jika user mengisi password baru, maka wajib konfirmasi
         if ($request->filled('password')) {
-            $rules['password'] = ['required', 'confirmed'];
+            $rules['password'] = ['required', 'confirmed', 'min:8'];
         }
 
         $request->validate($rules);
@@ -46,6 +47,9 @@ class ProfileController extends Controller
             ])->withInput();
         }
 
+        // TAMBAH: Update nama
+        $user->name = $request->name;
+        
         // Update email
         $user->email = $request->email;
 
@@ -56,10 +60,15 @@ class ProfileController extends Controller
 
         $user->save();
 
-        $message = $request->filled('password') 
-            ? 'Email dan password berhasil diubah!' 
-            : 'Email berhasil diubah!';
+        // UBAH: Pesan sukses yang lebih dinamis
+        $message = 'Profil berhasil diperbarui!';
+        if ($request->filled('password')) {
+            $message = 'Nama, email, dan password berhasil diubah!';
+        }
 
-        return back()->with('success', $message);
+        return redirect()->to(
+            $request->redirect_to ?? url()->previous()
+        )->with('success', $message);
+        
     }
 }
