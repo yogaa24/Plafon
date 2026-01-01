@@ -34,7 +34,7 @@ class Level3DoneExport implements FromCollection, WithHeadings, WithMapping, Wit
             'Nama Kios',
             'Alamat',
             'Jenis Pengajuan',
-            'Plafon Aktif',
+            'Plafon Aktif/Sebelumnya',
             'Plafon Baru',
             'Jumlah Value Faktur',
             'Sales',
@@ -71,7 +71,7 @@ class Level3DoneExport implements FromCollection, WithHeadings, WithMapping, Wit
         
         if ($submission->plafon_type === 'rubah') {
             if ($submission->customer) {
-                $plafonAktif = $submission->customer->plafon_aktif;
+                $plafonAktif = $submission->plafon_sebelumnya;
             }
             $plafonBaru = $submission->plafon;
         } elseif ($submission->plafon_type === 'open') {
@@ -212,7 +212,7 @@ class Level3DoneExport implements FromCollection, WithHeadings, WithMapping, Wit
             'E' => 25,  // Nama Kios
             'F' => 35,  // Alamat
             'G' => 15,  // Jenis Pengajuan
-            'H' => 15,  // Plafon Aktif
+            'H' => 25,  // Plafon Aktif
             'I' => 15,  // Plafon Baru
             'J' => 18,  // Jumlah Value Faktur
             'K' => 20,  // Sales

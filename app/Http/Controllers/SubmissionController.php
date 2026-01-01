@@ -182,7 +182,6 @@ class SubmissionController extends Controller
             'plafon' => 'required|numeric|min:0',
             'plafon_type' => 'required|in:open,rubah',
             'plafon_direction' => 'nullable|in:naik,turun',
-            'previous_submission_id' => 'nullable|exists:submissions,id',
             'komitmen_pembayaran' => 'required|string',
             'payment_type' => 'nullable|in:od,over',
             'od_piutang_value' => 'nullable|numeric',
@@ -266,15 +265,6 @@ class SubmissionController extends Controller
             }
         }
 
-        // Cari previous submission (untuk rubah plafon)
-        $previousSubmissionId = null;
-        if ($validated['plafon_type'] === 'rubah') {
-            $latestApproved = $customer->latestApprovedSubmission;
-            if ($latestApproved) {
-                $previousSubmissionId = $latestApproved->id;
-            }
-        }
-
         $lampiranPaths = null;
         if ($request->hasFile('lampiran')) {
             // Buat folder jika belum ada
@@ -305,9 +295,9 @@ class SubmissionController extends Controller
             'nama_kios' => $customer->nama_kios,
             'alamat' => $customer->alamat,
             'plafon' => $validated['plafon'],
+            'plafon_sebelumnya' => $customer->plafon_aktif,
             'plafon_type' => $validated['plafon_type'],
             'plafon_direction' => $validated['plafon_direction'] ?? null,
-            'previous_submission_id' => $previousSubmissionId,
             'jumlah_buka_faktur' => $jumlahBukaFaktur,
             'komitmen_pembayaran' => $validated['komitmen_pembayaran'],
             'payment_type' => $request->payment_type,
@@ -548,7 +538,7 @@ class SubmissionController extends Controller
             abort(403);
         }
 
-        $submission->load('approvals.approver', 'previousSubmission', 'customer');
+        $submission->load('approvals.approver', 'customer');
 
         $showAll = request()->get('show') == 'all';
 

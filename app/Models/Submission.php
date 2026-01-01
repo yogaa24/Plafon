@@ -17,9 +17,9 @@ class Submission extends Model
         'nama_kios',
         'alamat',
         'plafon',
+        'plafon_sebelumnya',
         'plafon_type',
         'plafon_direction',
-        'previous_submission_id',
         'jumlah_buka_faktur',
         'komitmen_pembayaran',
         'keterangan',
@@ -64,12 +64,6 @@ class Submission extends Model
     public function customer()
     {
         return $this->belongsTo(Customer::class, 'customer_id');
-    }
-
-    // Relasi Submission sebelumnya
-    public function previousSubmission()
-    {
-        return $this->belongsTo(Submission::class, 'previous_submission_id');
     }
 
     // Relasi ke Sales (User)

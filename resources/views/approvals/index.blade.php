@@ -125,10 +125,10 @@
                                 <div class="flex flex-col items-center space-y-1">
                                     <!-- Plafon Lama -->
                                     <span class="text-xs text-gray-400 line-through">
-                                        {{ number_format($submission->customer->plafon_aktif, 0, ',', '.') }}
+                                        {{ number_format($submission->plafon_sebelumnya, 0, ',', '.') }}
                                     </span>
                                     <!-- Plafon Baru -->
-                                    <span class="text-sm font-semibold {{ $submission->plafon > $submission->customer->plafon_aktif ? 'text-green-600' : 'text-red-600' }}">
+                                    <span class="text-sm font-semibold {{ $submission->plafon > $submission->plafon_sebelumnya ? 'text-green-600' : 'text-red-600' }}">
                                         {{ number_format($submission->plafon, 0, ',', '.') }}
                                     </span>
                                 </div>
@@ -254,7 +254,7 @@
                                         @if($submission->plafon_type === 'rubah' && $submission->customer)
                                         <div class="flex justify-between py-1 border-b border-gray-100">
                                             <span class="text-sm text-gray-600">Plafon Sebelumnya:</span>
-                                            <span class="text-sm text-gray-500">Rp {{ number_format($submission->customer->plafon_aktif, 0, ',', '.') }}</span>
+                                            <span class="text-sm text-gray-500">Rp {{ number_format($submission->plafon_sebelumnya, 0, ',', '.') }}</span>
                                         </div>
                                         @endif
                                         <div class="flex justify-between py-1 border-b border-gray-100">

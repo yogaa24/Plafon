@@ -16,7 +16,7 @@ class ViewerController extends Controller
     public function index(Request $request)
     {
         $query = Submission::whereIn('status', ['pending_viewer', 'done'])
-            ->with(['sales', 'approvals.approver', 'previousSubmission']); // ← Tambah previousSubmission
+            ->with(['sales', 'approvals.approver']); // ← Tambah previousSubmission
 
         // Search
         if ($request->filled('search')) {

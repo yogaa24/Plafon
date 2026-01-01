@@ -24,7 +24,6 @@ return new class extends Migration
             $table->decimal('plafon', 15, 2);
             $table->enum('plafon_type', ['open', 'rubah'])->default('open');
             $table->enum('plafon_direction', ['naik', 'turun'])->nullable()->comment('naik/turun');
-            $table->unsignedBigInteger('previous_submission_id')->nullable()->comment('ID submission sebelumnya (untuk rubah plafon)');
             
             // Data Faktur & Komitmen
             $table->integer('jumlah_buka_faktur');

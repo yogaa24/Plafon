@@ -32,7 +32,7 @@ class ApprovalController extends Controller
 
         $query = Submission::where('current_level', $level)
             ->whereIn('status', ['pending', 'approved_1', 'approved_2'])
-            ->with(['sales', 'approvals.approver', 'previousSubmission', 'customer']);
+            ->with(['sales', 'approvals.approver', 'customer']);
 
         // Search
         if ($request->filled('search')) {
@@ -187,7 +187,7 @@ class ApprovalController extends Controller
 
         $query = Submission::where('current_level', 3)
             ->whereIn('status', ['approved_2', 'approved_3'])
-            ->with(['sales', 'approvals.approver', 'customer', 'previousSubmission']);
+            ->with(['sales', 'approvals.approver', 'customer']);
 
         // Search
         if ($request->filled('search')) {
@@ -407,7 +407,7 @@ class ApprovalController extends Controller
                 'pending_viewer',       // Di Viewer (Proses Input)
                 'done'                  // Selesai
             ])
-            ->with(['sales', 'customer', 'previousSubmission'])
+            ->with(['sales', 'customer'])
             ->with(['approvals' => function($q) {
                 // Load approvals dari Level 3 sampai 6
                 $q->whereIn('level', [3, 4, 5, 6])->with('approver');
@@ -439,7 +439,7 @@ class ApprovalController extends Controller
         $submissions = $query->orderBy('created_at', 'desc')->get();
     
         // Tidak perlu kirim daftar approver, karena akan diambil dari approval records
-        $filename = 'Pengajuan_Level3_Keatas_' . date('Y-m-d_His') . '.xlsx';
+        $filename = 'Pengajuan Plafon ' . date('Y-m-d') . '.xlsx';
     
         return Excel::download(
             new Level3DoneExport($submissions), 

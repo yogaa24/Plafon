@@ -105,7 +105,7 @@
                     <!-- Plafon Saat Ini -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Plafon Aktif
+                            Plafon Saat Ini <span class="text-xs text-gray-500">(Snapshot)</span>
                         </label>
                         <div class="relative">
                             <span class="absolute left-4 top-3 text-gray-500">Rp</span>
@@ -113,9 +113,8 @@
                                 type="text" 
                                 value="{{ number_format($customer->plafon_aktif, 0, ',', '.') }}" 
                                 readonly 
-                                class="w-full pl-12 pr-4 py-2.5 bg-gray-100 border border-gray-300 rounded-lg text-gray-700 font-semibold">
+                                class="w-full pl-12 pr-4 py-2.5 bg-blue-50 border-2 border-blue-300 rounded-lg text-blue-900 font-semibold">
                         </div>
-                        <p class="text-xs text-gray-500 mt-1">Plafon yang sedang berlaku</p>
                     </div>
 
                     <!-- Plafon yang Diusulkan -->
