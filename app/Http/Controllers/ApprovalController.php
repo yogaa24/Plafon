@@ -127,6 +127,7 @@ class ApprovalController extends Controller
         $query = Approval::where('approver_id', $user->id)
             ->where('level', $level)
             ->whereIn('status', ['approved', 'rejected', 'revision'])
+            ->whereHas('submission')
             ->with(['submission.sales', 'submission.customer', 'submission.approvals.approver'])
             ->orderBy('created_at', 'desc');
 

@@ -97,13 +97,13 @@
                             </div>
                         </td>
                         <td class="px-4 py-3">
-                            <div class="text-sm font-medium text-gray-900">{{ $approval->submission->nama }}</div>
+                            <div class="text-sm font-medium text-gray-900">{{ $approval->submission?->nama ?? '-' }}</div>
                         </td>
                         <td class="px-4 py-3">
-                            <span class="text-sm text-gray-900">{{ $approval->submission->nama_kios }}</span>
+                            <span class="text-sm text-gray-900">{{ $approval->submission->nama_kios ?? '-'}} </span>
                         </td>
                         <td class="px-4 py-3 whitespace-nowrap">
-                            <span class="text-sm text-gray-900">{{ $approval->submission->sales->name }}</span>
+                            <span class="text-sm text-gray-900">{{ $approval->submission->sales->name ?? '-' }}</span>
                         </td>
                         <td class="px-4 py-3 whitespace-nowrap">
                             <span class="text-sm font-semibold text-gray-900">

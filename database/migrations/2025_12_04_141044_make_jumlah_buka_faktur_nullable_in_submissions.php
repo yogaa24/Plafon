@@ -12,10 +12,13 @@ return new class extends Migration
     public function up()
     {
         Schema::table('submissions', function (Blueprint $table) {
-            $table->integer('jumlah_buka_faktur')->nullable()->change();
+            $table->bigInteger('jumlah_buka_faktur')->nullable()->change();
         });
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down()
     {
         Schema::table('submissions', function (Blueprint $table) {
