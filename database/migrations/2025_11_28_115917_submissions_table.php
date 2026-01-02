@@ -48,12 +48,6 @@ return new class extends Migration
             
             $table->timestamps();
             
-            // Foreign Key untuk previous_submission_id
-            $table->foreign('previous_submission_id')
-                  ->references('id')
-                  ->on('submissions')
-                  ->onDelete('set null');
-            
             // Indexes untuk performa
             $table->index('sales_id');
             $table->index('status');

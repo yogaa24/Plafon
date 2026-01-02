@@ -28,7 +28,7 @@ class DatabaseSeeder extends Seeder
         // APPROVER 2 - TC (5 Users)
         // ==========================================
         $tcUsers = [
-            ['email' => 'tc1@kiu.com', 'name' => 'TC - Zahra'],
+            ['email' => 'tc1@kiu.com', 'name' => 'TC - syahra'],
             ['email' => 'tc2@kiu.com', 'name' => 'TC - Farida'],
             ['email' => 'tc3@kiu.com', 'name' => 'TC - Tiya'],
             ['email' => 'tc4@kiu.com', 'name' => 'TC - Novita'],
