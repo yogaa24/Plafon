@@ -47,8 +47,8 @@ class Level3DoneExport implements FromCollection, WithHeadings, WithMapping, Wit
             'Jml OD 90',
         ];
         
-        // Tambahkan kolom untuk setiap level (3, 4, 5, 6)
-        foreach ([3, 4, 5, 6] as $level) {
+        // Tambahkan kolom untuk setiap level (1, 2, 3, 4, 5, 6)
+        foreach ([1, 2, 3, 4, 5, 6] as $level) {
             $header[] = "Level {$level} - Nama Approver";
             $header[] = "Level {$level} - Status";
             $header[] = "Level {$level} - Tanggal";
@@ -132,8 +132,8 @@ class Level3DoneExport implements FromCollection, WithHeadings, WithMapping, Wit
             $jmlOd90,
         ];
         
-        // Data approval per level (3, 4, 5, 6)
-        foreach ([3, 4, 5, 6] as $level) {
+        // Data approval per level (1, 2, 3, 4, 5, 6)
+        foreach ([1, 2, 3, 4, 5, 6] as $level) {
             $approval = $submission->approvals->where('level', $level)->first();
             
             if ($approval) {
@@ -223,27 +223,37 @@ class Level3DoneExport implements FromCollection, WithHeadings, WithMapping, Wit
             'P' => 15,  // Jml OD 30
             'Q' => 15,  // Jml OD 60
             'R' => 15,  // Jml OD 90
+            // Level 1
+            'S' => 20,  // L1 Nama
+            'T' => 15,  // L1 Status
+            'U' => 18,  // L1 Tanggal
+            'V' => 40,  // L1 Catatan
+            // Level 2
+            'W' => 20,  // L2 Nama
+            'X' => 15,  // L2 Status
+            'Y' => 18,  // L2 Tanggal
+            'Z' => 40,  // L2 Catatan
             // Level 3
-            'S' => 20,  // L3 Nama
-            'T' => 15,  // L3 Status
-            'U' => 18,  // L3 Tanggal
-            'V' => 40,  // L3 Catatan
+            'AA' => 20, // L3 Nama
+            'AB' => 15, // L3 Status
+            'AC' => 18, // L3 Tanggal
+            'AD' => 40, // L3 Catatan
             // Level 4
-            'W' => 20,  // L4 Nama
-            'X' => 15,  // L4 Status
-            'Y' => 18,  // L4 Tanggal
-            'Z' => 40,  // L4 Catatan
+            'AE' => 20, // L4 Nama
+            'AF' => 15, // L4 Status
+            'AG' => 18, // L4 Tanggal
+            'AH' => 40, // L4 Catatan
             // Level 5
-            'AA' => 20, // L5 Nama
-            'AB' => 15, // L5 Status
-            'AC' => 18, // L5 Tanggal
-            'AD' => 40, // L5 Catatan
+            'AI' => 20, // L5 Nama
+            'AJ' => 15, // L5 Status
+            'AK' => 18, // L5 Tanggal
+            'AL' => 40, // L5 Catatan
             // Level 6
-            'AE' => 20, // L6 Nama
-            'AF' => 15, // L6 Status
-            'AG' => 18, // L6 Tanggal
-            'AH' => 40, // L6 Catatan
-            'AI' => 20, // Status Akhir
+            'AM' => 20, // L6 Nama
+            'AN' => 15, // L6 Status
+            'AO' => 18, // L6 Tanggal
+            'AP' => 40, // L6 Catatan
+            'AQ' => 20, // Status Akhir
         ];
     }
 }
