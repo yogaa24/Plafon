@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Submission;
 use App\Models\Approval;
 use App\Models\User;
+use App\Models\Customer;
 use Illuminate\Http\Request;
 use App\Exports\Level3DoneExport;
 use Maatwebsite\Excel\Facades\Excel;
@@ -759,6 +760,134 @@ class ApprovalController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+    // Di dalam class ApprovalController
+
+    public function showImportPiutang()
+    {
+        $user = Auth::user();
+        
+        if ($user->role !== 'approver3') {
+            abort(403, 'Unauthorized: Hanya Approver Level 3 yang dapat mengimport data piutang.');
+        }
+
+        // HAPUS return view yang lama, ganti dengan ini:
+        return view('approvals.import-piutang');
+    }
+
+    public function processImportPiutang(Request $request)
+    {
+        $user = Auth::user();
+        
+        if ($user->role !== 'approver3') {
+            abort(403, 'Unauthorized: Hanya Approver Level 3 yang dapat mengimport data piutang.');
+        }
+
+        $request->validate([
+            'piutang_data' => 'required|string|min:1'
+        ], [
+            'piutang_data.required' => 'Data piutang wajib diisi',
+            'piutang_data.min' => 'Data piutang tidak boleh kosong'
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $rawData = $request->input('piutang_data');
+            $lines = explode("\n", $rawData);
+            
+            $successCount = 0;
+            $errorCount = 0;
+            $skippedCount = 0;
+            $errors = [];
+            $notFoundCustomers = [];
+
+            foreach ($lines as $lineNumber => $line) {
+                // Trim dan skip empty lines
+                $line = trim($line);
+                if (empty($line)) {
+                    continue;
+                }
+
+                // Parse line: format expected is "KODE_CUSTOMER PIUTANG"
+                // Support both space and tab separator, ambil hanya 2 parts pertama
+                $parts = preg_split('/[\s\t]+/', $line, 3); // Limit ke 3 parts untuk tangkap kasus "CUS12 R20000"
+                
+                // VALIDASI 1: Harus ada minimal 2 bagian (kode + piutang)
+                if (count($parts) < 2) {
+                    $skippedCount++;
+                    continue; // Skip tanpa error message
+                }
+
+                $kodeCustomer = trim($parts[0]);
+                $piutangValue = trim($parts[1]);
+
+                // VALIDASI 2: Kode customer tidak boleh kosong
+                if (empty($kodeCustomer)) {
+                    $skippedCount++;
+                    continue; // Skip tanpa error message
+                }
+
+                // VALIDASI 3: Bersihkan prefix non-numeric dari piutang (misal: R, Rp, dll)
+                // Hapus semua karakter non-digit dan non-decimal point
+                $cleanPiutang = preg_replace('/[^0-9.]/', '', $piutangValue);
+                
+                // VALIDASI 4: Setelah dibersihkan, harus berupa angka valid
+                if (empty($cleanPiutang) || !is_numeric($cleanPiutang)) {
+                    $skippedCount++;
+                    continue; // Skip tanpa error message
+                }
+
+                // Convert to float/decimal
+                $piutangNumeric = floatval($cleanPiutang);
+
+                // VALIDASI 5: Piutang tidak boleh negatif
+                if ($piutangNumeric < 0) {
+                    $skippedCount++;
+                    continue;
+                }
+
+                // Find customer
+                $customer = Customer::where('kode_customer', $kodeCustomer)->first();
+
+                if (!$customer) {
+                    $errorCount++;
+                    if (!in_array($kodeCustomer, $notFoundCustomers)) {
+                        $notFoundCustomers[] = $kodeCustomer;
+                    }
+                    continue;
+                }
+
+                // Update piutang
+                $customer->piutang = $piutangNumeric;
+                $customer->save();
+                
+                $successCount++;
+            }
+
+            DB::commit();
+
+            $message = "Import selesai: {$successCount} berhasil";
+            
+            if ($skippedCount > 0) {
+                $message .= ", {$skippedCount} baris dilewati (format tidak valid)";
+            }
+            
+            if ($errorCount > 0) {
+                $message .= ", {$errorCount} customer tidak ditemukan";
+            }
+
+            return redirect()->route('approvals.level3.import-piutang')
+                ->with('success', $message)
+                ->with('not_found', $notFoundCustomers)
+                ->with('success_count', $successCount)
+                ->with('error_count', $errorCount)
+                ->with('skipped_count', $skippedCount);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->route('approvals.level3.import-piutang')
+                ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
     

@@ -20,19 +20,21 @@ class SubmissionController extends Controller
         if ($request->filled('customer_search')) {
             $search = $request->customer_search;
             $customers = Customer::where('sales_id', $user->id)
+                ->select('id', 'sales_id', 'nama_sales', 'kode_customer', 'nama', 'nama_kios', 'alamat', 'plafon_aktif', 'piutang', 'status', 'created_at', 'updated_at') // TAMBAH 'piutang'
                 ->where(function($q) use ($search) {
                     $q->where('nama', 'like', "%{$search}%")
                     ->orWhere('nama_kios', 'like', "%{$search}%")
                     ->orWhere('kode_customer', 'like', "%{$search}%");
                 })
                 ->orderBy('nama')
-                ->paginate(15)  // ← TAMBAHKAN INI
-                ->appends($request->except('page'));  // ← DAN INI untuk maintain query params
+                ->paginate(15)
+                ->appends($request->except('page'));
         } else {
             $customers = Customer::where('sales_id', $user->id)
+                ->select('id', 'sales_id', 'nama_sales', 'kode_customer', 'nama', 'nama_kios', 'alamat', 'plafon_aktif', 'piutang', 'status', 'created_at', 'updated_at') // TAMBAH 'piutang'
                 ->orderBy('nama')
-                ->paginate(15)  // ← TAMBAHKAN INI
-                ->appends($request->except('page'));  // ← DAN INI
+                ->paginate(15)
+                ->appends($request->except('page'));
         }
 
         // Submissions query (sudah ada paginate)

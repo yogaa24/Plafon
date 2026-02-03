@@ -90,10 +90,13 @@
                         <th class="px-4 py-3 text-left text-xs font-semibold text-black uppercase tracking-wider">Nama Kios</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-black uppercase tracking-wider">Alamat</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-black uppercase tracking-wider">Plafon Aktif</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-black uppercase tracking-wider">Piutang</th> <!-- BARU -->
                         <th class="px-4 py-3 text-center text-xs font-semibold text-black uppercase tracking-wider">Status Pengajuan</th>
                         <th class="px-4 py-3 text-center text-xs font-semibold text-black uppercase tracking-wider">Aksi</th>
                     </tr>
                 </thead>
+
+                <!-- Table Body - Tambah kolom Piutang -->
                 <tbody class="bg-white divide-y divide-gray-200">
                     @foreach($customers as $index => $customer)
                     <tr class="hover:bg-blue-50 transition">
@@ -103,6 +106,14 @@
                         <td class="px-4 py-3 text-sm text-gray-900">{{ $customer->alamat }}</td>
                         <td class="px-4 py-3 text-sm font-semibold text-green-700">
                             Rp {{ number_format($customer->plafon_aktif, 0, ',', '.') }}
+                        </td>
+                        <!-- KOLOM PIUTANG BARU -->
+                        <td class="px-4 py-3 text-sm font-semibold {{ $customer->piutang > 0 ? 'text-red-600' : 'text-gray-400' }}">
+                            @if($customer->piutang > 0)
+                                Rp {{ number_format($customer->piutang, 0, ',', '.') }}
+                            @else
+                                <span class="italic">Rp 0</span>
+                            @endif
                         </td>
                         <td class="px-4 py-3 text-center">
                             @if($customer->hasPendingSubmission())

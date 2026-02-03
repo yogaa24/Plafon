@@ -75,6 +75,12 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/approvals/level3/export', [ApprovalController::class, 'exportLevel3'])
             ->name('approvals.level3.export')
             ->middleware('role:approver3,approver4');
+            
+        // Import Piutang (Khusus Approver Level 3)
+        Route::get('/approvals/level3/import-piutang', [ApprovalController::class, 'showImportPiutang'])
+            ->name('approvals.level3.import-piutang');
+        Route::post('/approvals/level3/import-piutang', [ApprovalController::class, 'processImportPiutang'])
+            ->name('approvals.level3.import-piutang.process');
         
         // Route untuk history approval (Level 1 & 2)
         Route::get('/approvals/history', [ApprovalController::class, 'history'])

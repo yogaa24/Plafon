@@ -11,21 +11,21 @@ class Customer extends Model
 
     protected $fillable = [
         'sales_id',
+        'nama_sales',
         'kode_customer',
         'nama',
         'nama_kios',
         'alamat',
         'plafon_aktif',
+        'piutang', // TAMBAH INI
         'status',
     ];
 
     protected $casts = [
         'plafon_aktif' => 'decimal:2',
+        'piutang' => 'decimal:2', // TAMBAH INI
     ];
 
-    /**
-     * Relasi ke sales/user
-     */
     public function sales()
     {
         return $this->belongsTo(User::class, 'sales_id');
