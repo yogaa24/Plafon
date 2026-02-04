@@ -20,10 +20,11 @@
     <form action="{{ route('submissions.store') }}" method="POST" id="openPlafonForm" enctype="multipart/form-data">
             @csrf
             
-            <!-- Hidden fields -->
+           <!-- Hidden fields -->
             <input type="hidden" name="customer_id" value="{{ $customer->id }}">
             <input type="hidden" name="plafon_type" value="open">
             <input type="hidden" name="plafon" value="{{ $customer->plafon_aktif }}">
+            <input type="hidden" id="customer_piutang" value="{{ $customer->piutang ?? 0 }}">
 
             <!-- Kode (Read Only) -->
             <div class="mb-6">
@@ -197,17 +198,22 @@
 
                         <!-- Over Section -->
                         <div id="overSection" class="space-y-3 hidden">
-                            <!-- Piutang -->
+                            <!-- Piutang (AUTO-FILLED dari Customer) -->
                             <div class="flex items-center justify-between">
-                                <label class="text-sm text-gray-700">Piutang</label>
+                                <label class="text-sm text-gray-700 flex items-center">
+                                    Piutang
+                                    <svg class="w-4 h-4 ml-1 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" title="Auto-filled dari data customer">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                </label>
                                 <input 
                                     type="number" 
                                     id="over_piutang_value"
                                     name="over_piutang_value"
-                                    min="0"
-                                    class="w-48 px-3 py-1.5 text-sm border border-gray-300 rounded-lg 
+                                    readonly
+                                    class="w-48 px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-blue-50
                                         focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    placeholder="Jumlah">
+                                    placeholder="Auto-filled">
                             </div>
 
                             <!-- Jml Over -->
@@ -227,6 +233,7 @@
                                         focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                     placeholder="Auto-filled">
                             </div>
+
                             
                             <!-- Jml OD 30 -->
                             <div class="flex items-center justify-between">
@@ -337,8 +344,9 @@
 </div>
 
 <script>
-// Data plafon aktif dari backend
+// Data dari backend
 const plafonAktif = {{ $customer->plafon_aktif }};
+const customerPiutang = {{ $customer->piutang ?? 0 }}; // TAMBAH INI
 
 // Toggle payment type sections
 function togglePaymentType() {
@@ -348,9 +356,18 @@ function togglePaymentType() {
     document.getElementById('odSection').classList.toggle('hidden', !od);
     document.getElementById('overSection').classList.toggle('hidden', !over);
     
-    // Auto-calculate when switching type
+    // Auto-fill piutang dan calculate ketika Over dipilih
     if (over) {
+        autoFillOverPiutang();
         calculateOverAutoFill();
+    }
+}
+
+// AUTO-FILL Piutang dari customer data
+function autoFillOverPiutang() {
+    const overPiutangField = document.getElementById('over_piutang_value');
+    if (overPiutangField) {
+        overPiutangField.value = customerPiutang;
     }
 }
 
@@ -374,7 +391,6 @@ function calculateOverAutoFill() {
 // Trigger calculation when inputs change
 document.addEventListener('DOMContentLoaded', function() {
     const jumlahBukaFakturInput = document.querySelector('[name="jumlah_buka_faktur"]');
-    const overPiutangInput = document.getElementById('over_piutang_value');
     
     // Calculate when Value Faktur changes
     if (jumlahBukaFakturInput) {
@@ -382,36 +398,28 @@ document.addEventListener('DOMContentLoaded', function() {
         jumlahBukaFakturInput.addEventListener('change', calculateOverAutoFill);
     }
     
-    // Calculate when Piutang (Over) changes
-    if (overPiutangInput) {
-        overPiutangInput.addEventListener('input', calculateOverAutoFill);
-        overPiutangInput.addEventListener('change', calculateOverAutoFill);
-    }
+    // HAPUS event listener untuk over_piutang_value karena sekarang readonly
 });
 
-// Validate before submit (validasi minimal)
+// Validate before submit
 document.getElementById('openPlafonForm').addEventListener('submit', function(e) {
     const jumlahBukaFaktur = parseInt(document.querySelector('[name="jumlah_buka_faktur"]').value) || 0;
     
-    // Validate jumlah buka faktur harus lebih dari 0
     if (jumlahBukaFaktur <= 0) {
         e.preventDefault();
         alert('Jumlah value faktur harus lebih besar dari 0');
         return;
     }
     
-    // Check if payment type is selected
     const typeOd = document.getElementById('type_od');
     const typeOver = document.getElementById('type_over');
     
-    // Validate payment type is selected
     if (!typeOd.checked && !typeOver.checked) {
         e.preventDefault();
         alert('Pilih jenis pembayaran: OD atau Over');
         return;
     }
     
-    // Confirmation
     let paymentType = 'Tidak ada';
     if (typeOd.checked) paymentType = 'OD';
     if (typeOver.checked) paymentType = 'Over';
@@ -424,10 +432,13 @@ document.getElementById('openPlafonForm').addEventListener('submit', function(e)
         `Jumlah Value Faktur: Rp ${formattedValueFaktur}\n` +
         `Jenis Pembayaran: ${paymentType}\n`;
     
-    // Tambahkan info Jml Over jika Over dipilih
     if (typeOver.checked) {
+        const piutang = parseInt(document.getElementById('over_piutang_value').value) || 0;
         const jmlOver = parseInt(document.getElementById('over_jml_over_value').value) || 0;
+        const formattedPiutang = new Intl.NumberFormat('id-ID').format(piutang);
         const formattedJmlOver = new Intl.NumberFormat('id-ID').format(jmlOver);
+        
+        confirmMessage += `Piutang Customer: Rp ${formattedPiutang}\n`;
         confirmMessage += `Jml Over: Rp ${formattedJmlOver}\n`;
         
         if (jmlOver < 0) {
@@ -443,6 +454,8 @@ document.getElementById('openPlafonForm').addEventListener('submit', function(e)
         e.preventDefault();
     }
 });
+
+// Fungsi preview lampiran (tetap sama)
 function previewMultipleLampiran(event) {
     const files = Array.from(event.target.files);
     const previewContainer = document.getElementById('lampiranPreviewContainer');
@@ -450,7 +463,6 @@ function previewMultipleLampiran(event) {
     const imageCountText = document.getElementById('imageCountText');
     const inputElement = event.target;
     
-    // Validasi jumlah file
     if (files.length > 3) {
         alert('Maksimal 3 gambar yang dapat diupload');
         inputElement.value = '';
@@ -463,20 +475,16 @@ function previewMultipleLampiran(event) {
         return;
     }
     
-    // Clear previous previews
     previewList.innerHTML = '';
-    
     let validFiles = [];
     
     files.forEach((file, index) => {
-        // Validasi tipe file
         const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
         if (!validTypes.includes(file.type)) {
             alert(`File "${file.name}" bukan format gambar yang valid (JPG/PNG)`);
             return;
         }
         
-        // Validasi ukuran file (max 10MB sebelum compress)
         if (file.size > 10 * 1024 * 1024) {
             alert(`File "${file.name}" terlalu besar (max 10MB)`);
             return;
@@ -509,7 +517,6 @@ function previewMultipleLampiran(event) {
         reader.readAsDataURL(file);
     });
     
-    // Update counter
     imageCountText.textContent = `${validFiles.length} gambar dipilih`;
     
     if (validFiles.length > 0) {
@@ -520,7 +527,6 @@ function previewMultipleLampiran(event) {
     }
 }
 
-// Fungsi untuk menghapus preview individual
 function removePreviewImage(index) {
     const inputElement = document.getElementById('lampiranInput');
     const dt = new DataTransfer();
@@ -533,8 +539,6 @@ function removePreviewImage(index) {
     });
     
     inputElement.files = dt.files;
-    
-    // Trigger preview update
     previewMultipleLampiran({ target: inputElement });
 }
 </script>

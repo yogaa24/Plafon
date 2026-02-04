@@ -3,6 +3,7 @@
 use App\Http\Controllers\SubmissionController;
 use App\Http\Controllers\ApprovalController;
 use App\Http\Controllers\ViewerController;
+use App\Http\Controllers\PiutangManagerController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
@@ -31,6 +32,7 @@ Route::middleware(['auth'])->group(function () {
         return match($role) {
             'sales' => redirect()->route('submissions.index'),
             'viewer' => redirect()->route('viewer.index'),
+            'piutang_manager' => redirect()->route('piutang-manager.index'),
             'approver3' => redirect()->route('approvals.level3'),
             'approver4' => redirect()->route('approvals.level4'),
             'approver5' => redirect()->route('approvals.level5'),
@@ -110,5 +112,13 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/viewer/{submission}', [ViewerController::class, 'show'])->name('viewer.show');
         Route::post('/viewer/{submission}/done', [ViewerController::class, 'markDone'])->name('viewer.done');
         Route::post('/viewer/import', [ViewerController::class, 'import'])->name('viewer.import');
+    });
+
+    // Route untuk Piutang Manager
+    Route::middleware(['auth', 'role:piutang_manager'])->prefix('piutang-manager')->name('piutang-manager.')->group(function () {
+        Route::get('/', [PiutangManagerController::class, 'index'])->name('index');
+        Route::get('/customer/{customer}', [PiutangManagerController::class, 'show'])->name('show');
+        Route::get('/import-piutang', [PiutangManagerController::class, 'showImportPiutang'])->name('import-piutang');
+        Route::post('/import-piutang', [PiutangManagerController::class, 'processImportPiutang'])->name('import-piutang.process');
     });
 });
