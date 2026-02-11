@@ -100,6 +100,18 @@ class DatabaseSeeder extends Seeder
         );
 
         // ==========================================
+        // sales_executive
+        // ==========================================
+        User::updateOrCreate(
+            ['email' => 'se@kiu.com'],
+            [
+                'name' => 'SE',
+                'password' => Hash::make('karisma'),
+                'role' => 'sales_executive',
+            ]
+        );
+
+        // ==========================================
         // Piutang_manager
         // ==========================================
         User::updateOrCreate(

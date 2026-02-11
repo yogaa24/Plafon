@@ -394,25 +394,24 @@ class ApprovalController extends Controller
     public function exportLevel3(Request $request)
     {
         $user = Auth::user();
-        
-       // Approver Level 3 & 4 boleh export
+    
         if (!in_array($user->role, ['approver3', 'approver4'])) {
             abort(403, 'Unauthorized: Hanya Approver Level 3 dan 4 yang dapat mengekspor data.');
         }
-    
-        // Query pengajuan yang SUDAH MELEWATI Level 3 ke atas
+
         $query = Submission::whereIn('status', [
-                'approved_3',           // Di Level 4
-                'approved_4',    // Di Level 4
-                'approved_5',    // Di Level 5
-                'approved_6',    // Di Level 6
-                'pending_viewer',       // Di Viewer (Proses Input)
-                'done'                  // Selesai
+                'approved_1',
+                'approved_2',
+                'approved_3',
+                'approved_4',
+                'approved_5',
+                'approved_6',
+                'pending_viewer',
+                'done'
             ])
             ->with(['sales', 'customer'])
             ->with(['approvals' => function($q) {
-                // Load approvals dari Level 3 sampai 6
-                $q->whereIn('level', [3, 4, 5, 6])->with('approver');
+                $q->whereIn('level', [1, 2, 3, 4, 5, 6])->with('approver');
             }]);
     
         // Apply filter search, date, sales jika ada

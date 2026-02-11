@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\SubmissionController;
 use App\Http\Controllers\ApprovalController;
+use App\Http\Controllers\SalesExecutiveController;
 use App\Http\Controllers\ViewerController;
 use App\Http\Controllers\PiutangManagerController;
 use App\Http\Controllers\AuthController;
@@ -31,6 +32,7 @@ Route::middleware(['auth'])->group(function () {
 
         return match($role) {
             'sales' => redirect()->route('submissions.index'),
+            'sales_executive' => redirect()->route('sales-executive.index'),
             'viewer' => redirect()->route('viewer.index'),
             'piutang_manager' => redirect()->route('piutang-manager.index'),
             'approver3' => redirect()->route('approvals.level3'),
@@ -120,5 +122,11 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/customer/{customer}', [PiutangManagerController::class, 'show'])->name('show');
         Route::get('/import-piutang', [PiutangManagerController::class, 'showImportPiutang'])->name('import-piutang');
         Route::post('/import-piutang', [PiutangManagerController::class, 'processImportPiutang'])->name('import-piutang.process');
+    });
+
+    // Route untuk Sales Executive (SE)
+    Route::middleware(['role:sales_executive'])->prefix('sales-executive')->name('sales-executive.')->group(function () {
+        Route::get('/', [SalesExecutiveController::class, 'index'])->name('index');
+        Route::get('/customer/{customer}', [SalesExecutiveController::class, 'show'])->name('show');
     });
 });
