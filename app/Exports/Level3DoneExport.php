@@ -45,6 +45,9 @@ class Level3DoneExport implements FromCollection, WithHeadings, WithMapping, Wit
             'Jml OD 30',
             'Jml OD 60',
             'Jml OD 90',
+            'Lampiran 1',
+            'Lampiran 2',
+            'Lampiran 3',
         ];
         
         // Tambahkan kolom untuk setiap level (1, 2, 3, 4, 5, 6)
@@ -110,6 +113,20 @@ class Level3DoneExport implements FromCollection, WithHeadings, WithMapping, Wit
             $jmlOd60 = isset($paymentData['od_60']) ? (float)$paymentData['od_60'] : 0;
             $jmlOd90 = isset($paymentData['od_90']) ? (float)$paymentData['od_90'] : 0;
         }
+
+        // Parse lampiran paths
+        $lampiranUrls = [];
+        if ($submission->lampiran_path) {
+            $paths = is_array($submission->lampiran_path) 
+                ? $submission->lampiran_path 
+                : json_decode($submission->lampiran_path, true);
+            
+            if (is_array($paths)) {
+                foreach ($paths as $path) {
+                    $lampiranUrls[] = 'https://plafon.kiu.co.id/' . ltrim($path, '/');
+                }
+            }
+        }
         
         $row = [
             $index,
@@ -130,6 +147,9 @@ class Level3DoneExport implements FromCollection, WithHeadings, WithMapping, Wit
             $jmlOd30,
             $jmlOd60,
             $jmlOd90,
+            $lampiranUrls[0] ?? '-',
+            $lampiranUrls[1] ?? '-',
+            $lampiranUrls[2] ?? '-',
         ];
         
         // Data approval per level (1, 2, 3, 4, 5, 6)
@@ -191,14 +211,35 @@ class Level3DoneExport implements FromCollection, WithHeadings, WithMapping, Wit
                 'vertical' => Alignment::VERTICAL_CENTER,
             ],
         ]);
-        
+
         // Auto-fit row height
         $sheet->getDefaultRowDimension()->setRowHeight(15);
         $sheet->getRowDimension(1)->setRowHeight(25);
-        
+
         // Freeze first row
         $sheet->freezePane('A2');
-        
+
+        // Buat hyperlink untuk kolom lampiran (S, T, U = kolom 19, 20, 21)
+        // Kolom lampiran ada di posisi 19, 20, 21 (setelah 18 kolom awal)
+        $lampiranCols = ['S', 'T', 'U']; // Sesuaikan jika posisi bergeser
+        $highestRow = $sheet->getHighestRow();
+
+        foreach ($lampiranCols as $col) {
+            for ($row = 2; $row <= $highestRow; $row++) {
+                $cellValue = $sheet->getCell("{$col}{$row}")->getValue();
+                if ($cellValue && $cellValue !== '-' && str_starts_with($cellValue, 'http')) {
+                    $sheet->getCell("{$col}{$row}")->getHyperlink()->setUrl($cellValue);
+                    $sheet->getCell("{$col}{$row}")->setValue('Lihat Lampiran');
+                    $sheet->getStyle("{$col}{$row}")->applyFromArray([
+                        'font' => [
+                            'color' => ['rgb' => '0563C1'],
+                            'underline' => true,
+                        ]
+                    ]);
+                }
+            }
+        }
+
         return [];
     }
 
@@ -223,37 +264,40 @@ class Level3DoneExport implements FromCollection, WithHeadings, WithMapping, Wit
             'P' => 15,  // Jml OD 30
             'Q' => 15,  // Jml OD 60
             'R' => 15,  // Jml OD 90
-            // Level 1
-            'S' => 20,  // L1 Nama
-            'T' => 15,  // L1 Status
-            'U' => 18,  // L1 Tanggal
-            'V' => 40,  // L1 Catatan
-            // Level 2
-            'W' => 20,  // L2 Nama
-            'X' => 15,  // L2 Status
-            'Y' => 18,  // L2 Tanggal
-            'Z' => 40,  // L2 Catatan
-            // Level 3
-            'AA' => 20, // L3 Nama
-            'AB' => 15, // L3 Status
-            'AC' => 18, // L3 Tanggal
-            'AD' => 40, // L3 Catatan
-            // Level 4
-            'AE' => 20, // L4 Nama
-            'AF' => 15, // L4 Status
-            'AG' => 18, // L4 Tanggal
-            'AH' => 40, // L4 Catatan
-            // Level 5
-            'AI' => 20, // L5 Nama
-            'AJ' => 15, // L5 Status
-            'AK' => 18, // L5 Tanggal
-            'AL' => 40, // L5 Catatan
-            // Level 6
-            'AM' => 20, // L6 Nama
-            'AN' => 15, // L6 Status
-            'AO' => 18, // L6 Tanggal
-            'AP' => 40, // L6 Catatan
-            'AQ' => 20, // Status Akhir
+            'S' => 18,  // Lampiran 1  ← BARU
+            'T' => 18,  // Lampiran 2  ← BARU
+            'U' => 18,  // Lampiran 3  ← BARU
+            // Level 1 (bergeser dari S→V)
+            'V' => 20,  // L1 Nama
+            'W' => 15,  // L1 Status
+            'X' => 18,  // L1 Tanggal
+            'Y' => 40,  // L1 Catatan
+            // Level 2 (bergeser dari W→Z)
+            'Z' => 20,  // L2 Nama
+            'AA' => 15, // L2 Status
+            'AB' => 18, // L2 Tanggal
+            'AC' => 40, // L2 Catatan
+            // Level 3 (bergeser dari AA→AD)
+            'AD' => 20, // L3 Nama
+            'AE' => 15, // L3 Status
+            'AF' => 18, // L3 Tanggal
+            'AG' => 40, // L3 Catatan
+            // Level 4 (bergeser dari AE→AH)
+            'AH' => 20, // L4 Nama
+            'AI' => 15, // L4 Status
+            'AJ' => 18, // L4 Tanggal
+            'AK' => 40, // L4 Catatan
+            // Level 5 (bergeser dari AI→AL)
+            'AL' => 20, // L5 Nama
+            'AM' => 15, // L5 Status
+            'AN' => 18, // L5 Tanggal
+            'AO' => 40, // L5 Catatan
+            // Level 6 (bergeser dari AM→AP)
+            'AP' => 20, // L6 Nama
+            'AQ' => 15, // L6 Status
+            'AR' => 18, // L6 Tanggal
+            'AS' => 40, // L6 Catatan
+            'AT' => 20, // Status Akhir (bergeser dari AQ→AT)
         ];
     }
 }
