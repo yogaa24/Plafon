@@ -139,7 +139,10 @@
                                 @endphp
                                 @for($i = 1; $i <= $maxLevel; $i++)
                                     @php
-                                        $approval = $submission->approvals->where('level', $i)->first();
+                                        $approval = $submission->approvals
+                                            ->where('level', $i)
+                                            ->sortByDesc('created_at')
+                                            ->first();
                                     @endphp
                                     <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold
                                         @if($approval && $approval->status == 'approved') bg-green-500 text-white
