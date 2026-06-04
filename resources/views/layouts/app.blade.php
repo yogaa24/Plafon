@@ -34,6 +34,18 @@
                         <span class="font-semibold">{{ Auth::user()->name }}</span>
                         <span class="text-gray-500 ml-2">({{ ucfirst(Auth::user()->role) }})</span>
                     </span>
+
+                    @if(Auth::user()->isApprover())
+                        <button type="button"
+                            id="browserNotificationToggle"
+                            class="hidden items-center gap-2 px-3 py-2 text-sm font-medium text-indigo-700 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            title="Aktifkan notifikasi browser">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0a3 3 0 11-6 0m6 0H9"/>
+                            </svg>
+                            Notifikasi
+                        </button>
+                    @endif
                     
                     <!-- Dropdown Menu -->
                     <div class="relative" x-data="{ open: false }">
@@ -152,5 +164,137 @@
 
     <!-- Alpine.js for Dropdown -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    @if(Auth::user()->isApprover())
+    <script>
+        (function () {
+            const button = document.getElementById('browserNotificationToggle');
+            const endpoint = @json(route('approvals.notifications.pending'));
+            const storageKey = 'approval-browser-notifications:{{ Auth::id() }}:{{ Auth::user()->role }}';
+            const pollInterval = 5000;
+            let pollTimer = null;
+
+            if (!button || !('Notification' in window)) {
+                return;
+            }
+
+            function readNotifiedKeys() {
+                try {
+                    return new Set(JSON.parse(localStorage.getItem(storageKey) || '[]'));
+                } catch (error) {
+                    return new Set();
+                }
+            }
+
+            function saveNotifiedKeys(keys) {
+                const latestKeys = Array.from(keys).slice(-100);
+                localStorage.setItem(storageKey, JSON.stringify(latestKeys));
+            }
+
+            function updateButton() {
+                if (Notification.permission === 'granted') {
+                    button.classList.add('hidden');
+                    button.classList.remove('inline-flex');
+                    return;
+                }
+
+                button.classList.remove('hidden');
+                button.classList.add('inline-flex');
+                button.disabled = Notification.permission === 'denied';
+                button.title = Notification.permission === 'denied'
+                    ? 'Izin notifikasi diblokir di pengaturan browser'
+                    : 'Aktifkan notifikasi browser';
+            }
+
+            function showNotification(item) {
+                const notification = new Notification(item.title, {
+                    body: item.body,
+                    tag: item.key,
+                    renotify: false,
+                    requireInteraction: true,
+                });
+
+                notification.onclick = function () {
+                    window.focus();
+                    window.location.href = item.url;
+                    notification.close();
+                };
+            }
+
+            async function checkPendingApprovals() {
+                if (Notification.permission !== 'granted') {
+                    updateButton();
+                    return;
+                }
+
+                try {
+                    const response = await fetch(endpoint, {
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                        credentials: 'same-origin',
+                    });
+
+                    if (!response.ok) {
+                        return;
+                    }
+
+                    const data = await response.json();
+                    const notifiedKeys = readNotifiedKeys();
+                    const newItems = (data.items || []).filter(function (item) {
+                        return item.key && !notifiedKeys.has(item.key);
+                    });
+
+                    newItems.forEach(function (item) {
+                        notifiedKeys.add(item.key);
+                        saveNotifiedKeys(notifiedKeys);
+                        showNotification(item);
+                    });
+                } catch (error) {
+                    // Browser notification is optional; approval flow should never be blocked by it.
+                }
+            }
+
+            function startPolling() {
+                if (pollTimer) {
+                    return;
+                }
+
+                checkPendingApprovals();
+                pollTimer = window.setInterval(checkPendingApprovals, pollInterval);
+            }
+
+            button.addEventListener('click', async function () {
+                if (Notification.permission === 'default') {
+                    await Notification.requestPermission();
+                }
+
+                updateButton();
+
+                if (Notification.permission === 'granted') {
+                    startPolling();
+                }
+            });
+
+            updateButton();
+
+            if (Notification.permission === 'granted') {
+                startPolling();
+            }
+
+            document.addEventListener('visibilitychange', function () {
+                if (!document.hidden && Notification.permission === 'granted') {
+                    checkPendingApprovals();
+                }
+            });
+
+            window.addEventListener('focus', function () {
+                if (Notification.permission === 'granted') {
+                    checkPendingApprovals();
+                }
+            });
+        })();
+    </script>
+    @endif
 </body>
 </html>

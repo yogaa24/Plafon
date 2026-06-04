@@ -64,6 +64,10 @@ Route::middleware(['auth'])->group(function () {
     // APPROVERS (ALL LEVELS)
     // ------------------------
     Route::middleware(['role:approver1,approver2,approver3,approver4,approver5,approver6'])->group(function () {
+        // Browser notifications untuk pengajuan yang sedang menunggu approval user login
+        Route::get('/approvals/notifications/pending', [ApprovalController::class, 'pendingNotifications'])
+            ->name('approvals.notifications.pending');
+
         // General approval index (untuk Level 1 & 2)
         Route::get('/approvals', [ApprovalController::class, 'index'])->name('approvals.index');
         

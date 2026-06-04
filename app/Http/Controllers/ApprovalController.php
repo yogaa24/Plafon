@@ -178,6 +178,71 @@ class ApprovalController extends Controller
         ]);
     }
 
+    public function pendingNotifications()
+    {
+        $user = Auth::user();
+        $level = $this->getApproverLevel($user->role);
+
+        if (!in_array($level, [1, 2, 3, 4, 5, 6])) {
+            abort(403, 'Unauthorized access');
+        }
+
+        $dashboardRoute = match ($level) {
+            3 => route('approvals.level3'),
+            4 => route('approvals.level4'),
+            5 => route('approvals.level5'),
+            6 => route('approvals.level6'),
+            default => route('approvals.index'),
+        };
+
+        $waitingStatuses = match ($level) {
+            1 => ['pending'],
+            2 => ['approved_1'],
+            3 => ['approved_2'],
+            4 => ['approved_3'],
+            5 => ['approved_4'],
+            6 => ['approved_5'],
+        };
+
+        $query = Submission::where('current_level', $level)
+            ->whereIn('status', $waitingStatuses)
+            ->with(['sales:id,name']);
+
+        $count = (clone $query)->count();
+
+        $items = $query
+            ->orderBy('updated_at', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get()
+            ->map(function ($submission) use ($level, $dashboardRoute) {
+                $typeLabel = $submission->plafon_type === 'open' ? 'Open Plafon' : 'Rubah Plafon';
+                $salesName = optional($submission->sales)->name ?? 'Sales';
+
+                return [
+                    'id' => $submission->id,
+                    'key' => implode(':', [
+                        $submission->id,
+                        $level,
+                        $submission->status,
+                        optional($submission->updated_at)->timestamp,
+                    ]),
+                    'title' => "Pengajuan {$typeLabel} baru",
+                    'body' => "{$submission->kode} - {$submission->nama_kios} oleh {$salesName}",
+                    'url' => $dashboardRoute,
+                    'updated_at' => optional($submission->updated_at)->toIso8601String(),
+                ];
+            })
+            ->values();
+
+        return response()->json([
+            'level' => $level,
+            'count' => $count,
+            'items' => $items,
+            'dashboard_url' => $dashboardRoute,
+        ]);
+    }
+
     // Dashboard khusus Level 3
     public function level3(Request $request)
     {
@@ -588,18 +653,6 @@ class ApprovalController extends Controller
                 ];
         
                 $submission->payment_data = json_encode($paymentData);
-            }
-        }
-
-        // Khusus level 3: cek apakah user sudah pernah memberikan approval
-        if ($level == 3) {
-            $existingApproval = Approval::where('submission_id', $submission->id)
-                ->where('approver_id', $user->id)
-                ->where('level', 3)
-                ->first();
-
-            if ($existingApproval) {
-                return redirect()->back()->with('error', 'Anda sudah memberikan keputusan pada pengajuan ini');
             }
         }
 
