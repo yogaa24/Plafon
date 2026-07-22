@@ -1,15 +1,15 @@
 @extends('layouts.app')
 
-@section('title', 'Import Data Piutang')
+@section('title', 'Import Data Plafon & Piutang')
 
 @section('content')
 <div class="space-y-6 max-w-4xl mx-auto">
     <!-- Header -->
     <div class="flex items-center justify-between">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">Import Data Piutang</h1>
+            <h1 class="text-2xl font-bold text-gray-900">Import Data Plafon & Piutang</h1>
             <p class="text-sm text-gray-600 mt-1">
-                Import data piutang customer dalam format teks
+                Import data plafon dan piutang customer dalam format teks
             </p>
         </div>
         <a href="{{ route('piutang-manager.index') }}"
@@ -111,14 +111,19 @@
             
             <div class="mb-4">
                 <label class="block text-sm font-semibold text-gray-700 mb-2">
-                    Data Piutang <span class="text-red-500">*</span>
+                    Data Plafon & Piutang <span class="text-red-500">*</span>
                 </label>
                 <textarea name="piutang_data" rows="15" required
                         class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
-                        placeholder="C001 5000000&#10;C002 7500000&#10;C003 3200000&#10;...">{{ old('piutang_data') }}</textarea>
+                        placeholder="C001 10000000 5000000&#10;C002 15000000 7500000&#10;C003 5000000 3200000&#10;...">{{ old('piutang_data') }}</textarea>
                 <p class="text-xs text-gray-500 mt-2">
-                    Paste data dengan format: KODE_CUSTOMER [spasi] PIUTANG
+                    Paste data dengan format: <code class="bg-gray-100 px-1 py-0.5 rounded font-mono">KODE_CUSTOMER [spasi] PLAFON [spasi] PIUTANG</code>
                 </p>
+                <div class="mt-2 text-xs text-blue-600">
+                    <button type="button" onclick="copyExample()" class="underline font-semibold hover:text-blue-800">
+                        Klik di sini untuk menyalin contoh format data
+                    </button>
+                </div>
                 @if($errors->has('piutang_data'))
                     <p class="text-red-600 text-sm mt-1">{{ $errors->first('piutang_data') }}</p>
                 @endif
@@ -146,11 +151,11 @@
 
 <script>
 function copyExample() {
-    const exampleText = `C001 5000000
-C002 7500000.50
-C003 3200000
-C004 10000000
-C005 2500000.75`;
+    const exampleText = `C001 10000000 5000000
+C002 15000000 7500000.50
+C003 5000000 3200000
+C004 20000000 10000000
+C005 5000000 2500000.75`;
     
     navigator.clipboard.writeText(exampleText).then(() => {
         alert('Contoh data berhasil disalin!');

@@ -97,29 +97,32 @@ class PiutangManagerController extends Controller
 
                 $parts = preg_split('/[\s\t]+/', $line, 3);
                 
-                if (count($parts) < 2) {
+                if (count($parts) < 3) {
                     $skippedCount++;
                     continue;
                 }
 
                 $kodeCustomer = trim($parts[0]);
-                $piutangValue = trim($parts[1]);
+                $plafonValue = trim($parts[1]);
+                $piutangValue = trim($parts[2]);
 
                 if (empty($kodeCustomer)) {
                     $skippedCount++;
                     continue;
                 }
 
+                $cleanPlafon = preg_replace('/[^0-9.]/', '', $plafonValue);
                 $cleanPiutang = preg_replace('/[^0-9.]/', '', $piutangValue);
                 
-                if (empty($cleanPiutang) || !is_numeric($cleanPiutang)) {
+                if (empty($cleanPlafon) || !is_numeric($cleanPlafon) || empty($cleanPiutang) || !is_numeric($cleanPiutang)) {
                     $skippedCount++;
                     continue;
                 }
 
+                $plafonNumeric = floatval($cleanPlafon);
                 $piutangNumeric = floatval($cleanPiutang);
 
-                if ($piutangNumeric < 0) {
+                if ($plafonNumeric < 0 || $piutangNumeric < 0) {
                     $skippedCount++;
                     continue;
                 }
@@ -134,6 +137,7 @@ class PiutangManagerController extends Controller
                     continue;
                 }
 
+                $customer->plafon_aktif = $plafonNumeric;
                 $customer->piutang = $piutangNumeric;
                 $customer->save();
                 

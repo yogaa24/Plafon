@@ -515,25 +515,33 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Piutang <span class="text-red-500">*</span></label>
-                                <input type="number" name="piutang" id="piutangInput" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="0" step="0.01">
+                                <input type="text" inputmode="numeric" name="piutang" id="piutangInput" 
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" 
+                                    placeholder="0" oninput="formatNumberInput(this)">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Jml Over <span class="text-red-500">*</span></label>
-                                <input type="number" name="jml_over" id="jmlOverInput"
-                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                                        placeholder="0" step="0.01">
+                                <input type="text" inputmode="numeric" name="jml_over" id="jmlOverInput"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                    placeholder="0" oninput="formatNumberInput(this)">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Jml OD 30 <span class="text-red-500">*</span></label>
-                                <input type="number" name="jml_od_30" id="jmlOd30Input" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="0" step="0.01">
+                                <input type="text" inputmode="numeric" name="jml_od_30" id="jmlOd30Input" 
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" 
+                                    placeholder="0" oninput="formatNumberInput(this)">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Jml OD 60 <span class="text-red-500">*</span></label>
-                                <input type="number" name="jml_od_60" id="jmlOd60Input" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="0" step="0.01">
+                                <input type="text" inputmode="numeric" name="jml_od_60" id="jmlOd60Input" 
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" 
+                                    placeholder="0" oninput="formatNumberInput(this)">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Jml OD 90 <span class="text-red-500">*</span></label>
-                                <input type="number" name="jml_od_90" id="jmlOd90Input" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="0" step="0.01">
+                                <input type="text" inputmode="numeric" name="jml_od_90" id="jmlOd90Input" 
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" 
+                                    placeholder="0" oninput="formatNumberInput(this)">
                             </div>
                         </div>
                         
@@ -735,11 +743,11 @@ function openApprovalModal(submissionId, action) {
     displayExistingLampiran(submissionId); //lampiran sc
     
     /* PRE-FILL DATA DULU sebelum logic OVER/OD */
-    document.getElementById('piutangInput').value = paymentData.piutang || '';
-    document.getElementById('jmlOverInput').value = paymentData.jml_over || ''; // ✅ ISI DULU
-    document.getElementById('jmlOd30Input').value = paymentData.jml_od_30 || paymentData.od_30 || '';
-    document.getElementById('jmlOd60Input').value = paymentData.jml_od_60 || paymentData.od_60 || '';
-    document.getElementById('jmlOd90Input').value = paymentData.jml_od_90 || paymentData.od_90 || '';
+    setFormattedValue('piutangInput', paymentData.piutang || '');
+    setFormattedValue('jmlOverInput', paymentData.jml_over || '');
+    setFormattedValue('jmlOd30Input', paymentData.jml_od_30 || paymentData.od_30 || '');
+    setFormattedValue('jmlOd60Input', paymentData.jml_od_60 || paymentData.od_60 || '');
+    setFormattedValue('jmlOd90Input', paymentData.jml_od_90 || paymentData.od_90 || '');
     
     /* RESET STATE SETIAP MODAL DIBUKA */
     jmlOverInput.readOnly = false;
@@ -986,7 +994,6 @@ function setupOverAutoCalculation(submissionId) {
 
     if (!piutangInput || !jmlOverInput) return;
 
-    // ❗ Reset event listener lama
     piutangInput.oninput = null;
     piutangInput.onchange = null;
 
@@ -997,10 +1004,13 @@ function setupOverAutoCalculation(submissionId) {
     const valueFaktur = details.valueFaktur;
 
     function calculateJmlOver() {
-        const piutang = parseFloat(piutangInput.value) || 0;
+        // Ambil nilai bersih (tanpa titik) untuk kalkulasi
+        const rawVal = piutangInput.value.replace(/\./g, '');
+        const piutang = parseFloat(rawVal) || 0;
         const jmlOver = plafonAktif - (valueFaktur + piutang);
 
-        jmlOverInput.value = Math.round(jmlOver);
+        // Tampilkan hasil dengan format titik ribuan
+        setFormattedValue('jmlOverInput', Math.round(jmlOver));
     }
 
     piutangInput.addEventListener('input', calculateJmlOver);
@@ -1093,6 +1103,65 @@ document.addEventListener('DOMContentLoaded', function() {
                 alert.style.transition = 'opacity 0.5s ease-out';
                 setTimeout(() => alert.remove(), 500);
             }, 3000);
+        }
+    });
+});
+
+// Format angka dengan titik ribuan saat input
+function formatNumberInput(input) {
+    // Simpan posisi kursor
+    let cursorPos = input.selectionStart;
+    let oldLength = input.value.length;
+
+    // Ambil hanya angka (boleh negatif untuk jml_over)
+    let isNegative = input.value.startsWith('-');
+    let raw = input.value.replace(/[^0-9]/g, '');
+
+    if (raw === '') {
+        input.value = '';
+        return;
+    }
+
+    // Format dengan titik ribuan
+    let formatted = parseInt(raw, 10).toLocaleString('id-ID');
+    if (isNegative) formatted = '-' + formatted;
+
+    input.value = formatted;
+
+    // Kembalikan posisi kursor agar tidak loncat ke akhir
+    let newLength = input.value.length;
+    let newCursorPos = cursorPos + (newLength - oldLength);
+    input.setSelectionRange(newCursorPos, newCursorPos);
+}
+
+// Ambil nilai numerik bersih dari input yang sudah diformat
+function getRawNumber(inputId) {
+    const val = document.getElementById(inputId)?.value || '0';
+    return parseFloat(val.replace(/\./g, '').replace(',', '.')) || 0;
+}
+
+// Set nilai ke input dengan format titik ribuan
+function setFormattedValue(inputId, number) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    if (number === '' || number === null || number === undefined) {
+        input.value = '';
+        return;
+    }
+    const isNegative = number < 0;
+    const absVal = Math.abs(Math.round(number));
+    let formatted = absVal.toLocaleString('id-ID');
+    input.value = isNegative ? '-' + formatted : formatted;
+}
+
+// Sebelum form disubmit, ubah nilai kembali ke angka murni
+document.getElementById('approvalForm').addEventListener('submit', function() {
+    const fields = ['piutangInput', 'jmlOverInput', 'jmlOd30Input', 'jmlOd60Input', 'jmlOd90Input'];
+    fields.forEach(id => {
+        const input = document.getElementById(id);
+        if (input && input.value !== '') {
+            // Hapus titik ribuan sebelum dikirim ke server
+            input.value = input.value.replace(/\./g, '');
         }
     });
 });
