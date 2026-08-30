@@ -1,13 +1,13 @@
 @extends('layouts.app')
 
-@section('title', 'Dashboard Approval')
+@section('title', 'Dashboard Approval ' . ($level == 1 ? 'Manager SC' : ($level == 2 ? 'Collection' : 'Level ' . $level)))
 
 @section('content')
 <div class="space-y-4">
     <!-- Header -->
     <div class="flex justify-between items-center">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">Dashboard Approval Level {{ $level }}</h1>
+            <h1 class="text-2xl font-bold text-gray-900">Dashboard Approval {{ $level == 1 ? 'Manager SC' : ($level == 2 ? 'Collection' : 'Level ' . $level) }}</h1>
             <p class="text-sm text-gray-600">Review dan proses pengajuan yang menunggu approval Anda</p>
         </div>
         <!-- TAMBAHKAN TOMBOL INI -->

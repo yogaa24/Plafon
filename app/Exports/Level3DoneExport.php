@@ -34,6 +34,7 @@ class Level3DoneExport implements FromCollection, WithHeadings, WithMapping, Wit
             'Nama Kios',
             'Alamat',
             'Jenis Pengajuan',
+            'Status Target',
             'Plafon Aktif/Sebelumnya',
             'Plafon Baru',
             'Jumlah Value Faktur',
@@ -51,11 +52,21 @@ class Level3DoneExport implements FromCollection, WithHeadings, WithMapping, Wit
         ];
         
         // Tambahkan kolom untuk setiap level (1, 2, 3, 4, 5, 6)
+        $levelNames = [
+            1 => 'Manager SC',
+            2 => 'Collection',
+            3 => 'Manager Keuangan',
+            4 => 'Kadep Keu & Sales',
+            5 => 'Direktur Operasional',
+            6 => 'Direktur Operasional',
+        ];
+
         foreach ([1, 2, 3, 4, 5, 6] as $level) {
-            $header[] = "Level {$level} - Nama Approver";
-            $header[] = "Level {$level} - Status";
-            $header[] = "Level {$level} - Tanggal";
-            $header[] = "Level {$level} - Catatan";
+            $role = $levelNames[$level] ?? "Level {$level}";
+            $header[] = "{$role} - Nama Approver";
+            $header[] = "{$role} - Status";
+            $header[] = "{$role} - Tanggal";
+            $header[] = "{$role} - Catatan";
         }
         
         $header[] = 'Status Akhir Pengajuan';
@@ -73,12 +84,10 @@ class Level3DoneExport implements FromCollection, WithHeadings, WithMapping, Wit
         $plafonBaru = '';
         
         if ($submission->plafon_type === 'rubah') {
-            if ($submission->customer) {
-                $plafonAktif = $submission->plafon_sebelumnya;
-            }
+            $plafonAktif = $submission->plafon_sebelumnya ?? ($submission->customer->plafon_aktif ?? 0);
             $plafonBaru = $submission->plafon;
         } elseif ($submission->plafon_type === 'open') {
-            $plafonAktif = $submission->plafon;
+            $plafonAktif = $submission->plafon ?? 0;
             $plafonBaru = '-';
         }
         
@@ -114,6 +123,22 @@ class Level3DoneExport implements FromCollection, WithHeadings, WithMapping, Wit
             $jmlOd90 = isset($paymentData['od_90']) ? (float)$paymentData['od_90'] : 0;
         }
 
+        // Status Target
+        $targetStatus = '-';
+        if ($submission->target_status === 'masuk_target') {
+            $targetStatus = 'Masuk Target';
+        } elseif ($submission->target_status === 'tidak_masuk_target') {
+            $targetStatus = 'Tidak Masuk Target';
+        } else {
+            // Cek di approval level 3 jika ada
+            $level3Approval = $submission->approvals ? $submission->approvals->where('level', 3)->first() : null;
+            if ($level3Approval && $level3Approval->target_status === 'masuk_target') {
+                $targetStatus = 'Masuk Target';
+            } elseif ($level3Approval && $level3Approval->target_status === 'tidak_masuk_target') {
+                $targetStatus = 'Tidak Masuk Target';
+            }
+        }
+
         // Parse lampiran paths
         $lampiranUrls = [];
         if ($submission->lampiran_path) {
@@ -136,6 +161,7 @@ class Level3DoneExport implements FromCollection, WithHeadings, WithMapping, Wit
             $submission->nama_kios,
             $submission->alamat,
             $submission->plafon_type === 'open' ? 'Open Plafon' : 'Rubah Plafon',
+            $targetStatus,
             $plafonAktif,
             $plafonBaru,
             $jumlahValueFaktur,
@@ -154,7 +180,7 @@ class Level3DoneExport implements FromCollection, WithHeadings, WithMapping, Wit
         
         // Data approval per level (1, 2, 3, 4, 5, 6)
         foreach ([1, 2, 3, 4, 5, 6] as $level) {
-            $approval = $submission->approvals->where('level', $level)->first();
+            $approval = $submission->approvals ? $submission->approvals->where('level', $level)->first() : null;
             
             if ($approval) {
                 $row[] = $approval->approver->name ?? '-';
@@ -180,12 +206,19 @@ class Level3DoneExport implements FromCollection, WithHeadings, WithMapping, Wit
         
         // Status Akhir
         $statusMap = [
-            'approved_3'            => 'Menunggu Level 4',
-            'pending_approver4'     => 'Menunggu Level 4',
-            'pending_approver5'     => 'Menunggu Level 5',
-            'pending_approver6'     => 'Menunggu Level 6',
+            'pending'               => 'Menunggu Manager SC',
+            'approved_1'            => 'Menunggu Collection',
+            'approved_2'            => 'Menunggu Manager Keuangan',
+            'approved_3'            => 'Menunggu Kadep Keu & Sales',
+            'approved_4'            => 'Menunggu Direktur Operasional',
+            'approved_5'            => 'Menunggu Direktur Operasional',
+            'pending_approver4'     => 'Menunggu Kadep Keu & Sales',
+            'pending_approver5'     => 'Menunggu Direktur Operasional',
+            'pending_approver6'     => 'Menunggu Direktur Operasional',
             'pending_viewer'        => 'Proses Input Viewer',
             'done'                  => 'Selesai',
+            'rejected'              => 'Ditolak',
+            'revision'              => 'Perlu Revisi',
         ];
         
         $row[] = $statusMap[$submission->status] ?? ucfirst($submission->status);
@@ -219,13 +252,54 @@ class Level3DoneExport implements FromCollection, WithHeadings, WithMapping, Wit
         // Freeze first row
         $sheet->freezePane('A2');
 
-        // Buat hyperlink untuk kolom lampiran (S, T, U = kolom 19, 20, 21)
-        // Kolom lampiran ada di posisi 19, 20, 21 (setelah 18 kolom awal)
-        $lampiranCols = ['S', 'T', 'U']; // Sesuaikan jika posisi bergeser
+        // Buat hyperlink untuk kolom lampiran (T, U, V = kolom 20, 21, 22)
+        $lampiranCols = ['T', 'U', 'V'];
         $highestRow = $sheet->getHighestRow();
 
-        foreach ($lampiranCols as $col) {
-            for ($row = 2; $row <= $highestRow; $row++) {
+        for ($row = 2; $row <= $highestRow; $row++) {
+            // Styling kolom Status Target (Kolom H)
+            $targetVal = $sheet->getCell("H{$row}")->getValue();
+            if ($targetVal === 'Masuk Target') {
+                $sheet->getStyle("H{$row}")->applyFromArray([
+                    'font' => [
+                        'bold' => true,
+                        'color' => ['rgb' => '065F46'], // Dark Green
+                    ],
+                    'fill' => [
+                        'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                        'startColor' => ['rgb' => 'D1FAE5'], // Light Green background
+                    ],
+                    'alignment' => [
+                        'horizontal' => Alignment::HORIZONTAL_CENTER,
+                        'vertical' => Alignment::VERTICAL_CENTER,
+                    ],
+                ]);
+            } elseif ($targetVal === 'Tidak Masuk Target') {
+                $sheet->getStyle("H{$row}")->applyFromArray([
+                    'font' => [
+                        'bold' => true,
+                        'color' => ['rgb' => '991B1B'], // Dark Red
+                    ],
+                    'fill' => [
+                        'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                        'startColor' => ['rgb' => 'FEE2E2'], // Light Red background
+                    ],
+                    'alignment' => [
+                        'horizontal' => Alignment::HORIZONTAL_CENTER,
+                        'vertical' => Alignment::VERTICAL_CENTER,
+                    ],
+                ]);
+            } else {
+                $sheet->getStyle("H{$row}")->applyFromArray([
+                    'alignment' => [
+                        'horizontal' => Alignment::HORIZONTAL_CENTER,
+                        'vertical' => Alignment::VERTICAL_CENTER,
+                    ],
+                ]);
+            }
+
+            // Hyperlink lampiran
+            foreach ($lampiranCols as $col) {
                 $cellValue = $sheet->getCell("{$col}{$row}")->getValue();
                 if ($cellValue && $cellValue !== '-' && str_starts_with($cellValue, 'http')) {
                     $sheet->getCell("{$col}{$row}")->getHyperlink()->setUrl($cellValue);
@@ -252,52 +326,53 @@ class Level3DoneExport implements FromCollection, WithHeadings, WithMapping, Wit
             'D' => 25,  // Nama
             'E' => 25,  // Nama Kios
             'F' => 35,  // Alamat
-            'G' => 15,  // Jenis Pengajuan
-            'H' => 25,  // Plafon Aktif
-            'I' => 15,  // Plafon Baru
-            'J' => 18,  // Jumlah Value Faktur
-            'K' => 20,  // Sales
-            'L' => 30,  // Komitmen Pembayaran
-            'M' => 15,  // Jenis Pembayaran
-            'N' => 15,  // Piutang
-            'O' => 15,  // Jml Over
-            'P' => 15,  // Jml OD 30
-            'Q' => 15,  // Jml OD 60
-            'R' => 15,  // Jml OD 90
-            'S' => 18,  // Lampiran 1  ← BARU
-            'T' => 18,  // Lampiran 2  ← BARU
-            'U' => 18,  // Lampiran 3  ← BARU
-            // Level 1 (bergeser dari S→V)
-            'V' => 20,  // L1 Nama
-            'W' => 15,  // L1 Status
-            'X' => 18,  // L1 Tanggal
-            'Y' => 40,  // L1 Catatan
-            // Level 2 (bergeser dari W→Z)
-            'Z' => 20,  // L2 Nama
-            'AA' => 15, // L2 Status
-            'AB' => 18, // L2 Tanggal
-            'AC' => 40, // L2 Catatan
-            // Level 3 (bergeser dari AA→AD)
-            'AD' => 20, // L3 Nama
-            'AE' => 15, // L3 Status
-            'AF' => 18, // L3 Tanggal
-            'AG' => 40, // L3 Catatan
-            // Level 4 (bergeser dari AE→AH)
-            'AH' => 20, // L4 Nama
-            'AI' => 15, // L4 Status
-            'AJ' => 18, // L4 Tanggal
-            'AK' => 40, // L4 Catatan
-            // Level 5 (bergeser dari AI→AL)
-            'AL' => 20, // L5 Nama
-            'AM' => 15, // L5 Status
-            'AN' => 18, // L5 Tanggal
-            'AO' => 40, // L5 Catatan
-            // Level 6 (bergeser dari AM→AP)
-            'AP' => 20, // L6 Nama
-            'AQ' => 15, // L6 Status
-            'AR' => 18, // L6 Tanggal
-            'AS' => 40, // L6 Catatan
-            'AT' => 20, // Status Akhir (bergeser dari AQ→AT)
+            'G' => 16,  // Jenis Pengajuan
+            'H' => 20,  // Status Target
+            'I' => 25,  // Plafon Aktif
+            'J' => 18,  // Plafon Baru
+            'K' => 20,  // Jumlah Value Faktur
+            'L' => 20,  // Sales
+            'M' => 30,  // Komitmen Pembayaran
+            'N' => 16,  // Jenis Pembayaran
+            'O' => 16,  // Piutang
+            'P' => 16,  // Jml Over
+            'Q' => 16,  // Jml OD 30
+            'R' => 16,  // Jml OD 60
+            'S' => 16,  // Jml OD 90
+            'T' => 18,  // Lampiran 1
+            'U' => 18,  // Lampiran 2
+            'V' => 18,  // Lampiran 3
+            // Level 1
+            'W' => 20,  // L1 Nama
+            'X' => 15,  // L1 Status
+            'Y' => 18,  // L1 Tanggal
+            'Z' => 40,  // L1 Catatan
+            // Level 2
+            'AA' => 20, // L2 Nama
+            'AB' => 15, // L2 Status
+            'AC' => 18, // L2 Tanggal
+            'AD' => 40, // L2 Catatan
+            // Level 3
+            'AE' => 20, // L3 Nama
+            'AF' => 15, // L3 Status
+            'AG' => 18, // L3 Tanggal
+            'AH' => 40, // L3 Catatan
+            // Level 4
+            'AI' => 20, // L4 Nama
+            'AJ' => 15, // L4 Status
+            'AK' => 18, // L4 Tanggal
+            'AL' => 40, // L4 Catatan
+            // Level 5
+            'AM' => 20, // L5 Nama
+            'AN' => 15, // L5 Status
+            'AO' => 18, // L5 Tanggal
+            'AP' => 40, // L5 Catatan
+            // Level 6
+            'AQ' => 20, // L6 Nama
+            'AR' => 15, // L6 Status
+            'AS' => 18, // L6 Tanggal
+            'AT' => 40, // L6 Catatan
+            'AU' => 22, // Status Akhir
         ];
     }
 }

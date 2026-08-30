@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Approval extends Model
 {
     protected $fillable = [
-        'submission_id', 'approver_id', 'level', 'status', 'note'
+        'submission_id', 'approver_id', 'level', 'status', 'note', 'target_status'
     ];
 
     public function submission()

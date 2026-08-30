@@ -1,13 +1,24 @@
 @extends('layouts.app')
 
-@section('title', 'Riwayat Approval')
+@php
+    $roleTitle = match($level) {
+        1 => 'Manager SC',
+        2 => 'Collection',
+        3 => 'Manager Keuangan',
+        4 => 'Kadep Keu & Sales',
+        5, 6 => 'Direktur Operasional',
+        default => "Level {$level}"
+    };
+@endphp
+
+@section('title', 'Riwayat Approval ' . $roleTitle)
 
 @section('content')
 <div class="space-y-4">
     <!-- Header -->
     <div class="flex justify-between items-center">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">Riwayat Approval Level {{ $level }}</h1>
+            <h1 class="text-2xl font-bold text-gray-900">Riwayat Approval {{ $roleTitle }}</h1>
             <p class="text-sm text-gray-600">Semua pengajuan yang telah Anda proses</p>
         </div>
         <a href="{{ route('approvals.index') }}" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">

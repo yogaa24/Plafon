@@ -28,13 +28,12 @@
                 <div id="statusFilterWrapper" class="w-52 {{ request('view') != 'submissions' ? 'hidden' : '' }}">
                     <select name="status" id="statusFilter" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" onchange="document.getElementById('filterForm').submit()">
                         <option value="">Semua Status</option>
-                        <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Menunggu Koor SC</option>
-                        <option value="approved_1" {{ request('status') == 'approved_1' ? 'selected' : '' }}>Menunggu TC</option>
-                        <option value="approved_2" {{ request('status') == 'approved_2' ? 'selected' : '' }}>Menunggu Kabag KEU</option>
-                        <option value="approved_3" {{ request('status') == 'approved_3' ? 'selected' : '' }}>Menunggu Kadep KEU</option>
-                        <option value="approved_4" {{ request('status') == 'approved_4' ? 'selected' : '' }}>Menunggu Kadep KEU&HRD</option>
+                        <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Menunggu Manager SC</option>
+                        <option value="approved_1" {{ request('status') == 'approved_1' ? 'selected' : '' }}>Menunggu Collection</option>
+                        <option value="approved_2" {{ request('status') == 'approved_2' ? 'selected' : '' }}>Menunggu Manager Keuangan</option>
+                        <option value="approved_3" {{ request('status') == 'approved_3' ? 'selected' : '' }}>Menunggu Kadep Keu & Sales</option>
+                        <option value="approved_4" {{ request('status') == 'approved_4' ? 'selected' : '' }}>Menunggu Direktur Operasional</option>
                         <option value="approved_5" {{ request('status') == 'approved_5' ? 'selected' : '' }}>Menunggu Direksi</option>
-                        <!-- <option value="approved_6" {{ request('status') == 'approved_6' ? 'selected' : '' }}>Menunggu Approval 6</option> -->
                         <option value="pending_viewer" {{ request('status') == 'pending_viewer' ? 'selected' : '' }}>Proses Input</option>
                         <option value="done" {{ request('status') == 'done' ? 'selected' : '' }}>✓ Selesai</option>
                         <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Ditolak</option>
@@ -181,13 +180,12 @@
                 @if(request('status'))
                     Pengajuan - Status: 
                     @switch(request('status'))
-                        @case('pending') Menunggu Approval 1 @break
-                        @case('approved_1') Menunggu Approval 2 @break
-                        @case('approved_2') Menunggu Approval 3 @break
-                        @case('approved_3') Menunggu Approval 4 @break
-                        @case('approved_4') Menunggu Approval 4 @break
-                        @case('approved_5') Menunggu Approval 5 @break
-                        @case('approved_6') Menunggu Approval 6 @break
+                        @case('pending') Menunggu Manager SC @break
+                        @case('approved_1') Menunggu Collection @break
+                        @case('approved_2') Menunggu Manager Keuangan @break
+                        @case('approved_3') Menunggu Kadep Keu & Sales @break
+                        @case('approved_4') Menunggu Direktur Operasional @break
+                        @case('approved_5') Menunggu Direktur Operasional @break
                         @case('pending_viewer') Proses Input @break
                         @case('done') Selesai @break
                         @case('rejected') Ditolak @break
@@ -352,6 +350,12 @@
                                                 <span class="text-sm text-gray-600">Nama Kios:</span>
                                                 <span class="text-sm font-medium text-gray-900">{{ $submission->nama_kios }}</span>
                                             </div>
+                                            @if($submission->target_status)
+                                             <div class="flex justify-between py-1 border-b border-gray-100 items-center">
+                                                 <span class="text-sm text-gray-600">Status Target:</span>
+                                                 <span>{!! $submission->target_status_badge !!}</span>
+                                             </div>
+                                             @endif
                                             <div class="py-1">
                                                 <span class="text-sm text-gray-600 block mb-1">Alamat:</span>
                                                 <span class="text-sm text-gray-900">{{ $submission->alamat }}</span>

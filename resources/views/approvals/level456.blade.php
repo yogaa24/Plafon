@@ -1,13 +1,13 @@
 @extends('layouts.app')
 
-@section('title', 'Dashboard Approval Level ' . $level)
+@section('title', 'Dashboard Approval ' . ($level == 4 ? 'Kadep Keu & Sales' : 'Direktur Operasional'))
 
 @section('content')
 <div class="space-y-4">
     <!-- Header -->
     <div class="flex justify-between items-center">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">Dashboard Approval Level {{ $level }}</h1>
+            <h1 class="text-2xl font-bold text-gray-900">Dashboard Approval {{ $level == 4 ? 'Kadep Keu & Sales' : 'Direktur Operasional' }}</h1>
             <p class="text-sm text-gray-600">Review dan proses pengajuan yang menunggu approval Anda</p>
         </div>
 
@@ -22,14 +22,14 @@
 
             <!-- Export Excel (Approver Level 3 & 4) -->
             @if(in_array(auth()->user()->role, ['approver3', 'approver4']))
-                <a href="{{ route('approvals.level3.export', request()->query()) }}"
-                class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition">
+                <button type="button" onclick="openExportModal()"
+                class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition cursor-pointer shadow-sm">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                     </svg>
                     Export Excel
-                </a>
+                </button>
             @endif
         </div> 
     </div>
@@ -239,6 +239,12 @@
                                             <span class="text-sm text-gray-600">Nama Kios:</span>
                                             <span class="text-sm font-medium text-gray-900">{{ $submission->nama_kios }}</span>
                                         </div>
+                                        @if($submission->target_status)
+                                        <div class="flex justify-between py-1 border-b border-gray-100 items-center">
+                                            <span class="text-sm text-gray-600">Status Target:</span>
+                                            <span>{!! $submission->target_status_badge !!}</span>
+                                        </div>
+                                        @endif
                                         <div class="py-1">
                                             <span class="text-sm text-gray-600 block mb-1">Alamat:</span>
                                             <span class="text-sm text-gray-900">{{ $submission->alamat }}</span>
@@ -470,6 +476,116 @@
     </div>
 </div>
 
+<!-- Export Excel Modal -->
+<div id="exportModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-[2px] overflow-y-auto h-full w-full z-50 transition-opacity duration-200 opacity-0">
+    <div id="exportModalContent" class="relative top-24 mx-auto p-6 border w-full max-w-md shadow-2xl rounded-2xl bg-white transform transition-all duration-300 -translate-y-8 scale-95 opacity-0">
+        <!-- Header Modal -->
+        <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center text-green-600 shadow-sm">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-gray-900">Pilih Kategori Export</h3>
+                    <p class="text-xs text-gray-500">Tentukan data target yang ingin diunduh</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeExportModal()" class="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+
+        <!-- Opsi Pilihan Export -->
+        <div class="py-5 space-y-3">
+            <!-- Pilihan 1: Masuk Target -->
+            <a href="{{ route('approvals.level3.export', array_merge(request()->query(), ['target_status' => 'masuk_target'])) }}"
+               onclick="closeExportModal()"
+               class="flex items-center p-4 bg-emerald-50/60 border-2 border-emerald-200 rounded-xl hover:bg-emerald-100/70 hover:border-emerald-500 transition-all group">
+                <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform shadow-sm">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+                <div class="ml-3.5 flex-1">
+                    <h4 class="text-sm font-bold text-gray-900 group-hover:text-emerald-900 flex items-center gap-2">
+                        Export Masuk Target
+                        <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-800 font-bold">TARGET</span>
+                    </h4>
+                    <p class="text-xs text-gray-500 mt-0.5">Unduh data pengajuan yang <strong>Masuk Target</strong></p>
+                </div>
+                <svg class="w-5 h-5 text-emerald-600 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </a>
+
+            <!-- Pilihan 2: Tidak Masuk Target -->
+            <a href="{{ route('approvals.level3.export', array_merge(request()->query(), ['target_status' => 'tidak_masuk_target'])) }}"
+               onclick="closeExportModal()"
+               class="flex items-center p-4 bg-rose-50/60 border-2 border-rose-200 rounded-xl hover:bg-rose-100/70 hover:border-rose-500 transition-all group">
+                <div class="w-10 h-10 rounded-xl bg-rose-600 text-white flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform shadow-sm">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+                <div class="ml-3.5 flex-1">
+                    <h4 class="text-sm font-bold text-gray-900 group-hover:text-rose-900 flex items-center gap-2">
+                        Export Tidak Masuk Target
+                        <span class="text-[10px] px-2 py-0.5 rounded-full bg-rose-200 text-rose-800 font-bold">NON-TARGET</span>
+                    </h4>
+                    <p class="text-xs text-gray-500 mt-0.5">Unduh data pengajuan yang <strong>Tidak Masuk Target</strong></p>
+                </div>
+                <svg class="w-5 h-5 text-rose-600 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </a>
+
+            <!-- Pilihan 3: Export Semua (Gabungan) -->
+            <a href="{{ route('approvals.level3.export', array_merge(request()->query(), ['target_status' => 'all'])) }}"
+               onclick="closeExportModal()"
+               class="flex items-center p-4 bg-sky-50/60 border-2 border-sky-200 rounded-xl hover:bg-sky-100/70 hover:border-sky-500 transition-all group">
+                <div class="w-10 h-10 rounded-xl bg-sky-600 text-white flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform shadow-sm">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                    </svg>
+                </div>
+                <div class="ml-3.5 flex-1">
+                    <h4 class="text-sm font-bold text-gray-900 group-hover:text-sky-900 flex items-center gap-2">
+                        Export Semua (Gabungan)
+                        <span class="text-[10px] px-2 py-0.5 rounded-full bg-sky-200 text-sky-800 font-bold">SEMUA</span>
+                    </h4>
+                    <p class="text-xs text-gray-500 mt-0.5">Unduh seluruh data (<strong>Masuk Target & Tidak Masuk Target</strong> jadi 1 file)</p>
+                </div>
+                <svg class="w-5 h-5 text-sky-600 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </a>
+
+            <!-- Pilihan 4: Rekap SC -->
+            <a href="{{ route('approvals.export.rekap-sc', request()->query()) }}"
+               onclick="closeExportModal()"
+               class="flex items-center p-4 bg-indigo-50/60 border-2 border-indigo-200 rounded-xl hover:bg-indigo-100/70 hover:border-indigo-500 transition-all group">
+                <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform shadow-sm">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                    </svg>
+                </div>
+                <div class="ml-3.5 flex-1">
+                    <h4 class="text-sm font-bold text-gray-900 group-hover:text-indigo-900 flex items-center gap-2">
+                        Export Rekap SC
+                        <span class="text-[10px] px-2 py-0.5 rounded-full bg-indigo-200 text-indigo-800 font-bold">REKAP</span>
+                    </h4>
+                    <p class="text-xs text-gray-500 mt-0.5">Rekapitulasi total pengajuan, Over/OD, dan % per SC setiap bulan</p>
+                </div>
+                <svg class="w-5 h-5 text-indigo-600 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </a>
+        </div>
+
+        <!-- Footer Modal -->
+        <div class="pt-3 border-t border-gray-100 flex justify-end">
+            <button type="button" onclick="closeExportModal()" 
+                    class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition">
+                Batal
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- Image Preview Modal -->
 <div id="imageModal"
      class="hidden fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
@@ -612,9 +728,49 @@ document.getElementById('approvalModal')?.addEventListener('click', function(e) 
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         const modal = document.getElementById('approvalModal');
-        if (!modal.classList.contains('hidden')) {
+        if (modal && !modal.classList.contains('hidden')) {
             closeApprovalModal();
         }
+        closeExportModal();
+        closeImageModal();
+    }
+});
+
+// Export Modal Functions
+function openExportModal() {
+    const modal = document.getElementById('exportModal');
+    const modalContent = document.getElementById('exportModalContent');
+    if (!modal || !modalContent) return;
+
+    modal.classList.remove('hidden');
+    setTimeout(() => {
+        modal.classList.remove('opacity-0');
+        modal.classList.add('opacity-100');
+        modalContent.classList.remove('-translate-y-8', 'scale-95', 'opacity-0');
+        modalContent.classList.add('translate-y-0', 'scale-100', 'opacity-100');
+    }, 10);
+    document.body.style.overflow = 'hidden';
+}
+
+function closeExportModal() {
+    const modal = document.getElementById('exportModal');
+    const modalContent = document.getElementById('exportModalContent');
+    if (!modal || !modalContent) return;
+
+    modal.classList.remove('opacity-100');
+    modal.classList.add('opacity-0');
+    modalContent.classList.remove('translate-y-0', 'scale-100', 'opacity-100');
+    modalContent.classList.add('-translate-y-8', 'scale-95', 'opacity-0');
+    setTimeout(() => {
+        modal.classList.add('hidden');
+        document.body.style.overflow = '';
+    }, 200);
+}
+
+// Close export modal when clicking backdrop
+document.getElementById('exportModal')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeExportModal();
     }
 });
 

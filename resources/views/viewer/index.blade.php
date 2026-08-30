@@ -203,6 +203,12 @@
                                             <span class="text-sm text-gray-600">Nama Kios:</span>
                                             <span class="text-sm font-medium text-gray-900">{{ $submission->nama_kios }}</span>
                                         </div>
+                                        @if($submission->target_status)
+                                        <div class="flex justify-between py-1 border-b border-gray-100 items-center">
+                                            <span class="text-sm text-gray-600">Status Target:</span>
+                                            <span>{!! $submission->target_status_badge !!}</span>
+                                        </div>
+                                        @endif
                                         <div class="py-1">
                                             <span class="text-sm text-gray-600 block mb-1">Alamat:</span>
                                             <span class="text-sm text-gray-900">{{ $submission->alamat }}</span>

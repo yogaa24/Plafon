@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\Customer;
 use Illuminate\Http\Request;
 use App\Exports\Level3DoneExport;
+use App\Exports\RekapScExport;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Auth;
@@ -289,6 +290,7 @@ class ApprovalController extends Controller
             return [
                 'id' => $s->id,
                 'plafon_type' => $s->plafon_type,
+                'target_status' => $s->target_status,
                 'payment_type' => $s->payment_type ?? 'od',
                 'payment_data' => $s->payment_data ?? []
             ];
@@ -501,14 +503,47 @@ class ApprovalController extends Controller
         if ($request->filled('date_to')) {
             $query->whereDate('created_at', '<=', $request->date_to);
         }
+
+        // Filter by target_status (masuk_target / tidak_masuk_target)
+        if ($request->filled('target_status') && in_array($request->target_status, ['masuk_target', 'tidak_masuk_target'])) {
+            $query->where('target_status', $request->target_status);
+        }
     
         $submissions = $query->orderBy('created_at', 'desc')->get();
     
-        // Tidak perlu kirim daftar approver, karena akan diambil dari approval records
-        $filename = 'Pengajuan Plafon ' . date('Y-m-d') . '.xlsx';
+        $targetSuffix = '';
+        if ($request->target_status === 'masuk_target') {
+            $targetSuffix = ' - Masuk Target';
+        } elseif ($request->target_status === 'tidak_masuk_target') {
+            $targetSuffix = ' - Tidak Masuk Target';
+        } elseif ($request->target_status === 'all') {
+            $targetSuffix = ' - Semua Target';
+        }
+
+        $filename = 'Pengajuan Plafon' . $targetSuffix . ' ' . date('Y-m-d') . '.xlsx';
     
         return Excel::download(
             new Level3DoneExport($submissions), 
+            $filename
+        );
+    }
+
+    public function exportRekapSc(Request $request)
+    {
+        $user = Auth::user();
+    
+        if (!in_array($user->role, ['approver3', 'approver4'])) {
+            abort(403, 'Unauthorized: Hanya Approver Level 3 dan 4 yang dapat mengekspor data.');
+        }
+
+        $year = $request->filled('year') 
+            ? (int)$request->year 
+            : ($request->filled('date_from') ? (int)date('Y', strtotime($request->date_from)) : (int)date('Y'));
+
+        $filename = 'Rekap SC ' . $year . ' - ' . date('Y-m-d') . '.xlsx';
+
+        return Excel::download(
+            new RekapScExport($year),
             $filename
         );
     }
@@ -687,6 +722,16 @@ class ApprovalController extends Controller
                 $submission->payment_data = json_encode($paymentData);
             }
 
+            // Validasi khusus untuk Level 3 saat approve (Target Status)
+            if ($level == 3 && $action === 'approved') {
+                $request->validate([
+                    'target_status' => 'required|in:masuk_target,tidak_masuk_target',
+                ], [
+                    'target_status.required' => 'Pilih salah satu kategori target (Masuk Target atau Tidak Masuk Target)',
+                    'target_status.in' => 'Kategori target yang dipilih tidak valid',
+                ]);
+            }
+
             // Buat record approval
             $approval = new Approval();
             $approval->submission_id = $submission->id;
@@ -694,6 +739,12 @@ class ApprovalController extends Controller
             $approval->level = $level;
             $approval->status = $action; // bisa 'approved', 'rejected', atau 'revision'
             $approval->note = $request->input('note');
+
+            if ($level == 3 && $action === 'approved') {
+                $approval->target_status = $request->input('target_status');
+                $submission->target_status = $request->input('target_status');
+            }
+
             $approval->save();
 
             if ($level == 2 && $action === 'approved' && $submission->plafon_type === 'open') {

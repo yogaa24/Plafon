@@ -8,7 +8,7 @@
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
     <!-- Judul -->
     <div>
-        <h1 class="text-2xl font-bold text-gray-900">Dashboard Approval Kabag</h1>
+        <h1 class="text-2xl font-bold text-gray-900">Dashboard Approval Manager Keuangan</h1>
         <p class="text-sm text-gray-600">
             Review dan proses pengajuan yang menunggu approval Anda
         </p>
@@ -39,14 +39,14 @@
 
         <!-- Export Excel (Approver Level 3) -->
         @if(auth()->user()->role === 'approver3')
-            <a href="{{ route('approvals.level3.export', request()->query()) }}"
-               class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition">
+            <button type="button" onclick="openExportModal()"
+               class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition cursor-pointer shadow-sm">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                           d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                 </svg>
                 Export Excel
-            </a>
+            </button>
         @endif
     </div>
 </div>
@@ -256,6 +256,12 @@
                                             <span class="text-sm text-gray-600">Nama Kios:</span>
                                             <span class="text-sm font-medium text-gray-900">{{ $submission->nama_kios }}</span>
                                         </div>
+                                        @if($submission->target_status)
+                                        <div class="flex justify-between py-1 border-b border-gray-100 items-center">
+                                            <span class="text-sm text-gray-600">Status Target:</span>
+                                            <span>{!! $submission->target_status_badge !!}</span>
+                                        </div>
+                                        @endif
                                         <div class="py-1">
                                             <span class="text-sm text-gray-600 block mb-1">Alamat:</span>
                                             <span class="text-sm text-gray-900">{{ $submission->alamat }}</span>
@@ -475,6 +481,51 @@
                     <p class="text-xs text-gray-500 mt-1">* Catatan wajib diisi untuk approve maupun reject</p>
                 </div>
 
+                <!-- Checkbox Target (Khusus Approver Level 3 saat Approve) -->
+                <div id="targetSection" class="mb-5 p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="block text-sm font-semibold text-gray-800">
+                            Kategori Target <span class="text-red-500">*</span>
+                        </label>
+                        <span class="text-xs font-medium px-2 py-0.5 rounded bg-blue-100 text-blue-700">Wajib Dipilih</span>
+                    </div>
+                    <p class="text-xs text-gray-500 mb-3">Tentukan apakah pengajuan ini masuk ke dalam target atau tidak masuk target:</p>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <!-- Checkbox 1: Masuk Target -->
+                        <label for="target_masuk" class="flex items-start p-3 bg-white border-2 border-gray-200 rounded-xl cursor-pointer hover:border-emerald-400 hover:bg-emerald-50/40 transition-all select-none group has-[:checked]:border-emerald-600 has-[:checked]:bg-emerald-50 has-[:checked]:shadow-sm">
+                            <input type="checkbox" id="target_masuk" name="target_status" value="masuk_target" 
+                                   class="mt-0.5 w-4 h-4 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500 cursor-pointer"
+                                   onchange="handleTargetSelection('masuk_target')">
+                            <div class="ml-3">
+                                <span class="text-sm font-bold text-gray-900 group-hover:text-emerald-900 flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
+                                    Masuk Target
+                                </span>
+                                <span class="text-xs text-gray-500 mt-0.5 block">Termasuk pencapaian target</span>
+                            </div>
+                        </label>
+
+                        <!-- Checkbox 2: Tidak Masuk Target -->
+                        <label for="target_tidak" class="flex items-start p-3 bg-white border-2 border-gray-200 rounded-xl cursor-pointer hover:border-rose-400 hover:bg-rose-50/40 transition-all select-none group has-[:checked]:border-rose-600 has-[:checked]:bg-rose-50 has-[:checked]:shadow-sm">
+                            <input type="checkbox" id="target_tidak" name="target_status" value="tidak_masuk_target" 
+                                   class="mt-0.5 w-4 h-4 text-rose-600 rounded border-gray-300 focus:ring-rose-500 cursor-pointer"
+                                   onchange="handleTargetSelection('tidak_masuk_target')">
+                            <div class="ml-3">
+                                <span class="text-sm font-bold text-gray-900 group-hover:text-rose-900 flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-rose-500 inline-block"></span>
+                                    Tidak Masuk Target
+                                </span>
+                                <span class="text-xs text-gray-500 mt-0.5 block">Di luar pencapaian target</span>
+                            </div>
+                        </label>
+                    </div>
+                    <p id="targetError" class="text-xs text-rose-600 font-semibold mt-2.5 flex items-center gap-1 hidden">
+                        <svg class="w-4 h-4 text-rose-600 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        Pilih salah satu: Masuk Target atau Tidak Masuk Target
+                    </p>
+                </div>
+
                 <div class="flex gap-3">
                     <button type="button" onclick="closeApprovalModal()" 
                             class="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
@@ -486,6 +537,116 @@
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+<!-- Export Excel Modal -->
+<div id="exportModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-[2px] overflow-y-auto h-full w-full z-50 transition-opacity duration-200 opacity-0">
+    <div id="exportModalContent" class="relative top-24 mx-auto p-6 border w-full max-w-md shadow-2xl rounded-2xl bg-white transform transition-all duration-300 -translate-y-8 scale-95 opacity-0">
+        <!-- Header Modal -->
+        <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center text-green-600 shadow-sm">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-gray-900">Pilih Kategori Export</h3>
+                    <p class="text-xs text-gray-500">Tentukan data target yang ingin diunduh</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeExportModal()" class="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+
+        <!-- Opsi Pilihan Export -->
+        <div class="py-5 space-y-3">
+            <!-- Pilihan 1: Masuk Target -->
+            <a href="{{ route('approvals.level3.export', array_merge(request()->query(), ['target_status' => 'masuk_target'])) }}"
+               onclick="closeExportModal()"
+               class="flex items-center p-4 bg-emerald-50/60 border-2 border-emerald-200 rounded-xl hover:bg-emerald-100/70 hover:border-emerald-500 transition-all group">
+                <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform shadow-sm">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+                <div class="ml-3.5 flex-1">
+                    <h4 class="text-sm font-bold text-gray-900 group-hover:text-emerald-900 flex items-center gap-2">
+                        Export Masuk Target
+                        <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-800 font-bold">TARGET</span>
+                    </h4>
+                    <p class="text-xs text-gray-500 mt-0.5">Unduh data pengajuan yang <strong>Masuk Target</strong></p>
+                </div>
+                <svg class="w-5 h-5 text-emerald-600 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </a>
+
+            <!-- Pilihan 2: Tidak Masuk Target -->
+            <a href="{{ route('approvals.level3.export', array_merge(request()->query(), ['target_status' => 'tidak_masuk_target'])) }}"
+               onclick="closeExportModal()"
+               class="flex items-center p-4 bg-rose-50/60 border-2 border-rose-200 rounded-xl hover:bg-rose-100/70 hover:border-rose-500 transition-all group">
+                <div class="w-10 h-10 rounded-xl bg-rose-600 text-white flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform shadow-sm">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+                <div class="ml-3.5 flex-1">
+                    <h4 class="text-sm font-bold text-gray-900 group-hover:text-rose-900 flex items-center gap-2">
+                        Export Tidak Masuk Target
+                        <span class="text-[10px] px-2 py-0.5 rounded-full bg-rose-200 text-rose-800 font-bold">NON-TARGET</span>
+                    </h4>
+                    <p class="text-xs text-gray-500 mt-0.5">Unduh data pengajuan yang <strong>Tidak Masuk Target</strong></p>
+                </div>
+                <svg class="w-5 h-5 text-rose-600 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </a>
+
+            <!-- Pilihan 3: Export Semua (Gabungan) -->
+            <a href="{{ route('approvals.level3.export', array_merge(request()->query(), ['target_status' => 'all'])) }}"
+               onclick="closeExportModal()"
+               class="flex items-center p-4 bg-sky-50/60 border-2 border-sky-200 rounded-xl hover:bg-sky-100/70 hover:border-sky-500 transition-all group">
+                <div class="w-10 h-10 rounded-xl bg-sky-600 text-white flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform shadow-sm">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                    </svg>
+                </div>
+                <div class="ml-3.5 flex-1">
+                    <h4 class="text-sm font-bold text-gray-900 group-hover:text-sky-900 flex items-center gap-2">
+                        Export Semua (Gabungan)
+                        <span class="text-[10px] px-2 py-0.5 rounded-full bg-sky-200 text-sky-800 font-bold">SEMUA</span>
+                    </h4>
+                    <p class="text-xs text-gray-500 mt-0.5">Unduh seluruh data (<strong>Masuk Target & Tidak Masuk Target</strong> jadi 1 file)</p>
+                </div>
+                <svg class="w-5 h-5 text-sky-600 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </a>
+
+            <!-- Pilihan 4: Rekap SC -->
+            <a href="{{ route('approvals.export.rekap-sc', request()->query()) }}"
+               onclick="closeExportModal()"
+               class="flex items-center p-4 bg-indigo-50/60 border-2 border-indigo-200 rounded-xl hover:bg-indigo-100/70 hover:border-indigo-500 transition-all group">
+                <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform shadow-sm">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                    </svg>
+                </div>
+                <div class="ml-3.5 flex-1">
+                    <h4 class="text-sm font-bold text-gray-900 group-hover:text-indigo-900 flex items-center gap-2">
+                        Export Rekap SC
+                        <span class="text-[10px] px-2 py-0.5 rounded-full bg-indigo-200 text-indigo-800 font-bold">REKAP</span>
+                    </h4>
+                    <p class="text-xs text-gray-500 mt-0.5">Rekapitulasi total pengajuan, Over/OD, dan % per SC setiap bulan</p>
+                </div>
+                <svg class="w-5 h-5 text-indigo-600 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </a>
+        </div>
+
+        <!-- Footer Modal -->
+        <div class="pt-3 border-t border-gray-100 flex justify-end">
+            <button type="button" onclick="closeExportModal()" 
+                    class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition">
+                Batal
+            </button>
         </div>
     </div>
 </div>
@@ -532,17 +693,50 @@ document.addEventListener('DOMContentLoaded', function() {
     const salesSelect = document.querySelector('select[name="sales_id"]');
     const form = document.getElementById('filterForm');
     
-    salesSelect.addEventListener('change', function() {
-        // Optional: Tampilkan loading indicator
-        const selectElement = this;
-        selectElement.style.opacity = '0.6';
-        selectElement.style.pointerEvents = 'none';
-        
-        // Submit form
-        form.submit();
-    });
+    if (salesSelect && form) {
+        salesSelect.addEventListener('change', function() {
+            const selectElement = this;
+            selectElement.style.opacity = '0.6';
+            selectElement.style.pointerEvents = 'none';
+            form.submit();
+        });
+    }
+
+    const approvalForm = document.getElementById('approvalForm');
+    if (approvalForm) {
+        approvalForm.addEventListener('submit', function(e) {
+            const action = document.getElementById('actionInput').value;
+            if (action === 'approved') {
+                const masukCb = document.getElementById('target_masuk');
+                const tidakCb = document.getElementById('target_tidak');
+                const targetError = document.getElementById('targetError');
+
+                if (masukCb && tidakCb && !masukCb.checked && !tidakCb.checked) {
+                    e.preventDefault();
+                    if (targetError) targetError.classList.remove('hidden');
+                    return false;
+                }
+            }
+        });
+    }
 });
 
+function handleTargetSelection(selected) {
+    const masukCb = document.getElementById('target_masuk');
+    const tidakCb = document.getElementById('target_tidak');
+    const targetError = document.getElementById('targetError');
+    if (targetError) targetError.classList.add('hidden');
+
+    if (selected === 'masuk_target') {
+        if (masukCb && masukCb.checked && tidakCb) {
+            tidakCb.checked = false;
+        }
+    } else if (selected === 'tidak_masuk_target') {
+        if (tidakCb && tidakCb.checked && masukCb) {
+            masukCb.checked = false;
+        }
+    }
+}
 
 function toggleDetail(id) {
     const detailRow = document.getElementById('detail-' + id);
@@ -557,7 +751,6 @@ function toggleDetail(id) {
     }
 }
 
-// Di script section blade, update function openApprovalModal
 function openApprovalModal(submissionId, action) {
     const modal = document.getElementById('approvalModal');
     const modalContent = document.getElementById('approvalModalContent');
@@ -566,26 +759,36 @@ function openApprovalModal(submissionId, action) {
     const submitButton = document.getElementById('submitButton');
     const form = document.getElementById('approvalForm');
     const actionInput = document.getElementById('actionInput');
+    const targetSection = document.getElementById('targetSection');
+    const masukCb = document.getElementById('target_masuk');
+    const tidakCb = document.getElementById('target_tidak');
+    const targetError = document.getElementById('targetError');
     
     form.action = `/approvals/${submissionId}/process`;
     actionInput.value = action;
     
+    if (targetError) targetError.classList.add('hidden');
+    if (masukCb) masukCb.checked = false;
+    if (tidakCb) tidakCb.checked = false;
+
     if (action === 'approved') {
         modalTitle.textContent = 'Setujui Pengajuan';
         approvalNote.placeholder = 'Jelaskan alasan persetujuan Anda...';
         submitButton.className = 'flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition';
         submitButton.textContent = 'Setujui';
+        if (targetSection) targetSection.classList.remove('hidden');
     } else if (action === 'revision') {
-        // BARU: Handler untuk revisi
         modalTitle.textContent = 'Minta Revisi Pengajuan';
         approvalNote.placeholder = 'Jelaskan bagian yang perlu diperbaiki...';
         submitButton.className = 'flex-1 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition';
         submitButton.textContent = 'Kirim Revisi';
+        if (targetSection) targetSection.classList.add('hidden');
     } else {
         modalTitle.textContent = 'Tolak Pengajuan';
         approvalNote.placeholder = 'Jelaskan alasan penolakan Anda...';
         submitButton.className = 'flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition';
         submitButton.textContent = 'Tolak';
+        if (targetSection) targetSection.classList.add('hidden');
     }
     
     approvalNote.value = '';
@@ -606,18 +809,21 @@ function openApprovalModal(submissionId, action) {
 function closeApprovalModal() {
     const modal = document.getElementById('approvalModal');
     const modalContent = document.getElementById('approvalModalContent');
+    const targetError = document.getElementById('targetError');
+    const masukCb = document.getElementById('target_masuk');
+    const tidakCb = document.getElementById('target_tidak');
+
+    if (targetError) targetError.classList.add('hidden');
+    if (masukCb) masukCb.checked = false;
+    if (tidakCb) tidakCb.checked = false;
     
-    // NO ANIMATION - Langsung hide
     modal.classList.add('hidden');
-    
-    // Reset classes untuk next time
     modal.classList.remove('opacity-100');
     modal.classList.add('opacity-0');
     
     modalContent.classList.remove('translate-y-0', 'scale-100', 'opacity-100');
     modalContent.classList.add('-translate-y-12', 'scale-95', 'opacity-0');
     
-    // Re-enable body scroll
     document.body.style.overflow = '';
 }
 
@@ -689,6 +895,45 @@ document.getElementById('imageModal')?.addEventListener('click', function (e) {
 document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') {
         closeImageModal();
+        closeExportModal();
+    }
+});
+
+// Export Modal Functions
+function openExportModal() {
+    const modal = document.getElementById('exportModal');
+    const modalContent = document.getElementById('exportModalContent');
+    if (!modal || !modalContent) return;
+
+    modal.classList.remove('hidden');
+    setTimeout(() => {
+        modal.classList.remove('opacity-0');
+        modal.classList.add('opacity-100');
+        modalContent.classList.remove('-translate-y-8', 'scale-95', 'opacity-0');
+        modalContent.classList.add('translate-y-0', 'scale-100', 'opacity-100');
+    }, 10);
+    document.body.style.overflow = 'hidden';
+}
+
+function closeExportModal() {
+    const modal = document.getElementById('exportModal');
+    const modalContent = document.getElementById('exportModalContent');
+    if (!modal || !modalContent) return;
+
+    modal.classList.remove('opacity-100');
+    modal.classList.add('opacity-0');
+    modalContent.classList.remove('translate-y-0', 'scale-100', 'opacity-100');
+    modalContent.classList.add('-translate-y-8', 'scale-95', 'opacity-0');
+    setTimeout(() => {
+        modal.classList.add('hidden');
+        document.body.style.overflow = '';
+    }, 200);
+}
+
+// Close export modal when clicking backdrop
+document.getElementById('exportModal')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeExportModal();
     }
 });
 </script>

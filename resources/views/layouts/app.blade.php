@@ -32,7 +32,7 @@
                 <div class="flex items-center space-x-4">
                     <span class="text-sm text-gray-700">
                         <span class="font-semibold">{{ Auth::user()->name }}</span>
-                        <span class="text-gray-500 ml-2">({{ ucfirst(Auth::user()->role) }})</span>
+                        <span class="text-gray-500 ml-2">({{ Auth::user()->role_label }})</span>
                     </span>
 
                     @if(Auth::user()->isApprover())

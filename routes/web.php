@@ -84,6 +84,11 @@ Route::middleware(['auth'])->group(function () {
             ->name('approvals.level3.export')
             ->middleware('role:approver3,approver4');
             
+        // Rekap SC Export
+        Route::get('/approvals/export-rekap-sc', [ApprovalController::class, 'exportRekapSc'])
+            ->name('approvals.export.rekap-sc')
+            ->middleware('role:approver3,approver4');
+            
         // Import Piutang (Khusus Approver Level 3)
         Route::get('/approvals/level3/import-piutang', [ApprovalController::class, 'showImportPiutang'])
             ->name('approvals.level3.import-piutang');

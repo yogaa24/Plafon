@@ -74,4 +74,21 @@ class User extends Authenticatable implements CanResetPassword
     {
         return $this->role === 'viewer';
     }
+
+    public function getRoleLabelAttribute()
+    {
+        return match($this->role) {
+            'sales' => 'Sales',
+            'sales_executive' => 'Sales Executive',
+            'approver1' => 'Manager SC',
+            'approver2' => 'Collection',
+            'approver3' => 'Manager Keuangan',
+            'approver4' => 'Kadep Keu & Sales',
+            'approver5' => 'Direktur Operasional',
+            'approver6' => 'Direktur Utama',
+            'viewer' => 'Viewer',
+            'piutang_manager' => 'Piutang Manager',
+            default => ucfirst($this->role)
+        };
+    }
 }

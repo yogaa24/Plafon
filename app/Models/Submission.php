@@ -30,6 +30,7 @@ class Submission extends Model
         'status',
         'current_level',
         'rejection_note',
+        'target_status',
     ];
 
     protected $casts = [
@@ -92,13 +93,13 @@ class Submission extends Model
     public function getStatusBadgeAttribute()
     {
         $badges = [
-            'pending'               => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Menunggu Koor SC</span>',
-            'approved_1'            => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Menunggu TC</span>',
-            'approved_2'            => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-800">Menunggu Kabag KEU</span>',
-            'approved_3'            => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">Menunggu Kadep KEU</span>',
-            'approved_4'            => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">Menunggu Kadep KEU&HRD</span>',
-            'approved_5'            => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">Menunggu DIreksi</span>',
-            'approved_6'            => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">Proses Input</span>',
+            'pending'               => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Menunggu Manager SC</span>',
+            'approved_1'            => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Menunggu Collection</span>',
+            'approved_2'            => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-800">Menunggu Manager Keuangan</span>',
+            'approved_3'            => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">Menunggu Kadep Keu & Sales</span>',
+            'approved_4'            => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">Menunggu Direktur Operasional</span>',
+            'approved_5'            => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">Menunggu Direktur Operasional</span>',
+            'approved_6'            => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-cyan-100 text-cyan-800">Proses Input</span>',
             'pending_viewer'        => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-cyan-100 text-cyan-800">Proses Input</span>',
             'done'                  => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Selesai</span>',
             'rejected'              => '<span class="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Ditolak</span>',
@@ -127,5 +128,21 @@ class Submission extends Model
                     </svg>
                     Turun
                </span>';
+    }
+
+    public function getTargetStatusBadgeAttribute()
+    {
+        if ($this->target_status === 'masuk_target') {
+            return '<span class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                <svg class="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                Masuk Target
+            </span>';
+        } elseif ($this->target_status === 'tidak_masuk_target') {
+            return '<span class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-full bg-rose-100 text-rose-800 border border-rose-300">
+                <svg class="w-3 h-3 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                Tidak Masuk Target
+            </span>';
+        }
+        return '';
     }
 }
