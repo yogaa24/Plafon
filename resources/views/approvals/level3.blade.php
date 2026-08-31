@@ -197,7 +197,7 @@
                         <td class="px-4 py-3 text-center whitespace-nowrap">
                             <div class="flex items-center justify-center gap-2">
                                 <!-- Approve Button -->
-                                <button onclick="openApprovalModal({{ $submission->id }}, 'approved')" 
+                                <button onclick="openApprovalModal({{ $submission->id }}, 'approved', '{{ $submission->plafon_type }}')" 
                                         class="px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-700 transition" 
                                         title="Setujui">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -206,7 +206,7 @@
                                 </button>
                                 
                                 <!-- Revisi Button (BARU) -->
-                                <button onclick="openApprovalModal({{ $submission->id }}, 'revision')" 
+                                <button onclick="openApprovalModal({{ $submission->id }}, 'revision', '{{ $submission->plafon_type }}')" 
                                         class="px-3 py-1.5 bg-amber-600 text-white text-xs font-medium rounded hover:bg-amber-700 transition" 
                                         title="Revisi">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -215,7 +215,7 @@
                                 </button>
                                 
                                 <!-- Reject Button -->
-                                <button onclick="openApprovalModal({{ $submission->id }}, 'rejected')" 
+                                <button onclick="openApprovalModal({{ $submission->id }}, 'rejected', '{{ $submission->plafon_type }}')" 
                                         class="px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded hover:bg-red-700 transition" 
                                         title="Tolak">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -706,7 +706,10 @@ document.addEventListener('DOMContentLoaded', function() {
     if (approvalForm) {
         approvalForm.addEventListener('submit', function(e) {
             const action = document.getElementById('actionInput').value;
-            if (action === 'approved') {
+            const targetSection = document.getElementById('targetSection');
+            
+            // Validasi target hanya jika action == approved dan targetSection tidak tersembunyi (open plafon)
+            if (action === 'approved' && targetSection && !targetSection.classList.contains('hidden')) {
                 const masukCb = document.getElementById('target_masuk');
                 const tidakCb = document.getElementById('target_tidak');
                 const targetError = document.getElementById('targetError');
@@ -751,7 +754,7 @@ function toggleDetail(id) {
     }
 }
 
-function openApprovalModal(submissionId, action) {
+function openApprovalModal(submissionId, action, plafonType) {
     const modal = document.getElementById('approvalModal');
     const modalContent = document.getElementById('approvalModalContent');
     const modalTitle = document.getElementById('modalTitle');
@@ -764,6 +767,12 @@ function openApprovalModal(submissionId, action) {
     const tidakCb = document.getElementById('target_tidak');
     const targetError = document.getElementById('targetError');
     
+    // Cari plafon_type jika tidak dioper secara eksplisit
+    if (!plafonType && typeof submissionsData !== 'undefined') {
+        const sub = submissionsData.find(s => s.id === submissionId);
+        if (sub) plafonType = sub.plafon_type;
+    }
+
     form.action = `/approvals/${submissionId}/process`;
     actionInput.value = action;
     
@@ -776,7 +785,15 @@ function openApprovalModal(submissionId, action) {
         approvalNote.placeholder = 'Jelaskan alasan persetujuan Anda...';
         submitButton.className = 'flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition';
         submitButton.textContent = 'Setujui';
-        if (targetSection) targetSection.classList.remove('hidden');
+
+        // Pilihan target HANYA untuk Open Plafon
+        if (targetSection) {
+            if (plafonType === 'open') {
+                targetSection.classList.remove('hidden');
+            } else {
+                targetSection.classList.add('hidden');
+            }
+        }
     } else if (action === 'revision') {
         modalTitle.textContent = 'Minta Revisi Pengajuan';
         approvalNote.placeholder = 'Jelaskan bagian yang perlu diperbaiki...';

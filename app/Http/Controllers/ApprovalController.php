@@ -722,8 +722,8 @@ class ApprovalController extends Controller
                 $submission->payment_data = json_encode($paymentData);
             }
 
-            // Validasi khusus untuk Level 3 saat approve (Target Status)
-            if ($level == 3 && $action === 'approved') {
+            // Validasi khusus untuk Level 3 saat approve (Target Status hanya untuk open plafon)
+            if ($level == 3 && $action === 'approved' && $submission->plafon_type === 'open') {
                 $request->validate([
                     'target_status' => 'required|in:masuk_target,tidak_masuk_target',
                 ], [
@@ -740,7 +740,7 @@ class ApprovalController extends Controller
             $approval->status = $action; // bisa 'approved', 'rejected', atau 'revision'
             $approval->note = $request->input('note');
 
-            if ($level == 3 && $action === 'approved') {
+            if ($level == 3 && $action === 'approved' && $submission->plafon_type === 'open') {
                 $approval->target_status = $request->input('target_status');
                 $submission->target_status = $request->input('target_status');
             }

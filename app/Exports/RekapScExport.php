@@ -60,7 +60,7 @@ class RekapScExport implements WithEvents, WithTitle
                         'pending_viewer',
                         'done'
                     ])
-                    ->with('sales')
+                    ->with(['sales', 'approvals'])
                     ->get();
 
                 // Get distinct sales IDs that have submissions in this year or all sales users
@@ -73,6 +73,11 @@ class RekapScExport implements WithEvents, WithTitle
                     })
                     ->orderBy('name')
                     ->get();
+
+                // Section Title 1
+                $sheet->setCellValue('B2', 'REKAP SC');
+                $sheet->getStyle('B2')->getFont()->setBold(true)->setSize(12);
+                $sheet->getRowDimension(2)->setRowHeight(22);
 
                 // Sub-headers B4, C4
                 $sheet->setCellValue('B4', 'No');
@@ -127,11 +132,13 @@ class RekapScExport implements WithEvents, WithTitle
 
                 $lastCol = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colIndex - 1); // AM
 
-                // Helper to check Over/OD (menghitung pengajuan yang Plafon Aktif / Sebelumnya bernilai 1.000)
+                // Helper to check Over/OD (menghitung pengajuan yang Masuk Target)
                 $isOverOd = function($sub) {
-                    $plafon = (float)$sub->plafon;
-                    $plafonSebelumnya = (float)$sub->plafon_sebelumnya;
-                    return (round($plafon) == 1000 || round($plafonSebelumnya) == 1000);
+                    if ($sub->target_status === 'masuk_target') {
+                        return true;
+                    }
+                    $level3Approval = $sub->approvals ? $sub->approvals->where('level', 3)->first() : null;
+                    return $level3Approval && $level3Approval->target_status === 'masuk_target';
                 };
 
                 // Populate Data Rows
@@ -174,10 +181,11 @@ class RekapScExport implements WithEvents, WithTitle
                 }
 
                 $lastDataRow = $currentRow - 1;
+                $scTotalRow = $currentRow;
 
-                // Total Row at the bottom
-                $sheet->mergeCells("B{$currentRow}:C{$currentRow}");
-                $sheet->setCellValue("B{$currentRow}", 'TOTAL');
+                // Total Row at the bottom of Rekap SC
+                $sheet->mergeCells("B{$scTotalRow}:C{$scTotalRow}");
+                $sheet->setCellValue("B{$scTotalRow}", 'TOTAL');
 
                 $cIdx = 4;
                 foreach ($months as $mNum => $mInfo) {
@@ -185,23 +193,23 @@ class RekapScExport implements WithEvents, WithTitle
                     $c2 = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($cIdx + 1);
                     $c3 = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($cIdx + 2);
                     
-                    $sheet->setCellValue("{$c1}{$currentRow}", "=SUM({$c1}5:{$c1}{$lastDataRow})");
-                    $sheet->setCellValue("{$c2}{$currentRow}", "=SUM({$c2}5:{$c2}{$lastDataRow})");
-                    $sheet->setCellValue("{$c3}{$currentRow}", "=IF({$c1}{$currentRow}>0, {$c2}{$currentRow}/{$c1}{$currentRow}, 0)");
+                    $sheet->setCellValue("{$c1}{$scTotalRow}", "=SUM({$c1}5:{$c1}{$lastDataRow})");
+                    $sheet->setCellValue("{$c2}{$scTotalRow}", "=SUM({$c2}5:{$c2}{$lastDataRow})");
+                    $sheet->setCellValue("{$c3}{$scTotalRow}", "=IF({$c1}{$scTotalRow}>0, {$c2}{$scTotalRow}/{$c1}{$scTotalRow}, 0)");
                     
-                    $sheet->getStyle("{$c3}{$currentRow}")->getNumberFormat()->setFormatCode('0.00%');
+                    $sheet->getStyle("{$c3}{$scTotalRow}")->getNumberFormat()->setFormatCode('0.00%');
                     
                     $cIdx += 3;
                 }
 
-                // Styling Total Row
-                $sheet->getStyle("B{$currentRow}:{$lastCol}{$currentRow}")->applyFromArray([
+                // Styling Total Row Rekap SC
+                $sheet->getStyle("B{$scTotalRow}:{$lastCol}{$scTotalRow}")->applyFromArray([
                     'font' => ['name' => 'Calibri', 'size' => 11, 'bold' => true],
                     'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'F2F2F2']],
                 ]);
 
-                // Apply borders
-                $sheet->getStyle("B3:{$lastCol}{$currentRow}")->applyFromArray([
+                // Apply borders Rekap SC
+                $sheet->getStyle("B3:{$lastCol}{$scTotalRow}")->applyFromArray([
                     'borders' => [
                         'allBorders' => [
                             'borderStyle' => Border::BORDER_THIN,
@@ -210,25 +218,194 @@ class RekapScExport implements WithEvents, WithTitle
                     ],
                 ]);
 
-                // Alignments
-                $sheet->getStyle("B4:{$lastCol}{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                $sheet->getStyle("B4:{$lastCol}{$currentRow}")->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+                // Alignments Rekap SC
+                $sheet->getStyle("B4:{$lastCol}{$scTotalRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle("B4:{$lastCol}{$scTotalRow}")->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
                 $sheet->getStyle("C5:C{$lastDataRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
+
+                // Row Heights Rekap SC
+                $sheet->getRowDimension(3)->setRowHeight(24);
+                $sheet->getRowDimension(4)->setRowHeight(22);
+                for ($r = 5; $r <= $scTotalRow; $r++) {
+                    $sheet->getRowDimension($r)->setRowHeight(20);
+                }
+
+                // ----------------------------------------------------
+                // REKAP COLLECTION (Di bawah Rekap SC)
+                // ----------------------------------------------------
+                // Helper to get Collection user ID from submission (Approval Level 2)
+                $getCollectionId = function($sub) {
+                    $lvl2 = $sub->approvals->where('level', 2)->where('status', 'approved')->last()
+                        ?: $sub->approvals->where('level', 2)->last();
+                    return $lvl2 ? $lvl2->approver_id : null;
+                };
+
+                // Get distinct collection users from submissions in this year or all approver2 users
+                $collectionUserIds = $submissions->map(function($sub) use ($getCollectionId) {
+                    return $getCollectionId($sub);
+                })->unique()->filter();
+
+                $collectionUsers = User::whereIn('id', $collectionUserIds)
+                    ->orWhere('role', 'approver2')
+                    ->orderBy('name')
+                    ->get();
+
+                $t2TitleRow = $scTotalRow + 3;
+                $sheet->setCellValue("B{$t2TitleRow}", 'REKAP COLLECTION');
+                $sheet->getStyle("B{$t2TitleRow}")->getFont()->setBold(true)->setSize(12);
+                $sheet->getRowDimension($t2TitleRow)->setRowHeight(22);
+
+                $t2MonthRow = $t2TitleRow + 1;
+                $t2HeaderRow = $t2MonthRow + 1;
+
+                // Month Headers for Collection
+                $colIndex = 4;
+                foreach ($months as $mNum => $mInfo) {
+                    $col1 = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colIndex);
+                    $col2 = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colIndex + 1);
+                    $col3 = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colIndex + 2);
+                    
+                    // Month Header (Merged 3 cols)
+                    $sheet->mergeCells("{$col1}{$t2MonthRow}:{$col3}{$t2MonthRow}");
+                    $sheet->setCellValue("{$col1}{$t2MonthRow}", $mInfo['code']);
+                    $sheet->getStyle("{$col1}{$t2MonthRow}:{$col3}{$t2MonthRow}")->applyFromArray([
+                        'font' => ['name' => 'Calibri', 'size' => 11, 'bold' => true, 'color' => ['rgb' => '000000']],
+                        'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $mInfo['fill']]],
+                        'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+                    ]);
+                    
+                    // Total, Over/OD, %
+                    $sheet->setCellValue("{$col1}{$t2HeaderRow}", 'Total');
+                    $sheet->setCellValue("{$col2}{$t2HeaderRow}", 'Over/OD');
+                    $sheet->setCellValue("{$col3}{$t2HeaderRow}", '%');
+                    
+                    $sheet->getStyle("{$col1}{$t2HeaderRow}")->applyFromArray([
+                        'font' => ['name' => 'Calibri', 'size' => 11, 'bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+                        'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '002060']],
+                        'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+                    ]);
+                    
+                    $sheet->getStyle("{$col2}{$t2HeaderRow}")->applyFromArray([
+                        'font' => ['name' => 'Calibri', 'size' => 11, 'bold' => true, 'color' => ['rgb' => '000000']],
+                        'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FFC000']],
+                        'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+                    ]);
+                    
+                    $sheet->getStyle("{$col3}{$t2HeaderRow}")->applyFromArray([
+                        'font' => ['name' => 'Calibri', 'size' => 11, 'bold' => true, 'color' => ['rgb' => '000000']],
+                        'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '00B050']],
+                        'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+                    ]);
+                    
+                    $colIndex += 3;
+                }
+
+                // Sub-headers B & C for Collection
+                $sheet->setCellValue("B{$t2HeaderRow}", 'No');
+                $sheet->setCellValue("C{$t2HeaderRow}", 'COLLECTION');
+
+                $sheet->getStyle("B{$t2HeaderRow}:C{$t2HeaderRow}")->applyFromArray([
+                    'font' => ['name' => 'Calibri', 'size' => 11, 'bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+                    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '652523']],
+                    'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+                ]);
+
+                // Populate Collection Data Rows
+                $t2StartDataRow = $t2HeaderRow + 1;
+                $t2CurrentRow = $t2StartDataRow;
+                $noColl = 1;
+
+                foreach ($collectionUsers as $collUser) {
+                    $sheet->setCellValue("B{$t2CurrentRow}", $noColl++);
+                    $sheet->setCellValue("C{$t2CurrentRow}", $collUser->name);
+                    
+                    $cIdx = 4;
+                    foreach ($months as $mNum => $mInfo) {
+                        $c1 = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($cIdx);
+                        $c2 = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($cIdx + 1);
+                        $c3 = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($cIdx + 2);
+                        
+                        $collSubs = $submissions->filter(function($s) use ($collUser, $mNum, $getCollectionId) {
+                            return (int)$s->created_at->format('n') === $mNum && $getCollectionId($s) == $collUser->id;
+                        });
+                            
+                        $totalCount = $collSubs->count();
+                        $overCount = $collSubs->filter($isOverOd)->count();
+                        
+                        if ($totalCount > 0) {
+                            $sheet->setCellValue("{$c1}{$t2CurrentRow}", $totalCount);
+                            $sheet->setCellValue("{$c2}{$t2CurrentRow}", $overCount);
+                            $sheet->setCellValue("{$c3}{$t2CurrentRow}", "={$c2}{$t2CurrentRow}/{$c1}{$t2CurrentRow}");
+                        } else {
+                            $sheet->setCellValue("{$c1}{$t2CurrentRow}", '');
+                            $sheet->setCellValue("{$c2}{$t2CurrentRow}", '');
+                            $sheet->setCellValue("{$c3}{$t2CurrentRow}", "0.00%");
+                        }
+                        
+                        $sheet->getStyle("{$c3}{$t2CurrentRow}")->getNumberFormat()->setFormatCode('0.00%');
+                        $cIdx += 3;
+                    }
+                    
+                    $t2CurrentRow++;
+                }
+
+                $t2LastDataRow = $t2CurrentRow - 1;
+                $t2TotalRow = $t2CurrentRow;
+
+                // Total Row for Collection
+                $sheet->mergeCells("B{$t2TotalRow}:C{$t2TotalRow}");
+                $sheet->setCellValue("B{$t2TotalRow}", 'TOTAL');
+
+                $cIdx = 4;
+                foreach ($months as $mNum => $mInfo) {
+                    $c1 = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($cIdx);
+                    $c2 = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($cIdx + 1);
+                    $c3 = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($cIdx + 2);
+                    
+                    $sheet->setCellValue("{$c1}{$t2TotalRow}", "=SUM({$c1}{$t2StartDataRow}:{$c1}{$t2LastDataRow})");
+                    $sheet->setCellValue("{$c2}{$t2TotalRow}", "=SUM({$c2}{$t2StartDataRow}:{$c2}{$t2LastDataRow})");
+                    $sheet->setCellValue("{$c3}{$t2TotalRow}", "=IF({$c1}{$t2TotalRow}>0, {$c2}{$t2TotalRow}/{$c1}{$t2TotalRow}, 0)");
+                    
+                    $sheet->getStyle("{$c3}{$t2TotalRow}")->getNumberFormat()->setFormatCode('0.00%');
+                    
+                    $cIdx += 3;
+                }
+
+                // Styling Total Row Collection
+                $sheet->getStyle("B{$t2TotalRow}:{$lastCol}{$t2TotalRow}")->applyFromArray([
+                    'font' => ['name' => 'Calibri', 'size' => 11, 'bold' => true],
+                    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'F2F2F2']],
+                ]);
+
+                // Apply borders Collection
+                $sheet->getStyle("B{$t2MonthRow}:{$lastCol}{$t2TotalRow}")->applyFromArray([
+                    'borders' => [
+                        'allBorders' => [
+                            'borderStyle' => Border::BORDER_THIN,
+                            'color' => ['rgb' => '000000'],
+                        ],
+                    ],
+                ]);
+
+                // Alignments Collection
+                $sheet->getStyle("B{$t2HeaderRow}:{$lastCol}{$t2TotalRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle("B{$t2HeaderRow}:{$lastCol}{$t2TotalRow}")->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+                $sheet->getStyle("C{$t2StartDataRow}:C{$t2LastDataRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
+
+                // Row Heights Collection
+                $sheet->getRowDimension($t2MonthRow)->setRowHeight(24);
+                $sheet->getRowDimension($t2HeaderRow)->setRowHeight(22);
+                for ($r = $t2StartDataRow; $r <= $t2TotalRow; $r++) {
+                    $sheet->getRowDimension($r)->setRowHeight(20);
+                }
 
                 // Column Widths
                 $sheet->getColumnDimension('A')->setWidth(3);
                 $sheet->getColumnDimension('B')->setWidth(7);
-                $sheet->getColumnDimension('C')->setWidth(16);
+                $sheet->getColumnDimension('C')->setWidth(18);
                 for ($i = 4; $i <= $colIndex - 1; $i++) {
                     $c = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($i);
                     $sheet->getColumnDimension($c)->setWidth(10);
-                }
-
-                // Row Heights
-                $sheet->getRowDimension(3)->setRowHeight(24);
-                $sheet->getRowDimension(4)->setRowHeight(22);
-                for ($r = 5; $r <= $currentRow; $r++) {
-                    $sheet->getRowDimension($r)->setRowHeight(20);
                 }
             },
         ];
