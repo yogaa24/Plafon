@@ -244,9 +244,8 @@
                                             <span class="text-sm text-gray-600">Sales:</span>
                                             <span class="text-sm font-medium text-gray-900">{{ $submission->sales->name }}</span>
                                         </div>
-                                        <div class="py-1">
-                                            <span class="text-sm text-gray-600 block mb-1">Komitmen Pembayaran:</span>
-                                            <span class="text-sm text-gray-900">{{ $submission->komitmen_pembayaran }}</span>
+                                        <div class="py-2 border-b border-gray-100">
+                                            @include('partials.komitmen-history', ['submission' => $submission])
                                         </div>
                                          <div class="flex justify-between py-1">
                                             <span class="text-sm text-gray-600">Dibuat:</span>
@@ -347,17 +346,23 @@
                                         @foreach($submission->approvals->sortBy('level') as $approval)
                                         @php
                                             $isApproved = $approval->status === 'approved';
-                                            $isRejected = $approval->status === 'rejected';
+                                            $isRevisiKomitmen = $approval->status === 'revision' || str_contains($approval->note ?? '', 'Komitmen pembayaran ditolak');
+                                            $isRevision = !$isRevisiKomitmen && $approval->status === 'revision';
+                                            $isRejected = !$isRevisiKomitmen && $approval->status === 'rejected';
                                         @endphp
 
                                         <div class="flex items-start justify-between p-4 rounded-lg border
                                             {{ $isApproved ? 'bg-green-50 border-green-200' : '' }}
+                                            {{ $isRevisiKomitmen ? 'bg-amber-50 border-amber-200' : '' }}
+                                            {{ $isRevision ? 'bg-yellow-50 border-yellow-200' : '' }}
                                             {{ $isRejected ? 'bg-red-50 border-red-200' : '' }}
                                         ">
                                             <!-- KIRI -->
                                             <div class="flex items-start space-x-3">
                                                 <div class="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm text-white
                                                     {{ $isApproved ? 'bg-green-500' : '' }}
+                                                    {{ $isRevisiKomitmen ? 'bg-amber-500' : '' }}
+                                                    {{ $isRevision ? 'bg-yellow-500' : '' }}
                                                     {{ $isRejected ? 'bg-red-500' : '' }}
                                                 ">
                                                     {{ $approval->level }}
@@ -374,7 +379,7 @@
                                                     @if($approval->note)
                                                         <div class="mt-2 p-2 bg-white border border-gray-200 rounded">
                                                             <p class="text-xs font-semibold text-gray-500 mb-1">
-                                                                {{ $isRejected ? 'Alasan Penolakan:' : 'Catatan:' }}
+                                                                {{ $isRejected ? 'Alasan Penolakan:' : ($isRevisiKomitmen ? 'Catatan Revisi Komitmen:' : 'Catatan:') }}
                                                             </p>
                                                             <p class="text-xs text-gray-700 italic">
                                                                 "{{ $approval->note }}"
@@ -385,11 +390,21 @@
                                             </div>
 
                                             <!-- KANAN (STATUS) -->
-                                            <span class="text-xs px-2 py-1 rounded-full font-semibold h-fit
+                                            <span class="text-xs px-2.5 py-1 rounded-full font-semibold h-fit
                                                 {{ $isApproved ? 'bg-green-100 text-green-700' : '' }}
+                                                {{ $isRevisiKomitmen ? 'bg-amber-100 text-amber-800 border border-amber-300' : '' }}
+                                                {{ $isRevision ? 'bg-yellow-100 text-yellow-700' : '' }}
                                                 {{ $isRejected ? 'bg-red-100 text-red-700' : '' }}
                                             ">
-                                                {{ $isApproved ? '✓ Disetujui' : '✕ Ditolak' }}
+                                                @if($isApproved)
+                                                    ✓ Disetujui
+                                                @elseif($isRevisiKomitmen)
+                                                    ⟳ Revisi Komitmen
+                                                @elseif($isRevision)
+                                                    ⟳ Perlu Revisi
+                                                @else
+                                                    ✕ Ditolak
+                                                @endif
                                             </span>
                                         </div>
                                         @endforeach

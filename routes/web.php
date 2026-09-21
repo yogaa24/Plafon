@@ -74,6 +74,11 @@ Route::middleware(['auth'])->group(function () {
         // Process approval (semua level)
         Route::post('/approvals/{submission}/process', [ApprovalController::class, 'process'])->name('approvals.process');
         
+        // Tolak & Ganti Komitmen Pembayaran (Level 2 / TC & Level 4 / Kadep)
+        Route::post('/approvals/{submission}/reject-komitmen', [ApprovalController::class, 'rejectKomitmen'])
+            ->name('approvals.reject-komitmen')
+            ->middleware('role:approver2,approver4');
+        
         // Level 3 Dashboard
         Route::get('/approvals/level3', [ApprovalController::class, 'level3'])
             ->name('approvals.level3')

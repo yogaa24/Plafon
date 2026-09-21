@@ -196,6 +196,18 @@
                                 </svg>
                             </button>
                         @endif
+
+                        <!-- Tolak Komitmen Pembayaran Button (Khusus Level 2) -->
+                        @if($level == 2)
+                            <button onclick="openRejectKomitmenModal({{ $submission->id }})" 
+                                    type="button"
+                                    class="px-2.5 py-1.5 bg-amber-500 text-white text-xs font-medium rounded hover:bg-amber-600 transition flex items-center gap-1 shadow-xs" 
+                                    title="Tolak & Ganti Komitmen Pembayaran">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                </svg>
+                            </button>
+                        @endif
                         
                         <!-- Reject Button - Semua level pakai openApprovalModal untuk reject -->
                         <button onclick="openApprovalModal({{ $submission->id }}, 'rejected')" 
@@ -271,9 +283,40 @@
                                             <span class="text-sm text-gray-600">Sales:</span>
                                             <span class="text-sm font-medium text-gray-900">{{ $submission->sales->name }}</span>
                                         </div>
-                                        <div class="py-1">
-                                            <span class="text-sm text-gray-600 block mb-1">Komitmen Pembayaran:</span>
-                                            <span class="text-sm text-gray-900">{{ $submission->komitmen_pembayaran }}</span>
+                                        <div class="py-2 border-b border-gray-100">
+                                            @include('partials.komitmen-history', ['submission' => $submission])
+                                            
+                                            @if($level == 2)
+                                                @php
+                                                    $hList = is_array($submission->komitmen_pembayaran_history) ? $submission->komitmen_pembayaran_history : (json_decode($submission->komitmen_pembayaran_history, true) ?: []);
+                                                    $lastH = !empty($hList) ? end($hList) : null;
+                                                    $lastAct = $lastH['action_type'] ?? '';
+                                                    $isKadepReject = $lastAct === 'returned_to_collection';
+                                                    if (!$isKadepReject && empty($lastAct)) {
+                                                        $isKadepReject = $submission->current_level == 2 && str_contains($submission->rejection_note ?? '', 'Kadep');
+                                                    }
+                                                @endphp
+
+                                                @if($isKadepReject)
+                                                    <button type="button" 
+                                                            onclick="openRejectKomitmenModal({{ $submission->id }})"
+                                                            class="mt-2 w-full py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 shadow-sm transition">
+                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                                        </svg>
+                                                        Perbaiki Komitmen Pembayaran
+                                                    </button>
+                                                @else
+                                                    <button type="button" 
+                                                            onclick="openRejectKomitmenModal({{ $submission->id }})"
+                                                            class="mt-2 w-full py-1.5 px-3 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 shadow-sm transition">
+                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                                        </svg>
+                                                        Tolak Komitmen Pembayaran
+                                                    </button>
+                                                @endif
+                                            @endif
                                         </div>
                                         <div class="flex justify-between py-1">
                                             <span class="text-sm text-gray-600">Dibuat:</span>
@@ -409,16 +452,17 @@
 
                                         @php
                                             $isApproved = $approval->status === 'approved';
-                                            $isRejected = $approval->status === 'rejected';
-                                            $isRevision = $approval->status === 'revision';
+                                            $isRevisiKomitmen = $approval->status === 'revision' || str_contains($approval->note ?? '', 'Komitmen pembayaran ditolak');
+                                            $isRevision = !$isRevisiKomitmen && $approval->status === 'revision';
+                                            $isRejected = !$isRevisiKomitmen && $approval->status === 'rejected';
                                         @endphp
 
                                         <div class="flex items-start justify-between p-3 rounded-lg border
-                                            {{ $isApproved ? 'bg-green-50 border-green-200' : ($isRevision ? 'bg-yellow-50 border-yellow-200' : 'bg-red-50 border-red-200') }}">
+                                            {{ $isApproved ? 'bg-green-50 border-green-200' : ($isRevisiKomitmen ? 'bg-amber-50 border-amber-200' : ($isRevision ? 'bg-yellow-50 border-yellow-200' : 'bg-red-50 border-red-200')) }}">
 
                                             <div class="flex items-center space-x-3">
                                                 <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm
-                                                    {{ $isApproved ? 'bg-green-500 text-white' : ($isRevision ? 'bg-yellow-500 text-white' : 'bg-red-500 text-white') }}">
+                                                    {{ $isApproved ? 'bg-green-500 text-white' : ($isRevisiKomitmen ? 'bg-amber-500 text-white' : ($isRevision ? 'bg-yellow-500 text-white' : 'bg-red-500 text-white')) }}">
                                                     {{ $approval->level }}
                                                 </div>
 
@@ -438,10 +482,12 @@
                                                 </div>
                                             </div>
 
-                                            <span class="text-xs px-2 py-1 rounded-full font-semibold
-                                                {{ $isApproved ? 'bg-green-100 text-green-700' : ($isRevision ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700') }}">
+                                            <span class="text-xs px-2.5 py-1 rounded-full font-semibold
+                                                {{ $isApproved ? 'bg-green-100 text-green-700' : ($isRevisiKomitmen ? 'bg-amber-100 text-amber-800 border border-amber-300' : ($isRevision ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700')) }}">
                                                 @if($isApproved)
                                                     ✓ Disetujui
+                                                @elseif($isRevisiKomitmen)
+                                                    ⟳ Revisi Komitmen
                                                 @elseif($isRevision)
                                                     ⟳ Perlu Revisi
                                                 @else
@@ -582,6 +628,40 @@
                     </div>
                 </div>
 
+                <!-- Section Komitmen Pembayaran (Level 2) -->
+                <div id="level2KomitmenSection" class="hidden mb-4">
+                    <div class="border border-gray-200 rounded-lg p-4 bg-gray-50/50">
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="block text-sm font-semibold text-gray-700">Komitmen Pembayaran</label>
+                            <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="tolak_komitmen" id="tolakKomitmenCheckbox" value="1" onchange="toggleTolakKomitmenSection()" class="sr-only peer">
+                                <div class="relative w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500"></div>
+                                <span id="tolakKomitmenToggleLabel" class="ms-2 text-xs font-semibold text-amber-700">Tolak & Ganti Komitmen</span>
+                            </label>
+                        </div>
+                        <div id="displayCurrentKomitmenModal" class="p-2.5 bg-white border border-gray-200 rounded-lg text-xs text-gray-800 font-medium break-words"></div>
+
+                        <div id="tolakKomitmenSection" class="hidden mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg space-y-3">
+                            <div id="modalAlasanPenolakanContainer">
+                                <label id="modalAlasanPenolakanLabel" class="block text-xs font-semibold text-amber-900 mb-1">
+                                    Alasan Penolakan Komitmen <span class="text-red-500">*</span>
+                                </label>
+                                <textarea name="alasan_penolakan_komitmen" id="modalAlasanPenolakanKomitmen" rows="2"
+                                          placeholder="Jelaskan mengapa komitmen dari sales ditolak..."
+                                          class="w-full px-3 py-2 text-xs border border-amber-300 rounded-lg bg-white focus:ring-2 focus:ring-amber-500"></textarea>
+                            </div>
+                            <div>
+                                <label id="modalKomitmenBaruLabel" class="block text-xs font-semibold text-amber-900 mb-1">
+                                    Komitmen Pembayaran Baru dari TC <span class="text-red-500">*</span>
+                                </label>
+                                <textarea name="komitmen_pembayaran_baru" id="modalKomitmenPembayaranBaru" rows="2"
+                                          placeholder="Tulis komitmen pembayaran baru yang telah disesuaikan..."
+                                          class="w-full px-3 py-2 text-xs border border-amber-300 rounded-lg bg-white focus:ring-2 focus:ring-amber-500"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Catatan textarea tetap di bawah -->
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -602,6 +682,76 @@
                 </div>
             </form>
         </div>
+    </div>
+</div>
+
+<!-- Modal Tolak / Perbaiki Komitmen Pembayaran (Khusus Level 2 / TC) -->
+<div id="rejectKomitmenModal" class="hidden fixed inset-0 bg-black/40 backdrop-blur-[2px] overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
+    <div class="relative w-full max-w-lg bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden my-8">
+        <div id="rkModalHeader" class="px-6 py-4 bg-amber-500 text-white flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+                <h3 id="rkModalTitle" class="text-base font-bold">Tolak Komitmen Pembayaran</h3>
+            </div>
+            <button type="button" onclick="closeRejectKomitmenModal()" class="text-white hover:text-gray-200">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+
+        <form id="rejectKomitmenForm" method="POST" class="p-6 space-y-4">
+            @csrf
+            <!-- Banner Catatan Penolakan dari Kadep -->
+            <div id="rkKadepAlert" class="hidden p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-900">
+                <strong>⚠️ Catatan Penolakan Kadep:</strong> <span id="rkKadepNote"></span>
+            </div>
+
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 text-xs text-gray-600 space-y-1">
+                <div>Pengajuan: <span id="rkSubmissionCode" class="font-bold text-gray-900"></span></div>
+                <div>Customer / Kios: <span id="rkCustomerName" class="font-semibold text-gray-800"></span></div>
+                <div>Sales: <span id="rkSalesName" class="font-medium text-gray-700"></span></div>
+            </div>
+
+            <!-- Komitmen Saat Ini -->
+            <div>
+                <label id="rkCurrentLabel" class="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">
+                    Komitmen Pembayaran Saat Ini
+                </label>
+                <div id="rkCurrentKomitmen" class="p-3 bg-red-50/60 border border-red-200 rounded-lg text-xs text-red-900 font-medium whitespace-pre-line"></div>
+            </div>
+
+            <!-- Alasan Penolakan / Perbaikan -->
+            <div id="rkAlasanContainer">
+                <label for="rkAlasan" id="rkAlasanLabel" class="block text-xs font-semibold text-gray-700 mb-1">
+                    Alasan Penolakan Komitmen <span class="text-red-500">*</span>
+                </label>
+                <textarea name="alasan_penolakan" id="rkAlasan" rows="3" required
+                          placeholder="Jelaskan alasan ..."
+                          class="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-amber-500 focus:border-amber-500"></textarea>
+            </div>
+
+            <!-- Komitmen Pembayaran Baru -->
+            <div>
+                <label for="rkKomitmenBaru" id="rkKomitmenBaruLabel" class="block text-xs font-semibold text-gray-700 mb-1">
+                    Komitmen Pembayaran Baru (dari TC) <span class="text-red-500">*</span>
+                </label>
+                <textarea name="komitmen_pembayaran_baru" id="rkKomitmenBaru" rows="3" required
+                          placeholder="Tuliskan komitmen pembayaran baru yang telah disesuaikan..."
+                          class="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-amber-500 focus:border-amber-500"></textarea>
+            </div>
+
+            <div class="pt-2 flex gap-3">
+                <button type="button" onclick="closeRejectKomitmenModal()" class="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-lg transition">
+                    Batal
+                </button>
+                <button type="submit" id="rkSubmitBtn" class="flex-1 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold rounded-lg shadow-sm transition">
+                    Tolak & Simpan Komitmen Baru
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -728,6 +878,60 @@ function openApprovalModal(submissionId, action) {
     // RESET semua field dan section
     level2Fields.classList.add('hidden');
     lampiranSection.classList.add('hidden');
+    
+    // RESET Level 2 Komitmen Section
+    const level2KomitmenSection = document.getElementById('level2KomitmenSection');
+    const tolakKomitmenCheckbox = document.getElementById('tolakKomitmenCheckbox');
+    const tolakKomitmenSection = document.getElementById('tolakKomitmenSection');
+    const modalAlasanPenolakanKomitmen = document.getElementById('modalAlasanPenolakanKomitmen');
+    const modalKomitmenPembayaranBaru = document.getElementById('modalKomitmenPembayaranBaru');
+    const displayCurrentKomitmenModal = document.getElementById('displayCurrentKomitmenModal');
+
+    if (level2KomitmenSection) level2KomitmenSection.classList.add('hidden');
+    if (tolakKomitmenCheckbox) tolakKomitmenCheckbox.checked = false;
+    if (tolakKomitmenSection) tolakKomitmenSection.classList.add('hidden');
+    if (modalAlasanPenolakanKomitmen) {
+        modalAlasanPenolakanKomitmen.value = '';
+        modalAlasanPenolakanKomitmen.required = false;
+    }
+    if (modalKomitmenPembayaranBaru) {
+        modalKomitmenPembayaranBaru.value = '';
+        modalKomitmenPembayaranBaru.required = false;
+    }
+
+    // Tampilkan komitmen section untuk approval level 2
+    if (action === 'approved' && currentLevel === 2 && level2KomitmenSection && submission) {
+        level2KomitmenSection.classList.remove('hidden');
+        if (displayCurrentKomitmenModal) {
+            displayCurrentKomitmenModal.textContent = submission.komitmen_pembayaran || '-';
+        }
+
+        const tolakKomitmenToggleLabel = document.getElementById('tolakKomitmenToggleLabel');
+        const modalAlasanPenolakanContainer = document.getElementById('modalAlasanPenolakanContainer');
+        const modalAlasanPenolakanLabel = document.getElementById('modalAlasanPenolakanLabel');
+        const modalKomitmenBaruLabel = document.getElementById('modalKomitmenBaruLabel');
+        
+        if (submission.is_returned_from_kadep) {
+            if (tolakKomitmenToggleLabel) {
+                tolakKomitmenToggleLabel.textContent = 'Perbaiki Komitmen Pembayaran';
+                tolakKomitmenToggleLabel.className = 'ms-2 text-xs font-semibold text-blue-700';
+            }
+            if (modalAlasanPenolakanContainer) modalAlasanPenolakanContainer.classList.add('hidden');
+            if (modalAlasanPenolakanKomitmen) {
+                modalAlasanPenolakanKomitmen.required = false;
+                modalAlasanPenolakanKomitmen.value = '';
+            }
+            if (modalKomitmenBaruLabel) modalKomitmenBaruLabel.innerHTML = 'Komitmen Pembayaran yang Telah Diperbaiki <span class="text-red-500">*</span>';
+        } else {
+            if (tolakKomitmenToggleLabel) {
+                tolakKomitmenToggleLabel.textContent = 'Tolak & Ganti Komitmen';
+                tolakKomitmenToggleLabel.className = 'ms-2 text-xs font-semibold text-amber-700';
+            }
+            if (modalAlasanPenolakanContainer) modalAlasanPenolakanContainer.classList.remove('hidden');
+            if (modalAlasanPenolakanLabel) modalAlasanPenolakanLabel.innerHTML = 'Alasan Penolakan Komitmen <span class="text-red-500">*</span>';
+            if (modalKomitmenBaruLabel) modalKomitmenBaruLabel.innerHTML = 'Komitmen Pembayaran Baru dari TC <span class="text-red-500">*</span>';
+        }
+    }
     
     // Remove required dari payment fields
     ['piutangInput', 'jmlOverInput', 'jmlOd30Input', 'jmlOd60Input', 'jmlOd90Input'].forEach(id => {
@@ -985,6 +1189,14 @@ function closeApprovalModal() {
     
     // Reset preview lampiran
     removeLampiranPreview();
+
+    // Reset komitmen section
+    const level2KomitmenSection = document.getElementById('level2KomitmenSection');
+    const tolakKomitmenCheckbox = document.getElementById('tolakKomitmenCheckbox');
+    const tolakKomitmenSection = document.getElementById('tolakKomitmenSection');
+    if (level2KomitmenSection) level2KomitmenSection.classList.add('hidden');
+    if (tolakKomitmenCheckbox) tolakKomitmenCheckbox.checked = false;
+    if (tolakKomitmenSection) tolakKomitmenSection.classList.add('hidden');
 }
 
 // Auto-calculation untuk Jml Over di modal approval
@@ -1165,5 +1377,142 @@ document.getElementById('approvalForm').addEventListener('submit', function() {
         }
     });
 });
+
+// Modal Tolak / Perbaiki Komitmen Pembayaran (Level 2)
+function openRejectKomitmenModal(submissionId) {
+    const submission = submissionsData.find(s => s.id === submissionId);
+    if (!submission) return;
+
+    const modal = document.getElementById('rejectKomitmenModal');
+    const form = document.getElementById('rejectKomitmenForm');
+    
+    form.action = `/approvals/${submissionId}/reject-komitmen`;
+    
+    document.getElementById('rkSubmissionCode').textContent = submission.kode || '-';
+    document.getElementById('rkCustomerName').textContent = (submission.nama || '') + (submission.nama_kios ? ' (' + submission.nama_kios + ')' : '');
+    document.getElementById('rkSalesName').textContent = submission.sales_name || (submission.sales ? submission.sales.name : 'Sales');
+    document.getElementById('rkCurrentKomitmen').textContent = submission.komitmen_pembayaran || '-';
+    
+    document.getElementById('rkAlasan').value = '';
+    document.getElementById('rkKomitmenBaru').value = '';
+
+    const isReturnedFromKadep = submission.is_returned_from_kadep;
+    const header = document.getElementById('rkModalHeader');
+    const title = document.getElementById('rkModalTitle');
+    const alertBox = document.getElementById('rkKadepAlert');
+    const kadepNote = document.getElementById('rkKadepNote');
+    const currentLabel = document.getElementById('rkCurrentLabel');
+    const alasanContainer = document.getElementById('rkAlasanContainer');
+    const alasanLabel = document.getElementById('rkAlasanLabel');
+    const alasanInput = document.getElementById('rkAlasan');
+    const baruLabel = document.getElementById('rkKomitmenBaruLabel');
+    const baruInput = document.getElementById('rkKomitmenBaru');
+    const submitBtn = document.getElementById('rkSubmitBtn');
+
+    if (isReturnedFromKadep) {
+        if (header) {
+            header.className = 'px-6 py-4 bg-blue-600 text-white flex items-center justify-between';
+        }
+        if (title) title.textContent = 'Perbaiki Komitmen Pembayaran';
+        if (alertBox) {
+            alertBox.classList.remove('hidden');
+            if (kadepNote) kadepNote.textContent = submission.rejection_note || 'Komitmen ditolak oleh Kadep & perlu disesuaikan kembali oleh Collection.';
+        }
+        if (currentLabel) currentLabel.textContent = 'Komitmen Pembayaran yang Ditolak oleh Kadep';
+        
+        // HANYA menampilkan Komitmen Pembayaran yang Ditolak oleh Kadep dan Komitmen Pembayaran yang Telah Diperbaiki *
+        // TIDAK PERLU Catatan / Alasan Perbaikan Komitmen *
+        if (alasanContainer) alasanContainer.classList.add('hidden');
+        if (alasanInput) {
+            alasanInput.required = false;
+            alasanInput.value = '';
+        }
+
+        if (baruLabel) baruLabel.innerHTML = 'Komitmen Pembayaran yang Telah Diperbaiki <span class="text-red-500">*</span>';
+        if (baruInput) {
+            baruInput.placeholder = 'Tuliskan komitmen pembayaran baru hasil perbaikan...';
+            baruInput.className = 'w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500';
+            baruInput.required = true;
+        }
+        if (submitBtn) {
+            submitBtn.className = 'flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg shadow-sm transition';
+            submitBtn.textContent = 'Simpan Perbaikan Komitmen';
+        }
+    } else {
+        if (header) {
+            header.className = 'px-6 py-4 bg-amber-500 text-white flex items-center justify-between';
+        }
+        if (title) title.textContent = 'Tolak Komitmen Pembayaran';
+        if (alertBox) alertBox.classList.add('hidden');
+        if (currentLabel) currentLabel.textContent = 'Komitmen Pembayaran Saat Ini (dari Sales)';
+        
+        if (alasanContainer) alasanContainer.classList.remove('hidden');
+        if (alasanLabel) alasanLabel.innerHTML = 'Alasan Penolakan Komitmen <span class="text-red-500">*</span>';
+        if (alasanInput) {
+            alasanInput.required = true;
+            alasanInput.placeholder = 'Jelaskan alasan penolakan...';
+            alasanInput.className = 'w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-amber-500 focus:border-amber-500';
+        }
+        if (baruLabel) baruLabel.innerHTML = 'Komitmen Pembayaran Baru (dari TC) <span class="text-red-500">*</span>';
+        if (baruInput) {
+            baruInput.placeholder = 'Tuliskan komitmen pembayaran baru yang telah disesuaikan...';
+            baruInput.className = 'w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-amber-500 focus:border-amber-500';
+            baruInput.required = true;
+        }
+        if (submitBtn) {
+            submitBtn.className = 'flex-1 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold rounded-lg shadow-sm transition';
+            submitBtn.textContent = 'Tolak & Simpan Komitmen Baru';
+        }
+    }
+    
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeRejectKomitmenModal() {
+    const modal = document.getElementById('rejectKomitmenModal');
+    modal.classList.add('hidden');
+    document.body.style.overflow = '';
+}
+
+function toggleTolakKomitmenSection() {
+    const checkbox = document.getElementById('tolakKomitmenCheckbox');
+    const section = document.getElementById('tolakKomitmenSection');
+    const alasanContainer = document.getElementById('modalAlasanPenolakanContainer');
+    const alasan = document.getElementById('modalAlasanPenolakanKomitmen');
+    const baru = document.getElementById('modalKomitmenPembayaranBaru');
+    
+    if (!checkbox || !section) return;
+    
+    if (checkbox.checked) {
+        section.classList.remove('hidden');
+        if (alasanContainer && alasanContainer.classList.contains('hidden')) {
+            if (alasan) {
+                alasan.required = false;
+                alasan.value = '';
+            }
+            if (baru) {
+                baru.required = true;
+                baru.focus();
+            }
+        } else {
+            if (alasan) {
+                alasan.required = true;
+                alasan.focus();
+            }
+            if (baru) baru.required = true;
+        }
+    } else {
+        section.classList.add('hidden');
+        if (alasan) {
+            alasan.required = false;
+            alasan.value = '';
+        }
+        if (baru) {
+            baru.required = false;
+            baru.value = '';
+        }
+    }
+}
 </script>
 @endsection

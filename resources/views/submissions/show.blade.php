@@ -114,8 +114,7 @@
             </div>
             
             <div class="md:col-span-2">
-                <p class="text-sm text-gray-500 mb-1">Komitmen Pembayaran</p>
-                <p class="text-gray-900">{{ $submission->komitmen_pembayaran }}</p>
+                @include('partials.komitmen-history', ['submission' => $submission])
             </div>
 
             @if($submission->payment_type && $submission->payment_data)
@@ -208,19 +207,26 @@
 
                     // Update waktu sebelumnya untuk iterasi berikutnya
                     $previousTime = $approval->created_at;
+                @php
+                    $isApproved = $approval->status === 'approved';
+                    $isRevisiKomitmen = $approval->status === 'revision' || str_contains($approval->note ?? '', 'Komitmen pembayaran ditolak');
+                    $isRevision = !$isRevisiKomitmen && $approval->status === 'revision';
+                    $isRejected = !$isRevisiKomitmen && $approval->status === 'rejected';
                 @endphp
 
                 <div class="flex items-start space-x-4 p-4 bg-gray-50 rounded-lg border-l-4
-                    @if($approval->status == 'approved') border-green-500
-                    @elseif($approval->status == 'rejected') border-red-500
-                    @else border-orange-500
+                    @if($isApproved) border-green-500
+                    @elseif($isRevisiKomitmen) border-amber-500
+                    @elseif($isRevision) border-orange-500
+                    @else border-red-500
                     @endif">
                     
                     <div class="flex-shrink-0">
                         <div class="w-12 h-12 rounded-full flex items-center justify-center font-bold
-                            @if($approval->status == 'approved') bg-green-500 text-white
-                            @elseif($approval->status == 'rejected') bg-red-500 text-white
-                            @else bg-orange-500 text-white
+                            @if($isApproved) bg-green-500 text-white
+                            @elseif($isRevisiKomitmen) bg-amber-500 text-white
+                            @elseif($isRevision) bg-orange-500 text-white
+                            @else bg-red-500 text-white
                             @endif">
                             {{ $approval->level }}
                         </div>
@@ -246,17 +252,21 @@
                         </div>
 
                         <p class="text-sm mb-2">
-                            @if($approval->status == 'approved')
+                            @if($isApproved)
                             <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
                                 ✓ Disetujui
                             </span>
-                            @elseif($approval->status == 'rejected')
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800">
-                                ✗ Ditolak
+                            @elseif($isRevisiKomitmen)
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-300">
+                                ⟳ Revisi Komitmen
                             </span>
-                            @else
+                            @elseif($isRevision)
                             <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-800">
                                 ↻ Perlu Revisi
+                            </span>
+                            @else
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800">
+                                ✗ Ditolak
                             </span>
                             @endif
                         </p>

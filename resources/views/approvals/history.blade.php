@@ -198,9 +198,8 @@
                                             </span>
                                         </div>
                                         @endif
-                                        <div class="py-1">
-                                            <span class="text-sm text-gray-600 block mb-1">Komitmen Pembayaran:</span>
-                                            <span class="text-sm text-gray-900">{{ $approval->submission->komitmen_pembayaran }}</span>
+                                        <div class="py-2 border-b border-gray-100">
+                                            @include('partials.komitmen-history', ['submission' => $approval->submission])
                                         </div>
                                         <div class="flex justify-between py-1">
                                             <span class="text-sm text-gray-600">Dibuat:</span>
@@ -264,20 +263,30 @@
                                             $previousTime = $appr->created_at;
                                         @endphp
                                         
+                                        @php
+                                            $isApproved = $appr->status === 'approved';
+                                            $isRevisiKomitmen = $appr->status === 'revision' || str_contains($appr->note ?? '', 'Komitmen pembayaran ditolak');
+                                            $isRevision = !$isRevisiKomitmen && $appr->status === 'revision';
+                                            $isRejected = !$isRevisiKomitmen && $appr->status === 'rejected';
+                                        @endphp
                                         <div class="flex items-start justify-between p-3 rounded-lg border 
-                                            {{ $appr->status === 'approved' 
+                                            {{ $isApproved 
                                                 ? 'bg-green-50 border-green-200' 
-                                                : ($appr->status === 'revision' 
+                                                : ($isRevisiKomitmen 
                                                     ? 'bg-amber-50 border-amber-200' 
-                                                    : 'bg-red-50 border-red-200') }}">
+                                                    : ($isRevision 
+                                                        ? 'bg-yellow-50 border-yellow-200' 
+                                                        : 'bg-red-50 border-red-200')) }}">
                                             
                                             <div class="flex items-center space-x-3 flex-1">
                                                 <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm 
-                                                    {{ $appr->status === 'approved' 
+                                                    {{ $isApproved 
                                                         ? 'bg-green-500 text-white' 
-                                                        : ($appr->status === 'revision' 
+                                                        : ($isRevisiKomitmen 
                                                             ? 'bg-amber-500 text-white' 
-                                                            : 'bg-red-500 text-white') }}">
+                                                            : ($isRevision 
+                                                                ? 'bg-yellow-500 text-white' 
+                                                                : 'bg-red-500 text-white')) }}">
                                                     {{ $appr->level }}
                                                 </div>
 
@@ -303,18 +312,24 @@
                                                 </div>
                                             </div>
 
-                                            <span class="text-xs px-2 py-1 rounded-full font-semibold whitespace-nowrap
-                                                {{ $appr->status === 'approved' 
+                                            <span class="text-xs px-2.5 py-1 rounded-full font-semibold whitespace-nowrap
+                                                {{ $isApproved 
                                                     ? 'bg-green-100 text-green-700' 
-                                                    : ($appr->status === 'revision' 
-                                                        ? 'bg-amber-100 text-amber-700' 
-                                                        : 'bg-red-100 text-red-700') }}">
+                                                    : ($isRevisiKomitmen 
+                                                        ? 'bg-amber-100 text-amber-800 border border-amber-300' 
+                                                        : ($isRevision 
+                                                            ? 'bg-yellow-100 text-yellow-700' 
+                                                            : 'bg-red-100 text-red-700')) }}">
                                                 
-                                                {{ $appr->status === 'approved' 
-                                                    ? '✓ Disetujui' 
-                                                    : ($appr->status === 'revision' 
-                                                        ? '⟳ Revisi' 
-                                                        : '✖ Ditolak') }}
+                                                @if($isApproved)
+                                                    ✓ Disetujui
+                                                @elseif($isRevisiKomitmen)
+                                                    ⟳ Revisi Komitmen
+                                                @elseif($isRevision)
+                                                    ⟳ Revisi
+                                                @else
+                                                    ✖ Ditolak
+                                                @endif
                                             </span>
                                         </div>
                                         @endforeach

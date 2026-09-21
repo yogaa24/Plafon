@@ -375,9 +375,8 @@
                                                 <span class="text-sm text-gray-600">Plafon {{ $submission->plafon_type === 'rubah' ? 'Baru' : '' }}:</span>
                                                 <span class="text-sm font-bold text-indigo-600">Rp {{ number_format($submission->plafon, 0, ',', '.') }}</span>
                                             </div>
-                                            <div class="py-1">
-                                                <span class="text-sm text-gray-600 block mb-1">Komitmen Pembayaran:</span>
-                                                <span class="text-sm text-gray-900">{{ $submission->komitmen_pembayaran }}</span>
+                                            <div class="py-2 border-b border-gray-100">
+                                                @include('partials.komitmen-history', ['submission' => $submission])
                                             </div>
                                             <div class="flex justify-between py-1">
                                                 <span class="text-sm text-gray-600">Dibuat:</span>

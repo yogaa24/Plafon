@@ -84,13 +84,26 @@ class ApprovalController extends Controller
                 $lampiranPaths = json_decode($submission->lampiran_path, true);
                 $lampiranCount = is_array($lampiranPaths) ? count($lampiranPaths) : 0;
             }
+
+            $historyList = is_array($submission->komitmen_pembayaran_history) 
+                ? $submission->komitmen_pembayaran_history 
+                : (json_decode($submission->komitmen_pembayaran_history, true) ?: []);
+            $latestHistory = !empty($historyList) ? end($historyList) : null;
+            $latestAction = $latestHistory['action_type'] ?? '';
+            $isReturnedFromKadep = $latestAction === 'returned_to_collection';
+            if (!$isReturnedFromKadep && empty($latestAction)) {
+                $isReturnedFromKadep = $submission->current_level == 2 && str_contains($submission->rejection_note ?? '', 'Kadep');
+            }
             
             return [
                 'id' => $submission->id,
                 'kode' => $submission->kode,
                 'nama' => $submission->nama,
                 'nama_kios' => $submission->nama_kios,
+                'sales_name' => $submission->sales ? $submission->sales->name : '-',
                 'plafon_type' => $submission->plafon_type,
+                'is_returned_from_kadep' => $isReturnedFromKadep,
+                'rejection_note' => $submission->rejection_note,
                 
                 // PENTING: Ini field yang dibutuhkan untuk calculation
                 'plafon' => $submission->plafon, // Plafon aktif customer
@@ -98,6 +111,8 @@ class ApprovalController extends Controller
                 
                 'payment_type' => $submission->payment_type,
                 'payment_data' => $paymentData,
+                'komitmen_pembayaran' => $submission->komitmen_pembayaran,
+                'komitmen_pembayaran_history' => $historyList,
                 'lampiran_path' => $lampiranPaths, //dr sc
                 'lampiran_count' => $lampiranCount,  //dr sc
                 
@@ -615,6 +630,26 @@ class ApprovalController extends Controller
 
         // Validasi khusus untuk Level 2 saat approve
         if ($level == 2 && $action === 'approved') {
+            if ($request->filled('tolak_komitmen') && $request->tolak_komitmen == '1') {
+                $hList = is_array($submission->komitmen_pembayaran_history) ? $submission->komitmen_pembayaran_history : (json_decode($submission->komitmen_pembayaran_history, true) ?: []);
+                $lastH = !empty($hList) ? end($hList) : null;
+                $lastAct = $lastH['action_type'] ?? '';
+                $isKadepRet = $lastAct === 'returned_to_collection';
+                if (!$isKadepRet && empty($lastAct)) {
+                    $isKadepRet = str_contains($submission->rejection_note ?? '', 'Kadep');
+                }
+
+                $request->validate([
+                    'alasan_penolakan_komitmen' => $isKadepRet ? 'nullable|string' : 'required|string|min:3',
+                    'komitmen_pembayaran_baru' => 'required|string|min:3',
+                ], [
+                    'alasan_penolakan_komitmen.required' => 'Alasan penolakan komitmen wajib diisi.',
+                    'alasan_penolakan_komitmen.min' => 'Alasan penolakan komitmen minimal 3 karakter.',
+                    'komitmen_pembayaran_baru.required' => 'Komitmen pembayaran yang telah diperbaiki wajib diisi.',
+                    'komitmen_pembayaran_baru.min' => 'Komitmen pembayaran yang telah diperbaiki minimal 3 karakter.',
+                ]);
+            }
+
             $request->validate([
                 'lampiran' => 'nullable|array|max:3',
                 'lampiran.*' => 'image|mimes:jpeg,jpg,png|max:10240',
@@ -757,12 +792,65 @@ class ApprovalController extends Controller
 
             $approval->save();
 
+            // Jika Level 2 approve dan memilih tolak & ubah komitmen pembayaran
+            if ($level == 2 && $action === 'approved' && $request->filled('tolak_komitmen') && $request->tolak_komitmen == '1') {
+                $history = $submission->komitmen_pembayaran_history ?? [];
+                if (is_string($history)) {
+                    $history = json_decode($history, true) ?: [];
+                }
+                $hList = !empty($history) ? end($history) : null;
+                $lastAct = $hList['action_type'] ?? '';
+                $isKadepRet = $lastAct === 'returned_to_collection';
+                if (!$isKadepRet && empty($lastAct)) {
+                    $isKadepRet = str_contains($submission->rejection_note ?? '', 'Kadep');
+                }
+
+                $alasanK = $request->input('alasan_penolakan_komitmen');
+                if (empty($alasanK) && $isKadepRet) {
+                    $alasanK = 'Komitmen pembayaran telah diperbaiki oleh Collection pasca penolakan Kadep';
+                }
+
+                if ($isKadepRet) {
+                    $lastIndex = count($history) - 1;
+                    if ($lastIndex >= 0 && in_array($history[$lastIndex]['action_type'] ?? '', ['returned_to_collection', 'revised_by_collection'])) {
+                        $history[$lastIndex]['komitmen_baru'] = $request->input('komitmen_pembayaran_baru');
+                        $history[$lastIndex]['revised_by_id'] = $user->id;
+                        $history[$lastIndex]['revised_by_name'] = $user->name . ' (Team Collection)';
+                        $history[$lastIndex]['revised_at'] = now()->toDateTimeString();
+                        $history[$lastIndex]['action_type'] = 'revised_by_collection';
+                    } else {
+                        $history[] = [
+                            'komitmen_sebelumnya' => $submission->komitmen_pembayaran,
+                            'komitmen_baru' => $request->input('komitmen_pembayaran_baru'),
+                            'alasan' => $alasanK,
+                            'rejected_by_id' => $user->id,
+                            'rejected_by_name' => $user->name,
+                            'action_type' => 'revised_by_collection',
+                            'created_at' => now()->toDateTimeString(),
+                        ];
+                    }
+                } else {
+                    $history[] = [
+                        'komitmen_sebelumnya' => $submission->komitmen_pembayaran,
+                        'komitmen_baru' => $request->input('komitmen_pembayaran_baru'),
+                        'alasan' => $alasanK,
+                        'rejected_by_id' => $user->id,
+                        'rejected_by_name' => $user->name,
+                        'action_type' => 'updated_by_tc',
+                        'created_at' => now()->toDateTimeString(),
+                    ];
+                }
+                $submission->komitmen_pembayaran = $request->input('komitmen_pembayaran_baru');
+                $submission->komitmen_pembayaran_history = $history;
+            }
+
             // ===== LOGIKA BARU SESUAI REQUIREMENT =====
             if ($level == 1 || $level == 2) {
                 // Level 1 & 2 tetap sama (tidak ada revisi)
                 if ($action === 'approved') {
                     $submission->status = $level == 1 ? 'approved_1' : 'approved_2';
                     $submission->current_level = $level + 1;
+                    $submission->rejection_note = null; // Clear rejection note saat disetujui lanjut ke level berikutnya
                 } elseif ($action === 'rejected') {
                     $submission->status = 'rejected';
                     $submission->rejection_note = $request->input('note');
@@ -991,6 +1079,148 @@ class ApprovalController extends Controller
             DB::rollBack();
             return redirect()->route('approvals.level3.import-piutang')
                 ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Menolak/mengubah komitmen pembayaran (Level 2 / TC & Level 4 / Kadep)
+     * dan menetapkan komitmen pembayaran baru dengan menyimpan riwayat komitmen lama.
+     * Jika Level 4 menolak, pengajuan dikembalikan ke bagian Collection (Level 2) untuk direvisi.
+     */
+    public function rejectKomitmen(Request $request, Submission $submission)
+    {
+        $user = Auth::user();
+        $level = $this->getApproverLevel($user->role);
+
+        // Hanya approver level 2 (Collection) atau level 4 (Kadep) sesuai level pengajuan saat ini
+        if (!in_array($level, [2, 4]) || $submission->current_level != $level) {
+            return redirect()->back()->with('error', 'Anda tidak berhak mengubah komitmen pembayaran pada tahap ini.');
+        }
+
+        $history = $submission->komitmen_pembayaran_history ?? [];
+        if (is_string($history)) {
+            $history = json_decode($history, true) ?: [];
+        }
+
+        $latestHistory = !empty($history) ? end($history) : null;
+        $latestAction = $latestHistory['action_type'] ?? '';
+        $isReturnedFromKadep = $latestAction === 'returned_to_collection';
+        if (!$isReturnedFromKadep && empty($latestAction)) {
+            $isReturnedFromKadep = $submission->current_level == 2 && str_contains($submission->rejection_note ?? '', 'Kadep');
+        }
+
+        if ($level == 4) {
+            $request->validate([
+                'alasan_penolakan' => 'required|string|min:3',
+                'komitmen_pembayaran_baru' => 'nullable|string',
+            ], [
+                'alasan_penolakan.required' => 'Alasan penolakan komitmen wajib diisi.',
+                'alasan_penolakan.min' => 'Alasan penolakan komitmen minimal 3 karakter.',
+            ]);
+        } elseif ($level == 2 && $isReturnedFromKadep) {
+            $request->validate([
+                'komitmen_pembayaran_baru' => 'required|string|min:3',
+                'alasan_penolakan' => 'nullable|string',
+            ], [
+                'komitmen_pembayaran_baru.required' => 'Komitmen pembayaran yang telah diperbaiki wajib diisi.',
+                'komitmen_pembayaran_baru.min' => 'Komitmen pembayaran yang telah diperbaiki minimal 3 karakter.',
+            ]);
+        } else {
+            $request->validate([
+                'alasan_penolakan' => 'required|string|min:3',
+                'komitmen_pembayaran_baru' => 'required|string|min:3',
+            ], [
+                'alasan_penolakan.required' => 'Alasan penolakan/perubahan komitmen wajib diisi.',
+                'alasan_penolakan.min' => 'Alasan penolakan/perubahan komitmen minimal 3 karakter.',
+                'komitmen_pembayaran_baru.required' => 'Komitmen pembayaran baru wajib diisi.',
+                'komitmen_pembayaran_baru.min' => 'Komitmen pembayaran baru minimal 3 karakter.',
+            ]);
+        }
+
+        $roleTitle = match($level) {
+            2 => 'Team Collection',
+            4 => 'Kadep Keu & Sales',
+            default => 'Approver Level ' . $level,
+        };
+
+        $komitmenBaru = $request->filled('komitmen_pembayaran_baru') 
+            ? $request->input('komitmen_pembayaran_baru') 
+            : ($level == 4 ? '(Menunggu revisi komitmen dari Collection)' : $submission->komitmen_pembayaran);
+
+        $alasan = $request->input('alasan_penolakan');
+        if (empty($alasan) && $level == 2 && $isReturnedFromKadep) {
+            $alasan = 'Komitmen pembayaran telah diperbaiki oleh Collection pasca penolakan Kadep';
+        }
+
+        if ($level == 2 && $isReturnedFromKadep) {
+            // Update entri penolakan Kadep yang ada (perbaikan oleh TC melekat pada penolakan Kadep, bukan penolakan baru)
+            $lastIndex = count($history) - 1;
+            if ($lastIndex >= 0 && in_array($history[$lastIndex]['action_type'] ?? '', ['returned_to_collection', 'revised_by_collection'])) {
+                $history[$lastIndex]['komitmen_baru'] = $komitmenBaru;
+                $history[$lastIndex]['revised_by_id'] = $user->id;
+                $history[$lastIndex]['revised_by_name'] = $user->name . ' (Team Collection)';
+                $history[$lastIndex]['revised_at'] = now()->toDateTimeString();
+                $history[$lastIndex]['action_type'] = 'revised_by_collection';
+            } else {
+                $history[] = [
+                    'komitmen_sebelumnya' => $submission->komitmen_pembayaran,
+                    'komitmen_baru' => $komitmenBaru,
+                    'alasan' => $alasan,
+                    'rejected_by_id' => $user->id,
+                    'rejected_by_name' => $user->name . ' (' . $roleTitle . ')',
+                    'action_type' => 'revised_by_collection',
+                    'created_at' => now()->toDateTimeString(),
+                ];
+            }
+        } else {
+            $history[] = [
+                'komitmen_sebelumnya' => $submission->komitmen_pembayaran,
+                'komitmen_baru' => $komitmenBaru,
+                'alasan' => $alasan,
+                'rejected_by_id' => $user->id,
+                'rejected_by_name' => $user->name . ' (' . $roleTitle . ')',
+                'action_type' => $level == 4 ? 'returned_to_collection' : 'updated_by_tc',
+                'created_at' => now()->toDateTimeString(),
+            ];
+        }
+
+        $submission->komitmen_pembayaran_history = $history;
+
+        if ($level == 4) {
+            // Catat approval record untuk audit trail
+            $approval = new Approval();
+            $approval->submission_id = $submission->id;
+            $approval->approver_id = $user->id;
+            $approval->level = 4;
+            $approval->status = 'revision';
+            $approval->note = 'Komitmen pembayaran ditolak oleh Kadep: ' . $request->input('alasan_penolakan');
+            $approval->save();
+
+            // Kembalikan ke bagian Collection (Level 2)
+            $submission->current_level = 2;
+            $submission->status = 'approved_1';
+            $submission->rejection_note = 'Komitmen pembayaran ditolak oleh ' . $user->name . ' (Kadep): ' . $request->input('alasan_penolakan');
+
+            // Jika ada usulan komitmen baru dari Kadep, simpan juga sebagai referensi
+            if ($request->filled('komitmen_pembayaran_baru')) {
+                $submission->komitmen_pembayaran = $request->input('komitmen_pembayaran_baru');
+            }
+
+            $submission->save();
+
+            return redirect()->route('approvals.level4')->with('success', 'Komitmen pembayaran berhasil ditolak. Pengajuan dikembalikan ke bagian Collection (Level 2) untuk direvisi.');
+        } else {
+            $submission->komitmen_pembayaran = $request->input('komitmen_pembayaran_baru');
+            if ($isReturnedFromKadep) {
+                $submission->rejection_note = null; // Reset rejection note dari Kadep karena sudah diperbaiki oleh TC
+            }
+            $submission->save();
+
+            $successMsg = $isReturnedFromKadep 
+                ? 'Komitmen pembayaran berhasil diperbaiki.' 
+                : 'Komitmen pembayaran berhasil diperbarui dan riwayat lama tetap tersimpan.';
+
+            return redirect()->back()->with('success', $successMsg);
         }
     }
     

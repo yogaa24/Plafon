@@ -299,9 +299,8 @@
                                             <span class="text-sm text-gray-600">Sales:</span>
                                             <span class="text-sm font-medium text-gray-900">{{ $submission->sales->name }}</span>
                                         </div>
-                                        <div class="py-1 border-b border-gray-100">
-                                            <span class="text-sm text-gray-600 block mb-1">Komitmen Pembayaran:</span>
-                                            <span class="text-sm text-gray-900 font-medium">{{ $submission->komitmen_pembayaran }}</span>
+                                        <div class="py-2 border-b border-gray-100">
+                                            @include('partials.komitmen-history', ['submission' => $submission])
                                         </div>
                                         <div class="flex justify-between py-1">
                                             <span class="text-sm text-gray-600">Dibuat:</span>
@@ -400,11 +399,17 @@
                                     <h4 class="font-semibold text-gray-700 mb-3 text-sm uppercase tracking-wide">Riwayat Approval</h4>
                                     <div class="space-y-2">
                                         @foreach($submission->approvals as $approval)
+                                        @php
+                                            $isApproved = $approval->status === 'approved';
+                                            $isRevisiKomitmen = $approval->status === 'revision' || str_contains($approval->note ?? '', 'Komitmen pembayaran ditolak');
+                                            $isRevision = !$isRevisiKomitmen && $approval->status === 'revision';
+                                            $isRejected = !$isRevisiKomitmen && $approval->status === 'rejected';
+                                        @endphp
                                         <div class="flex items-start justify-between p-3 rounded-lg border 
-                                            {{ $approval->status === 'approved' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200' }}">
+                                            {{ $isApproved ? 'bg-green-50 border-green-200' : ($isRevisiKomitmen ? 'bg-amber-50 border-amber-200' : ($isRevision ? 'bg-yellow-50 border-yellow-200' : 'bg-red-50 border-red-200')) }}">
                                             <div class="flex items-center space-x-3">
                                                 <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm 
-                                                    {{ $approval->status === 'approved' ? 'bg-green-500 text-white' : 'bg-red-500 text-white' }}">
+                                                    {{ $isApproved ? 'bg-green-500 text-white' : ($isRevisiKomitmen ? 'bg-amber-500 text-white' : ($isRevision ? 'bg-yellow-500 text-white' : 'bg-red-500 text-white')) }}">
                                                     {{ $approval->level }}
                                                 </div>
                                                 <div>
@@ -415,9 +420,17 @@
                                                     @endif
                                                 </div>
                                             </div>
-                                            <span class="text-xs px-2 py-1 rounded-full font-semibold
-                                                {{ $approval->status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
-                                                {{ $approval->status === 'approved' ? '✓ Disetujui' : '✖ Ditolak' }}
+                                            <span class="text-xs px-2.5 py-1 rounded-full font-semibold
+                                                {{ $isApproved ? 'bg-green-100 text-green-700' : ($isRevisiKomitmen ? 'bg-amber-100 text-amber-800 border border-amber-300' : ($isRevision ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700')) }}">
+                                                @if($isApproved)
+                                                    ✓ Disetujui
+                                                @elseif($isRevisiKomitmen)
+                                                    ⟳ Revisi Komitmen
+                                                @elseif($isRevision)
+                                                    ⟳ Perlu Revisi
+                                                @else
+                                                    ✖ Ditolak
+                                                @endif
                                             </span>
                                         </div>
                                         @endforeach

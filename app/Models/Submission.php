@@ -22,6 +22,7 @@ class Submission extends Model
         'plafon_direction',
         'jumlah_buka_faktur',
         'komitmen_pembayaran',
+        'komitmen_pembayaran_history',
         'keterangan',
         'lampiran_path',
         'payment_type',
@@ -36,6 +37,7 @@ class Submission extends Model
     protected $casts = [
         'payment_data' => 'array',
         'lampiran_path' => 'array',
+        'komitmen_pembayaran_history' => 'array',
         'current_level' => 'integer',
         'created_at'   => 'datetime',
         'updated_at'   => 'datetime',

@@ -188,7 +188,7 @@
                                     </svg>
                                 </button>
 
-                                <!-- Revisi Button (BARU) -->
+                                <!-- Revisi Button -->
                                 <button onclick="openApprovalModal({{ $submission->id }}, 'revision')" 
                                         class="px-3 py-1.5 bg-amber-600 text-white text-xs font-medium rounded hover:bg-amber-700 transition" 
                                         title="Revisi">
@@ -197,6 +197,18 @@
                                     </svg>
                                 </button>
                                 
+                                <!-- Tolak Komitmen Button (Khusus Level 4 - Warna Biru & Icon Kembalikan ke Collection) -->
+                                @if($level == 4)
+                                    <button type="button" 
+                                            onclick="openRejectKomitmenModal({{ $submission->id }})"
+                                            class="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 transition" 
+                                            title="Tolak Komitmen Pembayaran (Kembalikan ke Collection)">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
+                                        </svg>
+                                    </button>
+                                @endif
+
                                 <!-- Reject Button -->
                                 <button onclick="openApprovalModal({{ $submission->id }}, 'rejected')" 
                                         class="px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded hover:bg-red-700 transition" 
@@ -239,12 +251,6 @@
                                             <span class="text-sm text-gray-600">Nama Kios:</span>
                                             <span class="text-sm font-medium text-gray-900">{{ $submission->nama_kios }}</span>
                                         </div>
-                                        @if($submission->target_status)
-                                        <div class="flex justify-between py-1 border-b border-gray-100 items-center">
-                                            <span class="text-sm text-gray-600">Status Target:</span>
-                                            <span>{!! $submission->target_status_badge !!}</span>
-                                        </div>
-                                        @endif
                                         <div class="py-1">
                                             <span class="text-sm text-gray-600 block mb-1">Alamat:</span>
                                             <span class="text-sm text-gray-900">{{ $submission->alamat }}</span>
@@ -282,9 +288,19 @@
                                             <span class="text-sm text-gray-600">Sales:</span>
                                             <span class="text-sm font-medium text-gray-900">{{ $submission->sales->name }}</span>
                                         </div>
-                                        <div class="py-1 border-b border-gray-100">
-                                            <span class="text-sm text-gray-600 block mb-1">Komitmen Pembayaran:</span>
-                                            <span class="text-sm text-gray-900 font-medium">{{ $submission->komitmen_pembayaran }}</span>
+                                        <div class="py-2 border-b border-gray-100">
+                                            @include('partials.komitmen-history', ['submission' => $submission])
+
+                                            @if($level == 4)
+                                                <button type="button" 
+                                                        onclick="openRejectKomitmenModal({{ $submission->id }})"
+                                                        class="mt-2 w-full py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-2 shadow-sm transition">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
+                                                    </svg>
+                                                    Tolak Komitmen (Kembalikan ke Collection)
+                                                </button>
+                                            @endif
                                         </div>
                                         <div class="flex justify-between py-1">
                                             <span class="text-sm text-gray-600">Dibuat:</span>
@@ -383,11 +399,17 @@
                                     <h4 class="font-semibold text-gray-700 mb-3 text-sm uppercase tracking-wide">Riwayat Approval</h4>
                                     <div class="space-y-2">
                                         @foreach($submission->approvals as $approval)
+                                        @php
+                                            $isApproved = $approval->status === 'approved';
+                                            $isRevisiKomitmen = $approval->status === 'revision' || str_contains($approval->note ?? '', 'Komitmen pembayaran ditolak');
+                                            $isRevision = !$isRevisiKomitmen && $approval->status === 'revision';
+                                            $isRejected = !$isRevisiKomitmen && $approval->status === 'rejected';
+                                        @endphp
                                         <div class="flex items-start justify-between p-3 rounded-lg border 
-                                            {{ $approval->status === 'approved' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200' }}">
+                                            {{ $isApproved ? 'bg-green-50 border-green-200' : ($isRevisiKomitmen ? 'bg-amber-50 border-amber-200' : ($isRevision ? 'bg-yellow-50 border-yellow-200' : 'bg-red-50 border-red-200')) }}">
                                             <div class="flex items-center space-x-3">
                                                 <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm 
-                                                    {{ $approval->status === 'approved' ? 'bg-green-500 text-white' : 'bg-red-500 text-white' }}">
+                                                    {{ $isApproved ? 'bg-green-500 text-white' : ($isRevisiKomitmen ? 'bg-amber-500 text-white' : ($isRevision ? 'bg-yellow-500 text-white' : 'bg-red-500 text-white')) }}">
                                                     {{ $approval->level }}
                                                 </div>
                                                 <div>
@@ -398,9 +420,17 @@
                                                     @endif
                                                 </div>
                                             </div>
-                                            <span class="text-xs px-2 py-1 rounded-full font-semibold
-                                                {{ $approval->status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
-                                                {{ $approval->status === 'approved' ? '✓ Disetujui' : '✖ Ditolak' }}
+                                            <span class="text-xs px-2.5 py-1 rounded-full font-semibold
+                                                {{ $isApproved ? 'bg-green-100 text-green-700' : ($isRevisiKomitmen ? 'bg-amber-100 text-amber-800 border border-amber-300' : ($isRevision ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700')) }}">
+                                                @if($isApproved)
+                                                    ✓ Disetujui
+                                                @elseif($isRevisiKomitmen)
+                                                    ⟳ Revisi Komitmen
+                                                @elseif($isRevision)
+                                                    ⟳ Perlu Revisi
+                                                @else
+                                                    ✖ Ditolak
+                                                @endif
                                             </span>
                                         </div>
                                         @endforeach
@@ -473,6 +503,77 @@
                 </div>
             </form>
         </div>
+    </div>
+</div>
+
+<!-- Modal Edit / Tolak Komitmen Pembayaran (Khusus Level 4) -->
+<div id="rejectKomitmenModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-[2px] overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
+    <div class="relative w-full max-w-lg bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden my-8">
+        <div class="px-6 py-4 bg-blue-600 text-white flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-lg bg-blue-700 flex items-center justify-center border border-blue-400/30 shadow-inner">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold">Tolak Komitmen Pembayaran</h3>
+                    <p class="text-[11px] text-blue-100">Kembalikan pengajuan ke bagian Collection (Level 2)</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeRejectKomitmenModal()" class="text-white hover:text-blue-200 p-1 rounded-lg hover:bg-blue-700 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+
+        <form id="rejectKomitmenForm" method="POST" class="p-6 space-y-4">
+            @csrf
+            <div class="p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-900 flex items-start gap-2">
+                <svg class="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <span><strong>Info:</strong> Pengajuan akan dikembalikan ke status <strong>Collection (Level 2)</strong> untuk dilakukan perbaikan / penyesuaian komitmen pembayaran.</span>
+            </div>
+
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 text-xs text-gray-600 space-y-1">
+                <div>Pengajuan: <span id="rkSubmissionCode" class="font-bold text-gray-900"></span></div>
+                <div>Customer / Kios: <span id="rkCustomerName" class="font-semibold text-gray-800"></span></div>
+                <div>Sales: <span id="rkSalesName" class="font-medium text-gray-700"></span></div>
+            </div>
+
+            <!-- Komitmen Saat Ini -->
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">
+                    Komitmen Pembayaran Saat Ini
+                </label>
+                <div id="rkCurrentKomitmen" class="p-3 bg-blue-50/50 border border-blue-200 rounded-lg text-xs text-blue-950 font-medium whitespace-pre-line"></div>
+            </div>
+
+            <!-- Alasan Penolakan -->
+            <div>
+                <label for="rkAlasan" class="block text-xs font-semibold text-gray-700 mb-1">
+                    Alasan Penolakan Komitmen <span class="text-red-500">*</span>
+                </label>
+                <textarea name="alasan_penolakan" id="rkAlasan" rows="3" required
+                          placeholder="Jelaskan alasan penolakan agar bagian Collection tahu bagian komitmen yang harus direvisi..."
+                          class="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
+            </div>
+
+
+            <div class="pt-2 flex gap-3">
+                <button type="button" onclick="closeRejectKomitmenModal()" class="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-lg transition">
+                    Batal
+                </button>
+                <button type="submit" class="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg shadow-sm transition flex items-center justify-center gap-1.5">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
+                    </svg>
+                    Tolak & Kembalikan ke Collection
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -622,6 +723,18 @@
 
 <script>
 const currentLevel = {{ $level }};
+const submissionsData = {
+    @foreach($submissions as $s)
+    {{ $s->id }}: {
+        id: {{ $s->id }},
+        kode: @json($s->kode),
+        nama: @json($s->nama),
+        nama_kios: @json($s->nama_kios),
+        sales_name: @json($s->sales->name ?? '-'),
+        komitmen: @json($s->komitmen_pembayaran)
+    },
+    @endforeach
+};
 
 function toggleDetail(id) {
     const detailRow = document.getElementById('detail-' + id);
@@ -733,6 +846,7 @@ document.addEventListener('keydown', function(e) {
         }
         closeExportModal();
         closeImageModal();
+        closeRejectKomitmenModal();
     }
 });
 
@@ -787,6 +901,41 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 3000);
         }
     });
+});
+
+// Modal Edit / Tolak Komitmen Pembayaran (Level 4)
+function openRejectKomitmenModal(submissionId) {
+    const data = submissionsData[submissionId];
+    if (!data) return;
+
+    const modal = document.getElementById('rejectKomitmenModal');
+    const form = document.getElementById('rejectKomitmenForm');
+    if (!modal || !form) return;
+    
+    form.action = `/approvals/${data.id}/reject-komitmen`;
+    
+    document.getElementById('rkSubmissionCode').textContent = data.kode || '-';
+    document.getElementById('rkCustomerName').textContent = (data.nama || '') + (data.nama_kios ? ' (' + data.nama_kios + ')' : '');
+    document.getElementById('rkSalesName').textContent = data.sales_name || '-';
+    document.getElementById('rkCurrentKomitmen').textContent = data.komitmen || '-';
+    
+    document.getElementById('rkAlasan').value = '';
+    
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeRejectKomitmenModal() {
+    const modal = document.getElementById('rejectKomitmenModal');
+    if (modal) modal.classList.add('hidden');
+    document.body.style.overflow = '';
+}
+
+// Close reject komitmen modal when clicking backdrop
+document.getElementById('rejectKomitmenModal')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeRejectKomitmenModal();
+    }
 });
 </script>
 @endsection
