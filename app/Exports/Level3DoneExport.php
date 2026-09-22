@@ -39,7 +39,9 @@ class Level3DoneExport implements FromCollection, WithHeadings, WithMapping, Wit
             'Plafon Baru',
             'Jumlah Value Faktur',
             'Sales',
-            'Komitmen Pembayaran',
+            'Komitmen Pembayaran Awal',
+            'Riwayat Komitmen Ditolak',
+            'Komitmen Pembayaran Baru',
             'Jenis Pembayaran',
             'Piutang',
             'Jml Over',
@@ -152,6 +154,102 @@ class Level3DoneExport implements FromCollection, WithHeadings, WithMapping, Wit
                 }
             }
         }
+
+        // Parse Riwayat & Komitmen Pembayaran
+        $rawHistoryList = [];
+        if ($submission->komitmen_pembayaran_history) {
+            $rawHistoryList = is_array($submission->komitmen_pembayaran_history) 
+                ? $submission->komitmen_pembayaran_history 
+                : (json_decode($submission->komitmen_pembayaran_history, true) ?: []);
+        }
+
+        // Normalisasi riwayat: gabungkan entri perbaikan duplikat terpisah dari TC versi lama
+        $historyList = [];
+        if (is_array($rawHistoryList)) {
+            foreach ($rawHistoryList as $item) {
+                $actionType = $item['action_type'] ?? '';
+                $alasan = $item['alasan'] ?? '';
+                $rejectedBy = $item['rejected_by_name'] ?? '';
+
+                $isSeparateTcRevision = str_contains($alasan, 'diperbaiki oleh Collection pasca penolakan')
+                    && str_contains($rejectedBy, 'Collection')
+                    && empty($item['revised_at']);
+
+                if ($isSeparateTcRevision && !empty($historyList)) {
+                    $lastIdx = count($historyList) - 1;
+                    if (($historyList[$lastIdx]['action_type'] ?? '') === 'returned_to_collection' || empty($historyList[$lastIdx]['revised_at'])) {
+                        $historyList[$lastIdx]['komitmen_baru'] = $item['komitmen_baru'] ?? ($historyList[$lastIdx]['komitmen_baru'] ?? null);
+                        $historyList[$lastIdx]['revised_by_name'] = $rejectedBy;
+                        $historyList[$lastIdx]['revised_at'] = $item['created_at'] ?? now()->toDateTimeString();
+                        $historyList[$lastIdx]['action_type'] = 'revised_by_collection';
+                        continue;
+                    }
+                }
+
+                $historyList[] = $item;
+            }
+        }
+
+        $hasHistory = !empty($historyList);
+
+        if (!$hasHistory) {
+            $komitmenAwal = $submission->komitmen_pembayaran ?: '-';
+            $riwayatKomitmenDitolak = '-';
+            $komitmenBaru = '-';
+        } else {
+            // Komitmen awal sebelum adanya penolakan
+            $komitmenAwal = $historyList[0]['komitmen_sebelumnya'] ?? ($submission->komitmen_pembayaran ?: '-');
+
+            // Format Riwayat Komitmen Ditolak
+            $rejectionEntries = [];
+            $totalRejections = count($historyList);
+
+            foreach ($historyList as $idx => $hist) {
+                $num = $idx + 1;
+                $dateStr = !empty($hist['created_at']) 
+                    ? \Carbon\Carbon::parse($hist['created_at'])->format('d-m-Y H:i') 
+                    : '';
+                
+                $headerTitle = $totalRejections > 1 ? "[Penolakan #{$num}]" : "Penolakan";
+                if ($dateStr) {
+                    $headerTitle .= " ({$dateStr})";
+                }
+
+                $entryLines = [];
+                $entryLines[] = $headerTitle . ':';
+                $entryLines[] = '• Komitmen Ditolak: "' . ($hist['komitmen_sebelumnya'] ?? '-') . '"';
+                $entryLines[] = '• Alasan: ' . ($hist['alasan'] ?? '-');
+                if (!empty($hist['rejected_by_name'])) {
+                    $entryLines[] = '• Ditolak oleh: ' . $hist['rejected_by_name'];
+                }
+
+                $rejectionEntries[] = implode("\n", $entryLines);
+            }
+
+            $riwayatKomitmenDitolak = implode("\n\n", $rejectionEntries);
+
+            // Format Komitmen Baru
+            $latestHist = end($historyList);
+            $latestAction = $latestHist['action_type'] ?? '';
+            $isReturned = $latestAction === 'returned_to_collection';
+
+            if ($isReturned && empty($latestHist['revised_at']) && (empty($latestHist['komitmen_baru']) || $latestHist['komitmen_baru'] === '(Menunggu revisi komitmen dari Collection)')) {
+                $komitmenBaru = '⏳ Menunggu perbaikan komitmen oleh Collection';
+            } else {
+                $newVal = !empty($latestHist['komitmen_baru']) && $latestHist['komitmen_baru'] !== '(Menunggu revisi komitmen dari Collection)'
+                    ? $latestHist['komitmen_baru']
+                    : ($submission->komitmen_pembayaran ?: '-');
+
+                $komitmenBaru = $newVal;
+
+                if (!empty($latestHist['revised_by_name'])) {
+                    $revisedDate = !empty($latestHist['revised_at']) ? ' - ' . \Carbon\Carbon::parse($latestHist['revised_at'])->format('d-m-Y H:i') : '';
+                    $komitmenBaru .= "\n(Diperbaiki oleh: " . $latestHist['revised_by_name'] . $revisedDate . ')';
+                } elseif (!empty($latestHist['rejected_by_name']) && $latestAction === 'updated_by_tc') {
+                    $komitmenBaru .= "\n(Ditetapkan oleh: " . $latestHist['rejected_by_name'] . ')';
+                }
+            }
+        }
         
         $row = [
             $index,
@@ -166,7 +264,9 @@ class Level3DoneExport implements FromCollection, WithHeadings, WithMapping, Wit
             $plafonBaru,
             $jumlahValueFaktur,
             $submission->sales->name ?? '-',
-            $submission->komitmen_pembayaran ?? '-',
+            $komitmenAwal,
+            $riwayatKomitmenDitolak,
+            $komitmenBaru,
             $jenisPembayaran,
             $piutang,
             $jmlOver,
@@ -252,9 +352,13 @@ class Level3DoneExport implements FromCollection, WithHeadings, WithMapping, Wit
         // Freeze first row
         $sheet->freezePane('A2');
 
-        // Buat hyperlink untuk kolom lampiran (T, U, V = kolom 20, 21, 22)
-        $lampiranCols = ['T', 'U', 'V'];
+        // Buat hyperlink untuk kolom lampiran (V, W, X = kolom 22, 23, 24)
+        $lampiranCols = ['V', 'W', 'X'];
         $highestRow = $sheet->getHighestRow();
+
+        // Wrap text & vertical alignment untuk kolom komitmen
+        $sheet->getStyle("M2:O{$highestRow}")->getAlignment()->setWrapText(true);
+        $sheet->getStyle("N2:O{$highestRow}")->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
 
         for ($row = 2; $row <= $highestRow; $row++) {
             // Styling kolom Status Target (Kolom H)
@@ -332,47 +436,49 @@ class Level3DoneExport implements FromCollection, WithHeadings, WithMapping, Wit
             'J' => 18,  // Plafon Baru
             'K' => 20,  // Jumlah Value Faktur
             'L' => 20,  // Sales
-            'M' => 30,  // Komitmen Pembayaran
-            'N' => 16,  // Jenis Pembayaran
-            'O' => 16,  // Piutang
-            'P' => 16,  // Jml Over
-            'Q' => 16,  // Jml OD 30
-            'R' => 16,  // Jml OD 60
-            'S' => 16,  // Jml OD 90
-            'T' => 18,  // Lampiran 1
-            'U' => 18,  // Lampiran 2
-            'V' => 18,  // Lampiran 3
+            'M' => 30,  // Komitmen Pembayaran Awal
+            'N' => 45,  // Riwayat Komitmen Ditolak
+            'O' => 35,  // Komitmen Pembayaran Baru
+            'P' => 16,  // Jenis Pembayaran
+            'Q' => 16,  // Piutang
+            'R' => 16,  // Jml Over
+            'S' => 16,  // Jml OD 30
+            'T' => 16,  // Jml OD 60
+            'U' => 16,  // Jml OD 90
+            'V' => 18,  // Lampiran 1
+            'W' => 18,  // Lampiran 2
+            'X' => 18,  // Lampiran 3
             // Level 1
-            'W' => 20,  // L1 Nama
-            'X' => 15,  // L1 Status
-            'Y' => 18,  // L1 Tanggal
-            'Z' => 40,  // L1 Catatan
+            'Y' => 20,  // L1 Nama
+            'Z' => 15,  // L1 Status
+            'AA' => 18, // L1 Tanggal
+            'AB' => 40, // L1 Catatan
             // Level 2
-            'AA' => 20, // L2 Nama
-            'AB' => 15, // L2 Status
-            'AC' => 18, // L2 Tanggal
-            'AD' => 40, // L2 Catatan
+            'AC' => 20, // L2 Nama
+            'AD' => 15, // L2 Status
+            'AE' => 18, // L2 Tanggal
+            'AF' => 40, // L2 Catatan
             // Level 3
-            'AE' => 20, // L3 Nama
-            'AF' => 15, // L3 Status
-            'AG' => 18, // L3 Tanggal
-            'AH' => 40, // L3 Catatan
+            'AG' => 20, // L3 Nama
+            'AH' => 15, // L3 Status
+            'AI' => 18, // L3 Tanggal
+            'AJ' => 40, // L3 Catatan
             // Level 4
-            'AI' => 20, // L4 Nama
-            'AJ' => 15, // L4 Status
-            'AK' => 18, // L4 Tanggal
-            'AL' => 40, // L4 Catatan
+            'AK' => 20, // L4 Nama
+            'AL' => 15, // L4 Status
+            'AM' => 18, // L4 Tanggal
+            'AN' => 40, // L4 Catatan
             // Level 5
-            'AM' => 20, // L5 Nama
-            'AN' => 15, // L5 Status
-            'AO' => 18, // L5 Tanggal
-            'AP' => 40, // L5 Catatan
+            'AO' => 20, // L5 Nama
+            'AP' => 15, // L5 Status
+            'AQ' => 18, // L5 Tanggal
+            'AR' => 40, // L5 Catatan
             // Level 6
-            'AQ' => 20, // L6 Nama
-            'AR' => 15, // L6 Status
-            'AS' => 18, // L6 Tanggal
-            'AT' => 40, // L6 Catatan
-            'AU' => 22, // Status Akhir
+            'AS' => 20, // L6 Nama
+            'AT' => 15, // L6 Status
+            'AU' => 18, // L6 Tanggal
+            'AV' => 40, // L6 Catatan
+            'AW' => 22, // Status Akhir
         ];
     }
 }
