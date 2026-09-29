@@ -1024,7 +1024,7 @@ class ApprovalController extends Controller
                 $cleanPiutang = preg_replace('/[^0-9.]/', '', $piutangValue);
                 
                 // VALIDASI 4: Setelah dibersihkan, harus berupa angka valid
-                if (empty($cleanPiutang) || !is_numeric($cleanPiutang)) {
+                if ($cleanPiutang === '' || !is_numeric($cleanPiutang)) {
                     $skippedCount++;
                     continue; // Skip tanpa error message
                 }

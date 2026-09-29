@@ -133,6 +133,7 @@ Route::middleware(['auth'])->group(function () {
     // Route untuk Piutang Manager
     Route::middleware(['auth', 'role:piutang_manager'])->prefix('piutang-manager')->name('piutang-manager.')->group(function () {
         Route::get('/', [PiutangManagerController::class, 'index'])->name('index');
+        Route::get('/export', [PiutangManagerController::class, 'export'])->name('export');
         Route::get('/customer/{customer}', [PiutangManagerController::class, 'show'])->name('show');
         Route::get('/import-piutang', [PiutangManagerController::class, 'showImportPiutang'])->name('import-piutang');
         Route::post('/import-piutang', [PiutangManagerController::class, 'processImportPiutang'])->name('import-piutang.process');

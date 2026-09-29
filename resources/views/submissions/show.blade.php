@@ -207,7 +207,7 @@
 
                     // Update waktu sebelumnya untuk iterasi berikutnya
                     $previousTime = $approval->created_at;
-                @php
+
                     $isApproved = $approval->status === 'approved';
                     $isRevisiKomitmen = $approval->status === 'revision' || str_contains($approval->note ?? '', 'Komitmen pembayaran ditolak');
                     $isRevision = !$isRevisiKomitmen && $approval->status === 'revision';

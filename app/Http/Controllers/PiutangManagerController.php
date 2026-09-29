@@ -3,12 +3,59 @@
 namespace App\Http\Controllers;
 
 use App\Models\Customer;
+use App\Exports\CustomerPiutangExport;
+use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class PiutangManagerController extends Controller
 {
+    public function export(Request $request)
+    {
+        $user = Auth::user();
+        
+        if ($user->role !== 'piutang_manager') {
+            abort(403, 'Unauthorized access');
+        }
+
+        $query = Customer::with('sales');
+
+        // Search
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('nama', 'like', "%{$search}%")
+                  ->orWhere('nama_kios', 'like', "%{$search}%")
+                  ->orWhere('kode_customer', 'like', "%{$search}%");
+            });
+        }
+
+        // Filter by sales
+        if ($request->filled('sales_id')) {
+            $query->where('sales_id', $request->sales_id);
+        }
+
+        // Filter by status
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Sort
+        $sortBy = $request->get('sort_by', 'nama');
+        $sortOrder = $request->get('sort_order', 'asc');
+        $query->orderBy($sortBy, $sortOrder);
+
+        $customers = $query->get();
+
+        $filename = 'Data Piutang Customer ' . date('Y-m-d') . '.xlsx';
+
+        return Excel::download(
+            new CustomerPiutangExport($customers),
+            $filename
+        );
+    }
+
     public function index(Request $request)
     {
         $user = Auth::user();
@@ -114,7 +161,7 @@ class PiutangManagerController extends Controller
                 $cleanPlafon = preg_replace('/[^0-9.]/', '', $plafonValue);
                 $cleanPiutang = preg_replace('/[^0-9.]/', '', $piutangValue);
                 
-                if (empty($cleanPlafon) || !is_numeric($cleanPlafon) || empty($cleanPiutang) || !is_numeric($cleanPiutang)) {
+                if ($cleanPlafon === '' || !is_numeric($cleanPlafon) || $cleanPiutang === '' || !is_numeric($cleanPiutang)) {
                     $skippedCount++;
                     continue;
                 }
