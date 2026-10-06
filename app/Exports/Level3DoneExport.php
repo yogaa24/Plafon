@@ -30,19 +30,21 @@ class Level3DoneExport implements FromCollection, WithHeadings, WithMapping, Wit
             'No',
             'Tanggal Pengajuan',
             'Kode',
-            'Nama Customer',
+            'Sales',
+            'Kode Customer',
             'Nama Kios',
+            'Kota',
+            'Klasifikasi',
+            'Plafon',
+            'Nama Customer',
             'Alamat',
             'Jenis Pengajuan',
             'Status Target',
             'Plafon Aktif/Sebelumnya',
-            'Plafon Baru',
             'Jumlah Value Faktur',
-            'Sales',
             'Komitmen Pembayaran Awal',
             'Riwayat Komitmen Ditolak',
             'Komitmen Pembayaran Baru',
-            'Jenis Pembayaran',
             'Piutang',
             'Jml Over',
             'Jml OD 30',
@@ -83,14 +85,10 @@ class Level3DoneExport implements FromCollection, WithHeadings, WithMapping, Wit
         
         // Logic berdasarkan jenis pengajuan
         $plafonAktif = 0;
-        $plafonBaru = '';
-        
         if ($submission->plafon_type === 'rubah') {
             $plafonAktif = $submission->plafon_sebelumnya ?? ($submission->customer->plafon_aktif ?? 0);
-            $plafonBaru = $submission->plafon;
         } elseif ($submission->plafon_type === 'open') {
             $plafonAktif = $submission->plafon ?? 0;
-            $plafonBaru = '-';
         }
         
         // Jumlah Value Faktur (hanya untuk open plafon)
@@ -107,8 +105,13 @@ class Level3DoneExport implements FromCollection, WithHeadings, WithMapping, Wit
                 : json_decode($submission->payment_data, true);
         }
         
-        // Jenis Pembayaran
-        $jenisPembayaran = $submission->payment_type ? strtoupper($submission->payment_type) : '-';
+        // Klasifikasi pembayaran yang dipakai oleh Approver 3.
+        $paymentType = strtolower(trim((string) $submission->payment_type));
+        $klasifikasi = match ($paymentType) {
+            'od' => 'OD',
+            'over' => 'Over',
+            default => $paymentType !== '' ? strtoupper($paymentType) : '-',
+        };
         
         // Data OD/Over
         $piutang = 0;
@@ -255,19 +258,21 @@ class Level3DoneExport implements FromCollection, WithHeadings, WithMapping, Wit
             $index,
             $submission->created_at->format('d-m-Y H:i'),
             $submission->kode,
+            $submission->sales?->name ?? '-',
+            $submission->customer?->kode_customer ?? '-',
             $submission->nama,
+            $submission->customer?->kota ?? '-',
+            $klasifikasi,
+            $submission->plafon ?? 0,
             $submission->nama_kios,
             $submission->alamat,
             $submission->plafon_type === 'open' ? 'Open Plafon' : 'Rubah Plafon',
             $targetStatus,
             $plafonAktif,
-            $plafonBaru,
             $jumlahValueFaktur,
-            $submission->sales->name ?? '-',
             $komitmenAwal,
             $riwayatKomitmenDitolak,
             $komitmenBaru,
-            $jenisPembayaran,
             $piutang,
             $jmlOver,
             $jmlOd30,
@@ -352,19 +357,19 @@ class Level3DoneExport implements FromCollection, WithHeadings, WithMapping, Wit
         // Freeze first row
         $sheet->freezePane('A2');
 
-        // Buat hyperlink untuk kolom lampiran (V, W, X = kolom 22, 23, 24)
-        $lampiranCols = ['V', 'W', 'X'];
+        // Buat hyperlink untuk kolom lampiran (X, Y, Z = kolom 24, 25, 26)
+        $lampiranCols = ['X', 'Y', 'Z'];
         $highestRow = $sheet->getHighestRow();
 
         // Wrap text & vertical alignment untuk kolom komitmen
-        $sheet->getStyle("M2:O{$highestRow}")->getAlignment()->setWrapText(true);
-        $sheet->getStyle("N2:O{$highestRow}")->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
+        $sheet->getStyle("P2:R{$highestRow}")->getAlignment()->setWrapText(true);
+        $sheet->getStyle("Q2:R{$highestRow}")->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
 
         for ($row = 2; $row <= $highestRow; $row++) {
-            // Styling kolom Status Target (Kolom H)
-            $targetVal = $sheet->getCell("H{$row}")->getValue();
+            // Styling kolom Status Target (Kolom M)
+            $targetVal = $sheet->getCell("M{$row}")->getValue();
             if ($targetVal === 'Masuk Target') {
-                $sheet->getStyle("H{$row}")->applyFromArray([
+                $sheet->getStyle("M{$row}")->applyFromArray([
                     'font' => [
                         'bold' => true,
                         'color' => ['rgb' => '065F46'], // Dark Green
@@ -379,7 +384,7 @@ class Level3DoneExport implements FromCollection, WithHeadings, WithMapping, Wit
                     ],
                 ]);
             } elseif ($targetVal === 'Tidak Masuk Target') {
-                $sheet->getStyle("H{$row}")->applyFromArray([
+                $sheet->getStyle("M{$row}")->applyFromArray([
                     'font' => [
                         'bold' => true,
                         'color' => ['rgb' => '991B1B'], // Dark Red
@@ -394,7 +399,7 @@ class Level3DoneExport implements FromCollection, WithHeadings, WithMapping, Wit
                     ],
                 ]);
             } else {
-                $sheet->getStyle("H{$row}")->applyFromArray([
+                $sheet->getStyle("M{$row}")->applyFromArray([
                     'alignment' => [
                         'horizontal' => Alignment::HORIZONTAL_CENTER,
                         'vertical' => Alignment::VERTICAL_CENTER,
@@ -427,58 +432,60 @@ class Level3DoneExport implements FromCollection, WithHeadings, WithMapping, Wit
             'A' => 5,   // No
             'B' => 18,  // Tanggal Pengajuan
             'C' => 20,  // Kode
-            'D' => 25,  // Nama
-            'E' => 25,  // Nama Kios
-            'F' => 35,  // Alamat
-            'G' => 16,  // Jenis Pengajuan
-            'H' => 20,  // Status Target
-            'I' => 25,  // Plafon Aktif
-            'J' => 18,  // Plafon Baru
-            'K' => 20,  // Jumlah Value Faktur
-            'L' => 20,  // Sales
-            'M' => 30,  // Komitmen Pembayaran Awal
-            'N' => 45,  // Riwayat Komitmen Ditolak
-            'O' => 35,  // Komitmen Pembayaran Baru
-            'P' => 16,  // Jenis Pembayaran
-            'Q' => 16,  // Piutang
-            'R' => 16,  // Jml Over
-            'S' => 16,  // Jml OD 30
-            'T' => 16,  // Jml OD 60
-            'U' => 16,  // Jml OD 90
-            'V' => 18,  // Lampiran 1
-            'W' => 18,  // Lampiran 2
-            'X' => 18,  // Lampiran 3
+            'D' => 20,  // Sales
+            'E' => 18,  // Kode Customer
+            'F' => 25,  // Nama Kios
+            'G' => 20,  // Kota
+            'H' => 16,  // Klasifikasi
+            'I' => 18,  // Plafon
+            'J' => 25,  // Nama Customer
+            'K' => 35,  // Alamat
+            'L' => 16,  // Jenis Pengajuan
+            'M' => 20,  // Status Target
+            'N' => 25,  // Plafon Aktif
+            'O' => 20,  // Jumlah Value Faktur
+            'P' => 30,  // Komitmen Pembayaran Awal
+            'Q' => 45,  // Riwayat Komitmen Ditolak
+            'R' => 35,  // Komitmen Pembayaran Baru
+            'S' => 16,  // Piutang
+            'T' => 16,  // Jml Over
+            'U' => 16,  // Jml OD 30
+            'V' => 16,  // Jml OD 60
+            'W' => 16,  // Jml OD 90
+            'X' => 18,  // Lampiran 1
+            'Y' => 18,  // Lampiran 2
+            'Z' => 18,  // Lampiran 3
             // Level 1
-            'Y' => 20,  // L1 Nama
-            'Z' => 15,  // L1 Status
-            'AA' => 18, // L1 Tanggal
-            'AB' => 40, // L1 Catatan
+            'AA' => 20, // L1 Nama
+            'AB' => 15, // L1 Status
+            'AC' => 18, // L1 Tanggal
+            'AD' => 40, // L1 Catatan
             // Level 2
-            'AC' => 20, // L2 Nama
-            'AD' => 15, // L2 Status
-            'AE' => 18, // L2 Tanggal
-            'AF' => 40, // L2 Catatan
+            'AE' => 20, // L2 Nama
+            'AF' => 15, // L2 Status
+            'AG' => 18, // L2 Tanggal
+            'AH' => 40, // L2 Catatan
             // Level 3
-            'AG' => 20, // L3 Nama
-            'AH' => 15, // L3 Status
-            'AI' => 18, // L3 Tanggal
-            'AJ' => 40, // L3 Catatan
+            'AI' => 20, // L3 Nama
+            'AJ' => 15, // L3 Status
+            'AK' => 18, // L3 Tanggal
+            'AL' => 40, // L3 Catatan
             // Level 4
-            'AK' => 20, // L4 Nama
-            'AL' => 15, // L4 Status
-            'AM' => 18, // L4 Tanggal
-            'AN' => 40, // L4 Catatan
+            'AM' => 20, // L4 Nama
+            'AN' => 15, // L4 Status
+            'AO' => 18, // L4 Tanggal
+            'AP' => 40, // L4 Catatan
             // Level 5
-            'AO' => 20, // L5 Nama
-            'AP' => 15, // L5 Status
-            'AQ' => 18, // L5 Tanggal
-            'AR' => 40, // L5 Catatan
+            'AQ' => 20, // L5 Nama
+            'AR' => 15, // L5 Status
+            'AS' => 18, // L5 Tanggal
+            'AT' => 40, // L5 Catatan
             // Level 6
-            'AS' => 20, // L6 Nama
-            'AT' => 15, // L6 Status
-            'AU' => 18, // L6 Tanggal
-            'AV' => 40, // L6 Catatan
-            'AW' => 22, // Status Akhir
+            'AU' => 20, // L6 Nama
+            'AV' => 15, // L6 Status
+            'AW' => 18, // L6 Tanggal
+            'AX' => 40, // L6 Catatan
+            'AY' => 22, // Status Akhir
         ];
     }
 }

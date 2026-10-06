@@ -16,6 +16,7 @@ class Customer extends Model
         'nama',
         'nama_kios',
         'alamat',
+        'kota',
         'plafon_aktif',
         'piutang', // TAMBAH INI
         'status',

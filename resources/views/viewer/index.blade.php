@@ -469,6 +469,7 @@
                 <input type="file" name="csv_file" accept=".csv" required
                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
                 <p class="text-xs text-gray-500 mt-1">File harus berformat .csv dengan maksimal 5MB</p>
+                <p class="text-xs text-gray-500 mt-1">Kolom CSV: kode, kontak, perusahaan, alamat1, kota, bataskredit, kategori.</p>
             </div>
 
             <div id="importProgress" class="hidden mb-4">

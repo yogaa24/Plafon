@@ -112,6 +112,7 @@ class ViewerController extends Controller
                 'kontak' => 'nama',
                 'perusahaan' => 'nama_kios',
                 'alamat1' => 'alamat',
+                'kota' => 'kota',
                 'bataskredit' => 'plafon_aktif',
                 'kategori' => 'nama_sales',
             ];
@@ -170,7 +171,7 @@ class ViewerController extends Controller
                 $mappedData['status'] = 'active';
 
                 // Validasi kolom wajib
-                $requiredFields = ['kode_customer', 'nama', 'nama_kios', 'alamat'];
+                $requiredFields = ['kode_customer', 'nama', 'nama_kios', 'alamat', 'kota'];
                 $missingFields = array_diff($requiredFields, array_keys($mappedData));
 
                 if (!empty($missingFields)) {
@@ -185,6 +186,7 @@ class ViewerController extends Controller
                     'nama' => 'required|string|max:255',
                     'nama_kios' => 'required|string|max:255',
                     'alamat' => 'required|string',
+                    'kota' => 'required|string|max:255',
                     'plafon_aktif' => 'nullable|numeric|min:0',
                     'nama_sales' => 'nullable|string|max:255',
                 ]);
@@ -228,6 +230,7 @@ class ViewerController extends Controller
                         'nama' => $mappedData['nama'],
                         'nama_kios' => $mappedData['nama_kios'],
                         'alamat' => $mappedData['alamat'],
+                        'kota' => $mappedData['kota'],
                         'plafon_aktif' => $mappedData['plafon_aktif'] ?? 0,
                         'nama_sales' => $mappedData['nama_sales'] ?? null,
                         'status' => 'active',
