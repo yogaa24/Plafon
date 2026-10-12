@@ -124,6 +124,19 @@ class DatabaseSeeder extends Seeder
         );
 
         // ==========================================
+        // DIREKTUR (MONITORING PROSES BISNIS)
+        // ==========================================
+        User::updateOrCreate(
+            ['role' => 'direktur'],
+            [
+                'email' => 'direktur2',
+                'name' => 'Direktur',
+                'password' => Hash::make('direktur123'),
+                'role' => 'direktur',
+            ]
+        );
+
+        // ==========================================
         // SALES
         // ==========================================
         $salesList = [

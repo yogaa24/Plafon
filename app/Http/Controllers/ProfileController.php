@@ -28,8 +28,8 @@ class ProfileController extends Controller
 
         // Validasi
         $rules = [
-            'name' => 'required|string|max:255', // TAMBAH: Validasi nama
-            'email' => 'required|email|unique:users,email,' . $user->id,
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|max:255|unique:users,email,' . $user->id,
             'current_password' => 'required',
         ];
 

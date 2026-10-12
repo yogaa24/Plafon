@@ -14,18 +14,30 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
-        $credentials = $request->validate([
-            'email' => 'required|email',
-            'password' => 'required'
+        $request->validate([
+            'email' => 'required|string',
+            'password' => 'required|string'
         ]);
 
-        if (Auth::attempt($credentials)) {
+        $input = trim($request->input('email'));
+        $password = $request->input('password');
+
+        // 1. Cek login kecocokan langsung (misal username 'direktur2' atau email persis)
+        if (Auth::attempt(['email' => $input, 'password' => $password])) {
             $request->session()->regenerate();
             return redirect()->intended('/');
         }
 
+        // 2. Jika input tanpa domain '@', coba tambahkan '@kiu.com'
+        if (!str_contains($input, '@')) {
+            if (Auth::attempt(['email' => $input . '@kiu.com', 'password' => $password])) {
+                $request->session()->regenerate();
+                return redirect()->intended('/');
+            }
+        }
+
         return back()->withErrors([
-            'email' => 'Email atau password salah.',
+            'email' => 'Username/Email atau password salah.',
         ])->onlyInput('email');
     }
 

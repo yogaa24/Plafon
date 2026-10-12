@@ -75,6 +75,11 @@ class User extends Authenticatable implements CanResetPassword
         return $this->role === 'viewer';
     }
 
+    public function isDirektur()
+    {
+        return $this->role === 'direktur';
+    }
+
     public function getRoleLabelAttribute()
     {
         return match($this->role) {
@@ -88,6 +93,7 @@ class User extends Authenticatable implements CanResetPassword
             'approver6' => 'Direktur Utama',
             'viewer' => 'Viewer',
             'piutang_manager' => 'Piutang Manager',
+            'direktur' => 'Direktur',
             default => ucfirst($this->role)
         };
     }

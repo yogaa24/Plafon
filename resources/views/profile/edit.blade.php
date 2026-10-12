@@ -7,7 +7,7 @@
     <!-- Header -->
     <div class="mb-8">
         <h1 class="text-3xl font-bold text-gray-900">Pengaturan Akun</h1>
-        <p class="text-gray-600 mt-2">Kelola nama, email dan password akun Anda</p>
+        <p class="text-gray-600 mt-2">Kelola nama, username/email dan password akun Anda</p>
     </div>
 
     <!-- Success Message -->
@@ -58,15 +58,15 @@
                     @enderror
                 </div>
 
-                <!-- Email -->
+                <!-- Username / Email -->
                 <div>
                     <label for="email" class="block text-sm font-semibold text-gray-700 mb-2">
-                        Email
+                        Username / Email
                         <span class="text-red-500">*</span>
                     </label>
-                    <input type="email" name="email" id="email" value="{{ old('email', $user->email) }}" required
+                    <input type="text" name="email" id="email" value="{{ old('email', $user->email) }}" required
                         class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition @error('email') border-red-500 @enderror"
-                        placeholder="email@example.com">
+                        placeholder="Contoh: direktur2 atau email@example.com">
                     @error('email')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror

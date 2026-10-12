@@ -5,6 +5,7 @@ use App\Http\Controllers\ApprovalController;
 use App\Http\Controllers\SalesExecutiveController;
 use App\Http\Controllers\ViewerController;
 use App\Http\Controllers\PiutangManagerController;
+use App\Http\Controllers\DirekturController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
@@ -39,6 +40,7 @@ Route::middleware(['auth'])->group(function () {
             'approver4' => redirect()->route('approvals.level4'),
             'approver5' => redirect()->route('approvals.level5'),
             'approver6' => redirect()->route('approvals.level6'),
+            'direktur' => redirect()->route('direktur.index'),
             default => redirect()->route('approvals.index'),
         };
     })->name('home');
@@ -143,5 +145,14 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['role:sales_executive'])->prefix('sales-executive')->name('sales-executive.')->group(function () {
         Route::get('/', [SalesExecutiveController::class, 'index'])->name('index');
         Route::get('/customer/{customer}', [SalesExecutiveController::class, 'show'])->name('show');
+    });
+
+    // ------------------------
+    // DIREKTUR (MONITORING PROSES BISNIS)
+    // ------------------------
+    Route::middleware(['role:direktur,approver5,approver6'])->prefix('direktur')->name('direktur.')->group(function () {
+        Route::get('/', [DirekturController::class, 'index'])->name('index');
+        Route::get('/export', [DirekturController::class, 'export'])->name('export');
+        Route::get('/submission/{submission}', [DirekturController::class, 'show'])->name('show');
     });
 });
