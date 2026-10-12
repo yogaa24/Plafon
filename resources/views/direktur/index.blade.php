@@ -258,7 +258,7 @@
                         <th class="px-3.5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Customer & Kios</th>
                         <th class="px-3.5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Sales</th>
                         <th class="px-3.5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Plafon</th>
-                        <th class="px-3.5 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Jenis & Target</th>
+                        <th class="px-3.5 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Jenis</th>
                         <th class="px-3.5 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Status / Tahap</th>
                         <th class="px-3.5 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Workflow Tracker</th>
                         <th class="px-3.5 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider w-24">Aksi</th>
@@ -325,14 +325,9 @@
                             @endif
                         </td>
 
-                        <!-- Jenis & Target -->
+                        <!-- Jenis -->
                         <td class="px-3.5 py-3 text-center whitespace-nowrap">
-                            <div class="flex flex-col items-center gap-1">
-                                {!! $submission->plafon_type_badge !!}
-                                @if($submission->target_status)
-                                    {!! $submission->target_status_badge !!}
-                                @endif
-                            </div>
+                            {!! $submission->plafon_type_badge !!}
                         </td>
 
                         <!-- Status / Tahap Saat Ini -->
