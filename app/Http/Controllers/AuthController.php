@@ -43,9 +43,15 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
+        $expired = $request->has('session_expired');
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
+        if ($expired) {
+            return redirect('/login')->with('warning', 'Sesi Anda telah berakhir setelah 15 menit tidak ada aktivitas. Silakan login kembali.');
+        }
+
         return redirect('/login');
     }
 }

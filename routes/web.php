@@ -20,6 +20,13 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::middleware(['auth'])->group(function () {
 
     // ------------------------
+    // SESSION PING (KEEP-ALIVE)
+    // ------------------------
+    Route::get('/session/ping', function () {
+        return response()->json(['status' => 'active', 'timestamp' => now()->timestamp]);
+    })->name('session.ping');
+
+    // ------------------------
     // PROFILE MANAGEMENT
     // ------------------------
     Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');

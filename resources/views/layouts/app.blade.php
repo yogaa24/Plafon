@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Sales Submission System')</title>
     @vite(['resources/css/app.css'])
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -236,6 +237,11 @@
                     return;
                 }
 
+                // Jangan polling background jika user sedang idle (> 2 menit) agar tidak memperpanjang sesi secara otomatis
+                if (window.isAppUserActive && !window.isAppUserActive()) {
+                    return;
+                }
+
                 try {
                     const response = await fetch(endpoint, {
                         headers: {
@@ -306,5 +312,178 @@
         })();
     </script>
     @endif
+
+    <!-- Session Timeout Warning Modal (15 Menit) -->
+    <div id="sessionTimeoutModal" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 backdrop-blur-sm hidden" role="dialog" aria-modal="true">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 p-6 border border-gray-100 transform transition-all">
+            <div class="flex items-center space-x-3 mb-4">
+                <div class="w-12 h-12 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center flex-shrink-0">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-gray-900">Sesi Segera Berakhir</h3>
+                    <p class="text-xs text-gray-500">Batas waktu sesi login 15 menit</p>
+                </div>
+            </div>
+            <p class="text-sm text-gray-600 mb-6 leading-relaxed">
+                Anda tidak melakukan aktivitas selama hampir 15 menit. Sesi login akan otomatis berakhir dalam <span id="sessionCountdownText" class="font-bold text-amber-600 text-base">60</span> detik.
+            </p>
+            <div class="flex items-center justify-end space-x-3">
+                <button type="button" id="sessionLogoutBtn" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition">
+                    Logout Sekarang
+                </button>
+                <button type="button" id="sessionKeepAliveBtn" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition">
+                    Tetap Login
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Session Timeout Manager -->
+    <script>
+        (function () {
+            const SESSION_TIMEOUT_MS = 15 * 60 * 1000; // 15 menit
+            const WARNING_TIME_MS = 60 * 1000;         // 60 detik sebelum berakhir
+            const PING_INTERVAL_MS = 4 * 60 * 1000;    // Ping server jika aktif > 4 menit agar sesi tetap valid
+            const pingUrl = @json(route('session.ping'));
+            const logoutUrl = @json(route('logout'));
+            const loginUrl = @json(route('login')) + '?session_expired=1';
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') 
+                           || '{{ csrf_token() }}';
+
+            let lastActivityTime = Date.now();
+            let lastPingTime = Date.now();
+            let warningModalOpen = false;
+            let checkIntervalTimer = null;
+            let isLoggingOut = false;
+
+            const modal = document.getElementById('sessionTimeoutModal');
+            const countdownEl = document.getElementById('sessionCountdownText');
+            const keepAliveBtn = document.getElementById('sessionKeepAliveBtn');
+            const logoutBtn = document.getElementById('sessionLogoutBtn');
+
+            function resetActivity() {
+                if (isLoggingOut) return;
+                const now = Date.now();
+                lastActivityTime = now;
+
+                if (warningModalOpen) {
+                    hideWarning();
+                    pingServer();
+                    return;
+                }
+
+                // Jika user sedang aktif dan sudah > 4 menit sejak ping terakhir, segarkan sesi di server
+                if (now - lastPingTime > PING_INTERVAL_MS) {
+                    pingServer();
+                }
+            }
+
+            function showWarning(remainingSeconds) {
+                if (!warningModalOpen) {
+                    warningModalOpen = true;
+                    if (modal) modal.classList.remove('hidden');
+                }
+                if (countdownEl) {
+                    countdownEl.textContent = Math.max(0, remainingSeconds);
+                }
+            }
+
+            function hideWarning() {
+                warningModalOpen = false;
+                if (modal) modal.classList.add('hidden');
+            }
+
+            async function pingServer() {
+                lastPingTime = Date.now();
+                try {
+                    await fetch(pingUrl, {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        credentials: 'same-origin'
+                    });
+                } catch (e) {
+                    // ignore
+                }
+            }
+
+            function performLogout() {
+                if (isLoggingOut) return;
+                isLoggingOut = true;
+
+                try {
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = logoutUrl;
+
+                    const csrfInput = document.createElement('input');
+                    csrfInput.type = 'hidden';
+                    csrfInput.name = '_token';
+                    csrfInput.value = csrfToken;
+                    form.appendChild(csrfInput);
+
+                    const expiredInput = document.createElement('input');
+                    expiredInput.type = 'hidden';
+                    expiredInput.name = 'session_expired';
+                    expiredInput.value = '1';
+                    form.appendChild(expiredInput);
+
+                    document.body.appendChild(form);
+                    form.submit();
+                } catch (err) {
+                    window.location.href = loginUrl;
+                }
+            }
+
+            function checkSession() {
+                if (isLoggingOut) return;
+                const idleMs = Date.now() - lastActivityTime;
+                const remainingMs = SESSION_TIMEOUT_MS - idleMs;
+
+                if (remainingMs <= 0) {
+                    clearInterval(checkIntervalTimer);
+                    performLogout();
+                    return;
+                }
+
+                if (remainingMs <= WARNING_TIME_MS) {
+                    showWarning(Math.ceil(remainingMs / 1000));
+                } else if (warningModalOpen) {
+                    hideWarning();
+                }
+            }
+
+            // Tangkap interaksi pengguna
+            ['mousedown', 'keydown', 'scroll', 'touchstart', 'click'].forEach(function (evt) {
+                window.addEventListener(evt, resetActivity, { passive: true });
+            });
+
+            if (keepAliveBtn) {
+                keepAliveBtn.addEventListener('click', function () {
+                    lastActivityTime = Date.now();
+                    hideWarning();
+                    pingServer();
+                });
+            }
+
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function () {
+                    performLogout();
+                });
+            }
+
+            // Expose fungsi ke window untuk memeriksa keaktifan (digunakan oleh polling notifikasi)
+            window.isAppUserActive = function () {
+                return (Date.now() - lastActivityTime) < (2 * 60 * 1000); // Dianggap aktif jika ada aktivitas dalam 2 menit terakhir
+            };
+
+            checkIntervalTimer = setInterval(checkSession, 1000);
+        })();
+    </script>
 </body>
 </html>
