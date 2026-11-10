@@ -866,6 +866,9 @@ class ApprovalController extends Controller
                     // Approve/Reject tetap lanjut Level 4
                     $submission->status = 'approved_3';
                     $submission->current_level = 4;
+                    if ($action === 'approved') {
+                        $submission->rejection_note = null;
+                    }
                 }
             }
             elseif ($level == 4) {
@@ -881,6 +884,7 @@ class ApprovalController extends Controller
                         ->count() > 0;
                     
                     if ($action === 'approved') {
+                        $submission->rejection_note = null;
                         if ($level3Rejected) {
                             $submission->status = 'approved_4';
                             $submission->current_level = 5;
@@ -903,6 +907,7 @@ class ApprovalController extends Controller
                 } elseif ($action === 'approved') {
                     $submission->status = 'pending_viewer';
                     $submission->current_level = null;
+                    $submission->rejection_note = null;
                 } else { // rejected
                     $submission->status = 'approved_5';
                     $submission->current_level = 6;
@@ -917,6 +922,7 @@ class ApprovalController extends Controller
                 } elseif ($action === 'approved') {
                     $submission->status = 'pending_viewer';
                     $submission->current_level = null;
+                    $submission->rejection_note = null;
                 } else { // rejected
                     $submission->status = 'rejected';
                     $submission->current_level = 1;
@@ -1222,6 +1228,125 @@ class ApprovalController extends Controller
 
             return redirect()->back()->with('success', $successMsg);
         }
+    }
+
+    /**
+     * Kembalikan pengajuan ke level sebelumnya atau batalkan approval (recall)
+     */
+    public function returnToPrevious(Request $request, Submission $submission)
+    {
+        $user = Auth::user();
+        $role = $user->role;
+        $level = $this->getApproverLevel($role);
+        $isViewer = ($role === 'viewer');
+
+        $request->validate([
+            'note' => 'required|string|min:3',
+        ], [
+            'note.required' => 'Alasan pengembalian / pembatalan wajib diisi.',
+            'note.min' => 'Alasan pengembalian minimal 3 karakter.',
+        ]);
+
+        $note = trim($request->input('note'));
+
+        DB::beginTransaction();
+        try {
+            $targetLevel = null;
+            $targetStatus = null;
+            $levelToDelete = null;
+            $actionMessage = '';
+
+            // Skenario 1: Penerima saat ini mengembalikan ke level sebelumnya
+            if ($isViewer && $submission->status === 'pending_viewer') {
+                $lastApproval = $submission->approvals()->whereIn('level', [4, 5, 6])->orderBy('level', 'desc')->first();
+                $targetLevel = $lastApproval ? $lastApproval->level : 4;
+                $targetStatus = match($targetLevel) {
+                    6 => 'approved_5',
+                    5 => 'approved_4',
+                    default => 'approved_3',
+                };
+                $levelToDelete = $targetLevel;
+                $actionMessage = "Pengajuan berhasil dikembalikan ke Level {$targetLevel} oleh Viewer.";
+            } elseif ($level >= 2 && $submission->current_level == $level) {
+                $targetLevel = $level - 1;
+                $targetStatus = match($targetLevel) {
+                    1 => 'pending',
+                    2 => 'approved_1',
+                    3 => 'approved_2',
+                    4 => 'approved_3',
+                    5 => 'approved_4',
+                    default => 'pending',
+                };
+                $levelToDelete = $targetLevel;
+                $actionMessage = "Pengajuan berhasil dikembalikan ke Level {$targetLevel}.";
+            }
+            // Skenario 2: Recall dari Riwayat Approval (User menarik kembali approval yang pernah diberikan)
+            elseif ($level >= 1 && $this->canRecallApproval($submission, $level)) {
+                $targetLevel = $level;
+                $targetStatus = match($targetLevel) {
+                    1 => 'pending',
+                    2 => 'approved_1',
+                    3 => 'approved_2',
+                    4 => 'approved_3',
+                    5 => 'approved_4',
+                    6 => 'approved_5',
+                    default => 'pending',
+                };
+                $levelToDelete = $level;
+                $actionMessage = "Approval Anda berhasil dibatalkan. Pengajuan dikembalikan ke antrean Level {$level} Anda untuk diproses ulang.";
+            } else {
+                return redirect()->back()->with('error', 'Pengajuan ini tidak dapat dikembalikan pada tahap ini atau Anda tidak memiliki hak akses.');
+            }
+
+            // Hapus record approval pada level yang ditargetkan agar antrean level tersebut bersih untuk approve ulang
+            Approval::where('submission_id', $submission->id)->where('level', $levelToDelete)->delete();
+
+            // Simpan status, level, dan catatan pengembalian
+            $roleLabel = $user->role_label ?? $user->name;
+            $submission->current_level = $targetLevel;
+            $submission->status = $targetStatus;
+            $submission->rejection_note = "Dikembalikan ke Level {$targetLevel} oleh {$user->name} ({$roleLabel}): {$note}";
+            $submission->save();
+
+            DB::commit();
+
+            return redirect()->back()->with('success', $actionMessage);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Gagal mengembalikan pengajuan: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Memeriksa apakah approver pada level tertentu dapat menarik kembali (recall) approval miliknya
+     */
+    private function canRecallApproval(Submission $submission, int $level): bool
+    {
+        if ($submission->status === 'done') {
+            return false;
+        }
+
+        $hasApproval = $submission->approvals()->where('level', $level)->exists();
+        if (!$hasApproval) {
+            return false;
+        }
+
+        // Jika status rejected oleh level ini, bisa di-recall (batalkan tolak)
+        if ($submission->status === 'rejected') {
+            $lastApproval = $submission->approvals()->latest()->first();
+            return $lastApproval && $lastApproval->level == $level && $lastApproval->status === 'rejected';
+        }
+
+        // Cek apakah level berikutnya belum memproses
+        return match($level) {
+            1 => $submission->current_level == 2 && $submission->status === 'approved_1',
+            2 => $submission->current_level == 3 && $submission->status === 'approved_2',
+            3 => $submission->current_level == 4 && $submission->status === 'approved_3',
+            4 => ($submission->current_level == 5 && $submission->status === 'approved_4') || ($submission->status === 'pending_viewer'),
+            5 => ($submission->current_level == 6 && $submission->status === 'approved_5') || ($submission->status === 'pending_viewer'),
+            6 => $submission->status === 'pending_viewer',
+            default => false,
+        };
     }
     
     private function getApproverLevel($role)

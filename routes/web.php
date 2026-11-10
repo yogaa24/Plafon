@@ -129,6 +129,11 @@ Route::middleware(['auth'])->group(function () {
             ->middleware('role:approver6');
     });
 
+    // Kembalikan ke level sebelumnya / Batalkan approval (semua level approver & viewer)
+    Route::post('/approvals/{submission}/return-to-previous', [ApprovalController::class, 'returnToPrevious'])
+        ->name('approvals.return-to-previous')
+        ->middleware('role:approver1,approver2,approver3,approver4,approver5,approver6,viewer');
+
     // ------------------------
     // VIEWER
     // ------------------------

@@ -161,9 +161,11 @@
         </div>
 
         @if($submission->rejection_note)
-        <div class="mt-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-lg">
-            <p class="text-sm font-semibold text-red-800 mb-2">Alasan Penolakan:</p>
-            <p class="text-sm text-red-700">{{ $submission->rejection_note }}</p>
+        <div class="mt-6 p-4 {{ str_contains($submission->rejection_note, 'Dikembalikan') ? 'bg-orange-50 border-l-4 border-orange-500' : 'bg-red-50 border-l-4 border-red-500' }} rounded-lg">
+            <p class="text-sm font-semibold {{ str_contains($submission->rejection_note, 'Dikembalikan') ? 'text-orange-900' : 'text-red-800' }} mb-2">
+                {{ str_contains($submission->rejection_note, 'Dikembalikan') ? 'Catatan Pengembalian:' : 'Alasan Penolakan:' }}
+            </p>
+            <p class="text-sm {{ str_contains($submission->rejection_note, 'Dikembalikan') ? 'text-orange-800' : 'text-red-700' }}">{{ $submission->rejection_note }}</p>
         </div>
         @endif
     </div>
@@ -207,7 +209,6 @@
 
                     // Update waktu sebelumnya untuk iterasi berikutnya
                     $previousTime = $approval->created_at;
-
                     $isApproved = $approval->status === 'approved';
                     $isRevisiKomitmen = $approval->status === 'revision' || str_contains($approval->note ?? '', 'Komitmen pembayaran ditolak');
                     $isRevision = !$isRevisiKomitmen && $approval->status === 'revision';

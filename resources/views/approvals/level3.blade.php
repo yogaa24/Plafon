@@ -195,33 +195,51 @@
                         </td>
                         <!-- Button aksi approver -->
                         <td class="px-4 py-3 text-center whitespace-nowrap">
-                            <div class="flex items-center justify-center gap-2">
-                                <!-- Approve Button -->
-                                <button onclick="openApprovalModal({{ $submission->id }}, 'approved', '{{ $submission->plafon_type }}')" 
-                                        class="px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-700 transition" 
-                                        title="Setujui">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            <div class="relative inline-block text-left">
+                                <button type="button" 
+                                        onclick="toggleActionDropdown(event, 'action-menu-{{ $submission->id }}')" 
+                                        class="action-dropdown-btn inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg shadow-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1">
+                                    <span>Aksi</span>
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                                     </svg>
                                 </button>
-                                
-                                <!-- Revisi Button (BARU) -->
-                                <button onclick="openApprovalModal({{ $submission->id }}, 'revision', '{{ $submission->plafon_type }}')" 
-                                        class="px-3 py-1.5 bg-amber-600 text-white text-xs font-medium rounded hover:bg-amber-700 transition" 
-                                        title="Revisi">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                                    </svg>
-                                </button>
-                                
-                                <!-- Reject Button -->
-                                <button onclick="openApprovalModal({{ $submission->id }}, 'rejected', '{{ $submission->plafon_type }}')" 
-                                        class="px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded hover:bg-red-700 transition" 
-                                        title="Tolak">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                                    </svg>
-                                </button>
+
+                                <!-- Dropdown Menu (Icon Only) -->
+                                <div id="action-menu-{{ $submission->id }}" 
+                                     class="hidden action-dropdown-menu bg-white rounded-xl shadow-xl border border-gray-200 p-1.5 flex items-center gap-1.5 z-50">
+                                    <!-- Approve Action -->
+                                    <button type="button" 
+                                            onclick="closeAllActionDropdowns(); openApprovalModal({{ $submission->id }}, 'approved', '{{ $submission->plafon_type }}')" 
+                                            class="w-8 h-8 rounded-lg flex items-center justify-center bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white border border-emerald-200 transition shadow-xs"
+                                            title="Setujui Pengajuan">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                    </button>
+
+                                    <!-- Revisi Button (Kembali ke Sales) -->
+                                    <button type="button" 
+                                            onclick="closeAllActionDropdowns(); openApprovalModal({{ $submission->id }}, 'revision', '{{ $submission->plafon_type }}')" 
+                                            class="w-8 h-8 rounded-lg flex items-center justify-center bg-amber-50 text-amber-600 hover:bg-amber-600 hover:text-white border border-amber-200 transition shadow-xs"
+                                            title="Kembalikan ke Sales (Revisi)">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                    </button>
+
+                                    <!-- Kembalikan ke Level 2 (Collection) -->
+                                    <button type="button" 
+                                            onclick="closeAllActionDropdowns(); openReturnModal({{ $submission->id }}, '{{ $submission->kode }}', '{{ addslashes($submission->nama_kios ?? $submission->nama) }}', 'Level 2 (Collection)')" 
+                                            class="w-8 h-8 rounded-lg flex items-center justify-center bg-orange-50 text-orange-600 hover:bg-orange-600 hover:text-white border border-orange-200 transition shadow-xs"
+                                            title="Kembalikan ke Level 2 (Collection)">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a5 5 0 015 5v2m0 0l-4-4m4 4l4-4M3 10l4-4m-4 4l4 4"/></svg>
+                                    </button>
+
+                                    <!-- Reject Action -->
+                                    <button type="button" 
+                                            onclick="closeAllActionDropdowns(); openApprovalModal({{ $submission->id }}, 'rejected', '{{ $submission->plafon_type }}')" 
+                                            class="w-8 h-8 rounded-lg flex items-center justify-center bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white border border-rose-200 transition shadow-xs"
+                                            title="Tolak Pengajuan">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </button>
+                                </div>
                             </div>
                         </td>
                     </tr>
@@ -967,4 +985,6 @@ document.getElementById('exportModal')?.addEventListener('click', function(e) {
     }
 });
 </script>
+
+@include('partials.return-approval-modal')
 @endsection

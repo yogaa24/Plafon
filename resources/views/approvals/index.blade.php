@@ -166,58 +166,81 @@
                             </div>
                         </td>
                         <td class="px-4 py-3 text-center whitespace-nowrap">
-                        <div class="flex items-center justify-center gap-2">
-                        <!-- Approve Button -->
-                        @if($level == 2 && $submission->plafon_type === 'open')
-                            <!-- Level 2 Open Plafon: Modal dengan payment data -->
-                            <button onclick="openApprovalModal({{ $submission->id }}, 'approved')" 
-                                    class="px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-700 transition" 
-                                    title="Setujui">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                                </svg>
-                            </button>
-                        @elseif($level == 2 && $submission->plafon_type === 'rubah')
-                            <!-- Level 2 Rubah Plafon: Modal dengan lampiran -->
-                            <button onclick="openApprovalModal({{ $submission->id }}, 'approved')" 
-                                    class="px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-700 transition" 
-                                    title="Setujui">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                                </svg>
-                            </button>
-                        @else
-                            <!-- Level 1 dan level lainnya: Modal simple (hanya notes) -->
-                            <button onclick="openApprovalModalSimple({{ $submission->id }}, 'approved')" 
-                                    class="px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-700 transition" 
-                                    title="Setujui">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                                </svg>
-                            </button>
-                        @endif
+                            <div class="relative inline-block text-left">
+                                <button type="button" 
+                                        onclick="toggleActionDropdown(event, 'action-menu-{{ $submission->id }}')" 
+                                        class="action-dropdown-btn inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg shadow-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1">
+                                    <span>Aksi</span>
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                    </svg>
+                                </button>
 
-                        <!-- Tolak Komitmen Pembayaran Button (Khusus Level 2) -->
-                        @if($level == 2)
-                            <button onclick="openRejectKomitmenModal({{ $submission->id }})" 
-                                    type="button"
-                                    class="px-2.5 py-1.5 bg-amber-500 text-white text-xs font-medium rounded hover:bg-amber-600 transition flex items-center gap-1 shadow-xs" 
-                                    title="Tolak & Ganti Komitmen Pembayaran">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                                </svg>
-                            </button>
-                        @endif
-                        
-                        <!-- Reject Button - Semua level pakai openApprovalModal untuk reject -->
-                        <button onclick="openApprovalModal({{ $submission->id }}, 'rejected')" 
-                                class="px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded hover:bg-red-700 transition" 
-                                title="Tolak">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                            </svg>
-                        </button>
-                    </div>
+                                <!-- Dropdown Menu (Icon Only) -->
+                                <div id="action-menu-{{ $submission->id }}" 
+                                     class="hidden action-dropdown-menu bg-white rounded-xl shadow-xl border border-gray-200 p-1.5 flex items-center gap-1.5 z-50">
+                                    <!-- Approve Action -->
+                                    @if($level == 2 && $submission->plafon_type === 'open')
+                                        <button type="button" 
+                                                onclick="closeAllActionDropdowns(); openApprovalModal({{ $submission->id }}, 'approved')" 
+                                                class="w-8 h-8 rounded-lg flex items-center justify-center bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white border border-emerald-200 transition shadow-xs"
+                                                title="Setujui Pengajuan">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                        </button>
+                                    @elseif($level == 2 && $submission->plafon_type === 'rubah')
+                                        <button type="button" 
+                                                onclick="closeAllActionDropdowns(); openApprovalModal({{ $submission->id }}, 'approved')" 
+                                                class="w-8 h-8 rounded-lg flex items-center justify-center bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white border border-emerald-200 transition shadow-xs"
+                                                title="Setujui Pengajuan">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                        </button>
+                                    @else
+                                        <button type="button" 
+                                                onclick="closeAllActionDropdowns(); openApprovalModalSimple({{ $submission->id }}, 'approved')" 
+                                                class="w-8 h-8 rounded-lg flex items-center justify-center bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white border border-emerald-200 transition shadow-xs"
+                                                title="Setujui Pengajuan">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                        </button>
+                                    @endif
+
+                                    <!-- Tolak Komitmen Pembayaran (Khusus Level 2) -->
+                                    @if($level == 2)
+                                        <button type="button" 
+                                                onclick="closeAllActionDropdowns(); openRejectKomitmenModal({{ $submission->id }})" 
+                                                class="w-8 h-8 rounded-lg flex items-center justify-center bg-amber-50 text-amber-600 hover:bg-amber-600 hover:text-white border border-amber-200 transition shadow-xs"
+                                                title="Tolak & Ganti Komitmen Pembayaran">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                        </button>
+                                    @endif
+
+                                    @if($level == 2)
+                                        <!-- Kembalikan ke Level 1 -->
+                                        <button type="button" 
+                                                onclick="closeAllActionDropdowns(); openReturnModal({{ $submission->id }}, '{{ $submission->kode }}', '{{ addslashes($submission->nama_kios ?? $submission->nama) }}', 'Level 1 (Manager SC)')" 
+                                                class="w-8 h-8 rounded-lg flex items-center justify-center bg-orange-50 text-orange-600 hover:bg-orange-600 hover:text-white border border-orange-200 transition shadow-xs"
+                                                title="Kembalikan ke Level 1 (Manager SC)">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a5 5 0 015 5v2m0 0l-4-4m4 4l4-4M3 10l4-4m-4 4l4 4"/></svg>
+                                        </button>
+                                    @endif
+
+                                    <!-- Reject Action -->
+                                    @if($level == 2)
+                                        <button type="button" 
+                                                onclick="closeAllActionDropdowns(); openApprovalModal({{ $submission->id }}, 'rejected')" 
+                                                class="w-8 h-8 rounded-lg flex items-center justify-center bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white border border-rose-200 transition shadow-xs"
+                                                title="Tolak Pengajuan">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                                        </button>
+                                    @else
+                                        <button type="button" 
+                                                onclick="closeAllActionDropdowns(); openApprovalModalSimple({{ $submission->id }}, 'rejected')" 
+                                                class="w-8 h-8 rounded-lg flex items-center justify-center bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white border border-rose-200 transition shadow-xs"
+                                                title="Tolak Pengajuan">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                                        </button>
+                                    @endif
+                                </div>
+                            </div>
                         </td>
                     </tr>
                     
@@ -1515,4 +1538,6 @@ function toggleTolakKomitmenSection() {
     }
 }
 </script>
+
+@include('partials.return-approval-modal')
 @endsection

@@ -91,7 +91,7 @@
                         <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
                         <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Status Pengajuan</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Tanggal Proses</th>
-                        <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Detail</th>
+                        <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
@@ -167,10 +167,43 @@
                         <td class="px-4 py-3 whitespace-nowrap">
                             <span class="text-sm text-gray-600">{{ $approval->created_at->format('d M Y H:i') }}</span>
                         </td>
-                        <td class="px-4 py-3 text-center">
-                            <button onclick="toggleDetail({{ $approval->id }})" class="text-indigo-600 hover:text-indigo-900 font-medium text-sm">
-                                Lihat
-                            </button>
+                        <td class="px-4 py-3 text-center whitespace-nowrap">
+                            <div class="flex items-center justify-center gap-2">
+                                <button onclick="toggleDetail({{ $approval->id }})" class="text-indigo-600 hover:text-indigo-900 font-medium text-sm">
+                                    Lihat
+                                </button>
+                                @php
+                                    $canRecall = false;
+                                    if ($approval->submission && $approval->submission->status !== 'done') {
+                                        $sub = $approval->submission;
+                                        if ($sub->status === 'rejected') {
+                                            $lastAppr = $sub->approvals->sortBy('created_at')->last();
+                                            $canRecall = ($lastAppr && $lastAppr->level == $level && $lastAppr->status === 'rejected');
+                                        } else {
+                                            $canRecall = match($level) {
+                                                1 => $sub->current_level == 2 && $sub->status === 'approved_1',
+                                                2 => $sub->current_level == 3 && $sub->status === 'approved_2',
+                                                3 => $sub->current_level == 4 && $sub->status === 'approved_3',
+                                                4 => ($sub->current_level == 5 && $sub->status === 'approved_4') || ($sub->status === 'pending_viewer'),
+                                                5 => ($sub->current_level == 6 && $sub->status === 'approved_5') || ($sub->status === 'pending_viewer'),
+                                                6 => $sub->status === 'pending_viewer',
+                                                default => false,
+                                            };
+                                        }
+                                    }
+                                @endphp
+                                @if($canRecall)
+                                    <button type="button" 
+                                            onclick="openRecallModal({{ $approval->submission->id }}, '{{ $approval->submission->kode }}', '{{ addslashes($approval->submission->nama_kios ?? $approval->submission->nama) }}')" 
+                                            class="px-2.5 py-1 text-xs font-semibold rounded bg-amber-500 hover:bg-amber-600 text-white transition flex items-center gap-1 shadow-xs" 
+                                            title="Batalkan approval Anda dan tarik pengajuan ini kembali ke dashboard">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a5 5 0 015 5v2m0 0l-4-4m4 4l4-4M3 10l4-4m-4 4l4 4"/>
+                                        </svg>
+                                        Tarik
+                                    </button>
+                                @endif
+                            </div>
                         </td>
                     </tr>
                     
@@ -406,4 +439,6 @@ function toggleDetail(id) {
     }
 }
 </script>
+
+@include('partials.return-approval-modal')
 @endsection
