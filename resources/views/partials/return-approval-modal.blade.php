@@ -35,15 +35,15 @@
                     </div>
                 </div>
 
-                <!-- Input Catatan/Alasan -->
-                <div>
+                <!-- Input Catatan/Alasan (Hanya untuk Recall / Batalkan Approval) -->
+                <div id="returnModalNoteContainer">
                     <label for="returnModalNote" class="block text-sm font-semibold text-gray-700 mb-1.5">
-                        Alasan Pengembalian / Pembatalan <span class="text-red-500">*</span>
+                        Alasan Pembatalan <span class="text-gray-400 font-normal">(Opsional)</span>
                     </label>
-                    <textarea name="note" id="returnModalNote" rows="3" required
-                              placeholder="Tuliskan alasan mengapa pengajuan ini dikembalikan/dibatalkan..."
+                    <textarea name="note" id="returnModalNote" rows="3"
+                              placeholder="Tuliskan alasan mengapa approval ini dibatalkan..."
                               class="w-full px-3.5 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"></textarea>
-                    <p class="text-[11px] text-gray-500 mt-1">Alasan ini akan tersimpan dan dapat dibaca oleh approver level tujuan.</p>
+                    <p class="text-[11px] text-gray-500 mt-1">Alasan ini akan tersimpan sebagai catatan pengembalian jika diisi.</p>
                 </div>
             </div>
 
@@ -68,6 +68,7 @@ function openReturnModal(submissionId, kode, customer, targetLevelName) {
     const desc = document.getElementById('returnModalDesc');
     const kodeEl = document.getElementById('returnModalKode');
     const custEl = document.getElementById('returnModalCustomer');
+    const noteContainer = document.getElementById('returnModalNoteContainer');
     const note = document.getElementById('returnModalNote');
     const submitBtn = document.getElementById('returnModalSubmitBtn');
     const header = document.getElementById('returnModalHeader');
@@ -78,6 +79,8 @@ function openReturnModal(submissionId, kode, customer, targetLevelName) {
     kodeEl.textContent = kode || '-';
     custEl.textContent = customer || '-';
     note.value = '';
+    note.required = false;
+    if (noteContainer) noteContainer.classList.add('hidden');
     submitBtn.textContent = 'Ya, Kembalikan';
     submitBtn.className = 'flex-1 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-semibold rounded-lg shadow-sm transition';
     header.className = 'px-6 py-4 bg-orange-600 text-white flex items-center justify-between';
@@ -92,6 +95,7 @@ function openRecallModal(submissionId, kode, customer) {
     const desc = document.getElementById('returnModalDesc');
     const kodeEl = document.getElementById('returnModalKode');
     const custEl = document.getElementById('returnModalCustomer');
+    const noteContainer = document.getElementById('returnModalNoteContainer');
     const note = document.getElementById('returnModalNote');
     const submitBtn = document.getElementById('returnModalSubmitBtn');
     const header = document.getElementById('returnModalHeader');
@@ -102,6 +106,8 @@ function openRecallModal(submissionId, kode, customer) {
     kodeEl.textContent = kode || '-';
     custEl.textContent = customer || '-';
     note.value = '';
+    note.required = false;
+    if (noteContainer) noteContainer.classList.remove('hidden');
     submitBtn.textContent = 'Ya, Batalkan Approval';
     submitBtn.className = 'flex-1 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold rounded-lg shadow-sm transition';
     header.className = 'px-6 py-4 bg-amber-600 text-white flex items-center justify-between';

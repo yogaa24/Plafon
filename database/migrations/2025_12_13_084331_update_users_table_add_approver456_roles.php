@@ -10,12 +10,14 @@ return new class extends Migration
     public function up()
     {
         // Ubah enum role untuk menambahkan approver4, approver5, approver6
-        DB::statement("ALTER TABLE users MODIFY COLUMN role ENUM('sales', 'approver1', 'approver2', 'approver3', 'approver4', 'approver5', 'approver6', 'viewer') NOT NULL");
+        $table = DB::getTablePrefix() . 'users';
+        DB::statement("ALTER TABLE `{$table}` MODIFY COLUMN role ENUM('sales', 'approver1', 'approver2', 'approver3', 'approver4', 'approver5', 'approver6', 'viewer') NOT NULL");
     }
 
     public function down()
     {
         // Kembalikan ke enum lama
-        DB::statement("ALTER TABLE users MODIFY COLUMN role ENUM('sales', 'approver1', 'approver2', 'approver3', 'viewer') NOT NULL");
+        $table = DB::getTablePrefix() . 'users';
+        DB::statement("ALTER TABLE `{$table}` MODIFY COLUMN role ENUM('sales', 'approver1', 'approver2', 'approver3', 'viewer') NOT NULL");
     }
 };

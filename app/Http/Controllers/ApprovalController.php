@@ -1241,13 +1241,10 @@ class ApprovalController extends Controller
         $isViewer = ($role === 'viewer');
 
         $request->validate([
-            'note' => 'required|string|min:3',
-        ], [
-            'note.required' => 'Alasan pengembalian / pembatalan wajib diisi.',
-            'note.min' => 'Alasan pengembalian minimal 3 karakter.',
+            'note' => 'nullable|string',
         ]);
 
-        $note = trim($request->input('note'));
+        $note = trim((string) $request->input('note', ''));
 
         DB::beginTransaction();
         try {
@@ -1301,11 +1298,13 @@ class ApprovalController extends Controller
             // Hapus record approval pada level yang ditargetkan agar antrean level tersebut bersih untuk approve ulang
             Approval::where('submission_id', $submission->id)->where('level', $levelToDelete)->delete();
 
-            // Simpan status, level, dan catatan pengembalian
+            // Simpan status dan level (catatan hanya disimpan jika diisi)
             $roleLabel = $user->role_label ?? $user->name;
             $submission->current_level = $targetLevel;
             $submission->status = $targetStatus;
-            $submission->rejection_note = "Dikembalikan ke Level {$targetLevel} oleh {$user->name} ({$roleLabel}): {$note}";
+            $submission->rejection_note = $note !== ''
+                ? "Dikembalikan ke Level {$targetLevel} oleh {$user->name} ({$roleLabel}): {$note}"
+                : null;
             $submission->save();
 
             DB::commit();

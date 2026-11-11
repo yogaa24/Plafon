@@ -9,8 +9,10 @@ return new class extends Migration
 {
     public function up()
     {
+        $table = DB::getTablePrefix() . 'submissions';
+
         // Update enum status untuk menambahkan status baru
-        DB::statement("ALTER TABLE submissions MODIFY COLUMN status ENUM(
+        DB::statement("ALTER TABLE `{$table}` MODIFY COLUMN status ENUM(
             'pending',
             'approved_1',
             'approved_2',
@@ -26,7 +28,7 @@ return new class extends Migration
 
         // Update current_level - ubah ke integer atau nullable
         // Opsi 1: Ubah ke integer
-        DB::statement("ALTER TABLE submissions MODIFY COLUMN current_level INT NULL");
+        DB::statement("ALTER TABLE `{$table}` MODIFY COLUMN current_level INT NULL");
         
         // Atau Opsi 2: Tetap integer tapi nullable dengan default NULL
         // Schema::table('submissions', function (Blueprint $table) {
@@ -36,8 +38,10 @@ return new class extends Migration
 
     public function down()
     {
+        $table = DB::getTablePrefix() . 'submissions';
+
         // Kembalikan ke enum lama
-        DB::statement("ALTER TABLE submissions MODIFY COLUMN status ENUM(
+        DB::statement("ALTER TABLE `{$table}` MODIFY COLUMN status ENUM(
             'pending',
             'approved_1',
             'approved_2',
